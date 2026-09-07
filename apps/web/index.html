@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>calibrEAT — Calibrate your eating lifestyle</title>
+<meta name="description" content="Free calorie tracker for Android. Log food, scan barcodes, track water &amp; weight — no ads, no subscriptions. One lifetime activation code, delivered by email." />
+<meta name="theme-color" content="#0a1019" />
+<link rel="icon" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+<!--
+  ═══════════════════════════════════════════════════════════════════════
+  CONFIG — one place to make the store live (see apps/web/README.md)
+  ───────────────────────────────────────────────────────────────────────
+  CHECKOUT_URL : hosted checkout for the one-time "lifetime activation code"
+                 product. Currently a placeholder — the Merchant of Record
+                 (provider not chosen yet) will email the permanent license
+                 key automatically on purchase.
+  APK_URL      : direct download link for the free Android APK. Placeholder —
+                 the release APK has not been built yet.
+  ═══════════════════════════════════════════════════════════════════════
+-->
+<script>
+  const CHECKOUT_URL = "#checkout-not-configured"; // TODO: paste MoR checkout URL
+  const APK_URL = "#apk-coming-soon"; // TODO: paste hosted APK link
+
+  // Inline night mark (data URI) — keeps the page self-contained. Master copy:
+  // brand/calibreat-mark-line-dark.svg (also mirrored in assets/).
+  const MARK_NIGHT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <path d="M 220 370 L 292 370 L 272 335 L 240 335 Z" fill="#B7E93C"/>
+    <rect x="206" y="370" width="100" height="12" rx="6" fill="#B7E93C"/>
+    <path d="M 315 185 A 75 75 0 1 0 315 315" fill="none" stroke="#B7E93C" stroke-width="22" stroke-linecap="round"/>
+    <line x1="130" y1="315" x2="382" y2="245" stroke="#B7E93C" stroke-width="12" stroke-linecap="round"/>
+    <g transform="translate(135, 220)">
+      <path d="M 25 12 C 32 3, 42 8, 42 8 C 42 8, 38 20, 25 12 Z" fill="#B7E93C"/>
+      <path d="M 25 20 C 10 20, 5 33, 5 50 C 5 72, 20 82, 25 82 C 30 82, 45 72, 45 50 C 45 33, 40 20, 25 20 Z" fill="#1F9D55"/>
+    </g>
+    <g transform="translate(335, 150)">
+      <path d="M 25 75 C 10 75, 0 62, 0 45 C 0 28, 15 15, 25 0 C 30 18, 40 25, 40 42 C 40 60, 35 75, 25 75 Z" fill="#1F9D55"/>
+      <path d="M 25 75 C 18 75, 12 68, 12 55 C 12 42, 22 32, 25 25 C 28 35, 33 40, 33 52 C 33 65, 30 75, 25 75 Z" fill="#B7E93C"/>
+    </g>
+  </svg>`;
+</script>
+
+<style>
+  /* ── Design tokens ─────────────────────────────────────── */
+  :root {
+    --ink: #0a1019;
+    --ink-2: #0e1623;
+    --ink-3: #131d2d;
+    --green: #1f9d55;
+    --green-bright: #23b25f;
+    --green-deep: #0e6b38;
+    --lime: #b7e93c;
+    --lime-soft: #c8f259;
+    --bg: #f6f7f4;
+    --surface: #ffffff;
+    --text: #101820;
+    --text-2: #46525c;
+    --muted: #67727c;
+    --line: rgba(13, 21, 30, 0.09);
+    --line-strong: rgba(13, 21, 30, 0.16);
+    --font-display: "Sora", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --shadow-sm: 0 1px 2px rgba(10, 16, 25, 0.04), 0 4px 12px -4px rgba(10, 16, 25, 0.06);
+    --shadow-md: 0 2px 4px rgba(10, 16, 25, 0.04), 0 14px 34px -14px rgba(10, 16, 25, 0.14);
+    --radius-sm: 10px;
+    --radius: 16px;
+    --radius-lg: 22px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.6;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  img, svg { display: block; }
+  .wrap { max-width: 1024px; margin: 0 auto; padding: 0 24px; }
+  h1, h2, h3 { font-family: var(--font-display); }
+
+  /* ── Buttons ───────────────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    border-radius: 12px; font-weight: 600; font-size: 15px; line-height: 1;
+    text-decoration: none; cursor: pointer; border: 0; font-family: inherit;
+    padding: 15px 24px; white-space: nowrap;
+    transition: transform 0.12s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  }
+  .btn:active { transform: translateY(1px) scale(0.995); }
+  .btn .arr { transition: transform 0.18s ease; }
+  .btn:hover .arr { transform: translateX(3px); }
+  .btn-primary {
+    background: linear-gradient(180deg, var(--green-bright), var(--green));
+    color: #fff;
+    box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 8px 20px -8px rgba(31,157,85,.6);
+  }
+  .btn-primary:hover { box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 12px 26px -8px rgba(31,157,85,.7); }
+  .btn-lime { background: var(--lime); color: #0a1019; box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 8px 20px -10px rgba(183,233,60,.55); }
+  .btn-lime:hover { background: var(--lime-soft); }
+  .btn-dark { background: #111a29; color: #fff; border: 1px solid rgba(255,255,255,.1); }
+  .btn-dark:hover { background: #182436; }
+  .btn-outline { border: 1.5px solid var(--line-strong); color: var(--text); background: var(--surface); }
+  .btn-outline:hover { border-color: var(--green); color: var(--green-deep); background: rgba(31,157,85,.04); }
+  .btn-block { width: 100%; }
+  .btn-lg { padding: 17px 28px; font-size: 16px; }
+
+  /* ── Nav ───────────────────────────────────────────────── */
+  .site-nav {
+    position: sticky; top: 0; z-index: 60;
+    background: rgba(10, 16, 25, 0.78);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 6px 24px; max-width: 1024px; margin: 0 auto; }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; font-family: var(--font-display); color: #fff; text-decoration: none; }
+  .brand img, .brand svg { width: 30px; height: 30px; }
+  .brand .e { color: var(--lime); }
+  .nav-links { display: flex; align-items: center; gap: 20px; }
+  .nav-links .link { color: #aeb9c4; text-decoration: none; font-size: 14px; font-weight: 500; position: relative; padding: 4px 0; }
+  .nav-links .link::after {
+    content: ""; position: absolute; left: 0; right: 100%; bottom: -1px; height: 2px;
+    background: var(--lime); border-radius: 2px; transition: right 0.2s ease;
+  }
+  .nav-links .link:hover { color: #fff; }
+  .nav-links .link:hover::after { right: 0; }
+  .nav-cta { padding: 6px 15px; font-size: 13.5px; }
+  .nav-burger { display: none; background: none; border: 1px solid rgba(255,255,255,.14); border-radius: 9px; padding: 5px 8px; cursor: pointer; }
+  .nav-burger svg { width: 18px; height: 18px; }
+
+  /* ── Shared section bits ───────────────────────────────── */
+  section { padding: clamp(56px, 7vw, 88px) 0; }
+  .kicker {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--green-deep);
+  }
+  .kicker::before { content: ""; width: 24px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--green), var(--lime)); }
+  .kicker.on-dark { color: var(--lime); }
+  .sec-head { max-width: 640px; margin-bottom: 32px; }
+  .sec-head.center { margin-left: auto; margin-right: auto; text-align: center; }
+  .sec-head.center .kicker::before { display: none; }
+  .sec-head h2 { font-size: clamp(28px, 3.6vw, 40px); letter-spacing: -0.025em; line-height: 1.12; margin: 10px 0 12px; color: var(--text); }
+  .sec-head p { color: var(--text-2); font-size: 16px; margin: 0; }
+  .sec-head.center .kicker { justify-content: center; }
+
+  /* ── Hero ──────────────────────────────────────────────── */
+  .hero { background: var(--ink); color: var(--text-light, #e9eef2); overflow: hidden; position: relative; }
+  .hero-grid-bg {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size: 46px 46px;
+    -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 20%, #000 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse 90% 80% at 50% 20%, #000 30%, transparent 75%);
+  }
+  .hero::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(720px 420px at 82% 8%, rgba(31,157,85,.28), transparent 62%),
+      radial-gradient(640px 460px at 4% 96%, rgba(183,233,60,.10), transparent 62%);
+  }
+  .hero .wrap { position: relative; display: grid; grid-template-columns: minmax(0, 1.06fr) minmax(0, 0.94fr); gap: 40px; align-items: center; padding-top: clamp(44px, 6vw, 68px); padding-bottom: clamp(56px, 7vw, 84px); }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px;
+    border: 1px solid rgba(183,233,60,.35); border-radius: 999px;
+    background: rgba(183,233,60,.08); color: var(--lime);
+    font-size: 12.5px; font-weight: 600; letter-spacing: 0.03em;
+  }
+  .hero-eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 4px rgba(183,233,60,.16); }
+  .hero h1 {
+    font-size: clamp(40px, 5.2vw, 62px); font-weight: 800; letter-spacing: -0.032em;
+    line-height: 1.05; margin: 20px 0 18px; color: #fff;
+  }
+  .hero h1 .lime { color: var(--lime); }
+  .hero h1 .soft { color: #cdd6dd; }
+  .hero .lede { font-size: 17.5px; color: #9fabb7; max-width: 520px; margin: 0 0 26px; }
+  .hero .lede b { color: #dbe2e8; font-weight: 600; }
+  .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .hero-note { display: flex; align-items: flex-start; gap: 10px; font-size: 13.5px; color: #84919d; margin: 14px 0 0; max-width: 500px; }
+  .hero-note .note-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .hero-note svg { flex: none; margin-top: 2px; }
+  .hero-note b { color: #c6cfd6; font-weight: 600; }
+  .hero-trust { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 24px; border-top: 1px solid rgba(255,255,255,.08); padding-top: 18px; }
+  .trust-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #9fabb7; }
+  .trust-item svg { flex: none; }
+
+  /* Phone mockup */
+  .hero-visual { position: relative; display: flex; justify-content: center; padding: 8px 0; }
+  .phone-glow { position: absolute; width: 380px; height: 380px; border-radius: 50%; background: radial-gradient(circle, rgba(31,157,85,.4), transparent 65%); filter: blur(10px); top: 8%; }
+  .phone {
+    position: relative; width: 302px; border-radius: 46px; padding: 10px;
+    background: linear-gradient(165deg, #2a3648, #0c1420 40%, #1a2536);
+    box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 40px 90px -30px rgba(0,0,0,.8), 0 18px 40px -24px rgba(31,157,85,.35);
+  }
+  .phone::before { content: ""; position: absolute; left: 50%; top: 22px; width: 92px; height: 24px; transform: translateX(-50%); background: #0a1019; border-radius: 999px; z-index: 5; }
+  .phone::after { content: ""; position: absolute; right: -3px; top: 150px; width: 3px; height: 64px; border-radius: 3px; background: linear-gradient(#3c4a5e, #121c2b); }
+  .phone-screen {
+    position: relative; overflow: hidden; border-radius: 36px; background:
+      radial-gradient(240px 160px at 50% -8%, rgba(31,157,85,.28), transparent 70%),
+      linear-gradient(180deg, #0e1623, #0a1019 70%);
+    height: 590px; padding: 56px 22px 24px; display: flex; flex-direction: column; align-items: center; text-align: center;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
+  }
+  .statusbar { position: absolute; top: 18px; left: 24px; right: 24px; display: flex; justify-content: space-between; align-items: center; color: #dde5ea; font-size: 12px; font-weight: 600; }
+  .statusbar .sys { display: flex; align-items: center; gap: 5px; }
+  .statusbar .bar { display: flex; gap: 2px; align-items: flex-end; }
+  .statusbar .bar i { width: 3px; border-radius: 1px; background: currentColor; }
+  .lock-body { margin-top: 28px; display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; }
+  .lock-mark { width: 64px; height: 64px; filter: drop-shadow(0 10px 24px rgba(183,233,60,.22)); }
+  .lock-word { font-family: var(--font-display); font-weight: 700; font-size: 24px; letter-spacing: -0.02em; color: #fff; margin-top: 10px; line-height: 1.2; }
+  .lock-word .e { color: var(--lime); }
+  .lock-sub { color: #8b97a4; font-size: 12px; margin-top: 6px; line-height: 1.55; }
+  .lock-bullets { margin: 20px 0 0; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; text-align: left; width: 100%; padding: 0 4px; }
+  .lock-bullet { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: #c4cdd4; font-weight: 500; }
+  .lock-bullet .ic { width: 22px; height: 22px; border-radius: 7px; background: rgba(183,233,60,.1); display: grid; place-items: center; flex: none; }
+  .lock-field {
+    width: 100%; margin-top: auto; background: #0c1420; border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px; padding: 12px 10px; color: #4c5a68; font-size: 12.5px; letter-spacing: 0.13em;
+    font-weight: 600; text-align: center; white-space: nowrap; overflow: hidden;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  .lock-btn {
+    width: 100%; margin-top: 10px; border: 0; cursor: default; font-family: var(--font-body);
+    background: linear-gradient(180deg, var(--green-bright), var(--green)); color: #fff;
+    border-radius: 12px; padding: 13px; font-weight: 600; font-size: 14px;
+    box-shadow: 0 12px 24px -10px rgba(31,157,85,.7);
+  }
+  .lock-link { margin-top: 10px; font-size: 11.5px; line-height: 1.5; color: #7d8a96; text-decoration: none; }
+  .float-card {
+    position: absolute; display: flex; align-items: center; gap: 11px; z-index: 4;
+    background: rgba(19, 29, 45, 0.82); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,.12); border-radius: 14px; padding: 11px 15px;
+    box-shadow: 0 18px 40px -16px rgba(0,0,0,.6);
+  }
+  .float-card .fc-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; flex: none; }
+  .float-card .fc-ic.green { background: rgba(31,157,85,.2); color: #4ade80; }
+  .float-card .fc-ic.lime { background: rgba(183,233,60,.15); color: var(--lime); }
+  .float-card b { display: block; color: #fff; font-size: 12.5px; font-weight: 600; line-height: 1.25; }
+  .float-card span { display: block; color: #8b97a4; font-size: 11px; line-height: 1.3; }
+  .fc-a { left: -6px; top: 22%; animation: floaty 6s ease-in-out infinite; }
+  .fc-b { right: -8px; bottom: 16%; animation: floaty 6s ease-in-out 3s infinite; }
+  @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+
+  /* ── Steps ─────────────────────────────────────────────── */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; position: relative; }
+  .steps::before {
+    content: ""; position: absolute; top: 49px; left: 12%; right: 12%; height: 2px;
+    background: repeating-linear-gradient(90deg, var(--line-strong) 0 7px, transparent 7px 13px);
+  }
+  .step {
+    position: relative; background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 22px 20px;
+    box-shadow: var(--shadow-sm); transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .step:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .step .num {
+    width: 54px; height: 54px; border-radius: 16px; margin-bottom: 16px;
+    display: grid; place-items: center; font-family: var(--font-display);
+    font-size: 19px; font-weight: 700; color: #fff;
+    background: linear-gradient(150deg, var(--green-bright), var(--green-deep));
+    box-shadow: 0 10px 22px -8px rgba(14, 107, 56, 0.55);
+    position: relative; z-index: 1;
+  }
+  .step h3 { margin: 0 0 8px; font-size: 18.5px; letter-spacing: -0.015em; }
+  .step p { margin: 0; color: var(--text-2); font-size: 14.5px; }
+  .step p b { color: var(--text); font-weight: 600; }
+  .tag-email {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 14px;
+    font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; color: var(--green-deep);
+    background: rgba(31,157,85,.1); border-radius: 999px; padding: 5px 11px;
+  }
+
+  /* ── Features ──────────────────────────────────────────── */
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .feature {
+    position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
+    padding: 20px; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .feature:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: rgba(31,157,85,.35); }
+  .feature .ftile {
+    width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
+    background: linear-gradient(145deg, rgba(31,157,85,.13), rgba(183,233,60,.1));
+    border: 1px solid rgba(31,157,85,.18); color: var(--green-deep);
+  }
+  .feature h3 { margin: 14px 0 6px; font-size: 16.5px; letter-spacing: -0.01em; }
+  .feature p { margin: 0; color: var(--text-2); font-size: 14.5px; }
+
+  /* ── Pricing band ──────────────────────────────────────── */
+  .band { background: var(--ink); position: relative; overflow: hidden; }
+  .band::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(560px 300px at 12% 10%, rgba(31,157,85,.18), transparent 65%),
+      radial-gradient(520px 320px at 90% 100%, rgba(183,233,60,.07), transparent 65%);
+  }
+  .band .wrap { position: relative; }
+  .pricing { display: grid; grid-template-columns: 1fr minmax(0, 430px); gap: clamp(36px, 6vw, 84px); align-items: center; }
+  .pricing-left h2 { font-size: clamp(28px, 3.4vw, 38px); letter-spacing: -0.025em; color: #fff; line-height: 1.14; margin: 12px 0 14px; }
+  .pricing-left > p { color: #9fabb7; font-size: 16.5px; margin: 0 0 26px; max-width: 480px; }
+  .pricing-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 11px; }
+  .pricing-list li { display: flex; align-items: flex-start; gap: 12px; color: #c7d0d7; font-size: 15px; }
+  .pricing-list li .ck {
+    flex: none; width: 22px; height: 22px; border-radius: 50%; margin-top: 1px;
+    display: grid; place-items: center; background: rgba(183,233,60,.14); color: var(--lime);
+  }
+  .buy-card {
+    background: linear-gradient(180deg, #131d2d, #0e1623);
+    border: 1px solid rgba(255,255,255,.1); border-radius: 24px; padding: 28px;
+    position: relative; box-shadow: 0 40px 90px -34px rgba(0,0,0,.8);
+  }
+  .buy-card::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 1px; border-radius: 24px 24px 0 0;
+    background: linear-gradient(90deg, transparent, rgba(183,233,60,.6), transparent);
+  }
+  .buy-tag {
+    display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--lime);
+    background: rgba(183,233,60,.1); border: 1px solid rgba(183,233,60,.25);
+    padding: 5px 12px; border-radius: 999px;
+  }
+  .buy-card h3 { color: #fff; font-size: 21px; letter-spacing: -0.015em; margin: 18px 0 4px; }
+  .buy-card .prod-sub { color: #8b97a4; font-size: 13.5px; margin: 0 0 20px; }
+  .buy-rows { display: grid; gap: 11px; border-top: 1px solid rgba(255,255,255,.08); padding: 18px 0; }
+  .buy-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13.5px; color: #b6c0c9; }
+  .buy-row b { color: #fff; font-weight: 600; }
+  .buy-row .val { display: flex; align-items: center; gap: 6px; }
+  .buy-row .ok { color: var(--lime); }
+  .buy-price { text-align: center; padding: 6px 0 20px; }
+  .buy-price .big { font-family: var(--font-display); font-size: 44px; font-weight: 700; letter-spacing: -0.03em; color: #fff; line-height: 1; }
+  .buy-price .big small { font-size: 20px; color: #8b97a4; font-weight: 600; margin-right: 2px; }
+  .buy-price p { margin: 8px 0 0; color: #7d8a96; font-size: 12.5px; }
+  .buy-fine { text-align: center; color: #7d8a96; font-size: 12px; margin: 14px 0 0; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+  /* ── Download ──────────────────────────────────────────── */
+  .download { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .dl-card {
+    position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
+    padding: 22px; display: flex; flex-direction: column;
+  }
+  .dl-head { display: flex; align-items: center; gap: 13px; margin-bottom: 10px; }
+  .dl-head .os-ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--ink); color: #fff; flex: none; }
+  .dl-head .os-ic.soon-os { background: rgba(10,16,25,.06); color: var(--muted); }
+  .dl-head .os-name { font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: -0.01em; }
+  .dl-head .soon {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--green-deep); background: rgba(31,157,85,.1); border-radius: 999px; padding: 4px 9px; margin-left: 8px;
+  }
+  .dl-card p { color: var(--text-2); font-size: 14.5px; margin: 0 0 6px; flex: 1; }
+  .dl-card small { color: var(--muted); font-size: 12.5px; }
+  .dl-meta { display: block; margin-top: 10px; color: var(--muted); font-size: 12px; }
+  .dl-actions { display: flex; gap: 10px; margin-top: 14px; align-items: center; }
+
+  /* ── FAQ ──────────────────────────────────────────────── */
+  .faq { max-width: 720px; margin: 0 auto; display: grid; gap: 10px; }
+  details.faq-item { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; transition: border-color 0.18s ease, box-shadow 0.18s ease; }
+  details.faq-item[open] { border-color: rgba(31,157,85,.4); box-shadow: var(--shadow-sm); }
+  details.faq-item summary {
+    cursor: pointer; font-weight: 600; font-size: 15px; padding: 15px 20px; list-style: none;
+    display: flex; justify-content: space-between; align-items: center; gap: 14px; color: var(--text); user-select: none;
+  }
+  details.faq-item summary::-webkit-details-marker { display: none; }
+  details.faq-item summary .chev { flex: none; width: 24px; height: 24px; border-radius: 50%; background: rgba(31,157,85,.1); color: var(--green-deep); display: grid; place-items: center; transition: transform 0.25s ease, background 0.2s ease; }
+  details.faq-item[open] summary .chev { transform: rotate(180deg); background: var(--green); color: #fff; }
+  details.faq-item .ans { padding: 0 20px 16px; color: var(--text-2); font-size: 14.5px; margin: 0; }
+
+  /* ── Footer ────────────────────────────────────────────── */
+  .footer { background: var(--ink); color: #9fabb7; padding: 52px 0 0; font-size: 14px; }
+  .footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 32px; padding-bottom: 40px; }
+  .footer .brand { font-size: 20px; margin-bottom: 12px; }
+  .foot-copy { max-width: 320px; font-size: 13.5px; line-height: 1.65; margin: 0 0 18px; color: #84919d; }
+  .foot-trust { display: flex; gap: 12px; }
+  .foot-trust .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: #aeb9c4; border: 1px solid rgba(255,255,255,.1); border-radius: 999px; padding: 5px 10px; }
+  .footer h4 { color: #fff; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 16px; font-family: var(--font-body); font-weight: 700; }
+  .footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .footer ul a { color: #9fabb7; text-decoration: none; }
+  .footer ul a:hover { color: var(--lime); }
+  .footer-bottom {
+    border-top: 1px solid rgba(255,255,255,.08); padding: 18px 0 22px;
+    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    font-size: 12.5px; color: #6b7885;
+  }
+  .footer-bottom .heart { color: var(--lime); }
+
+  /* ── Commitment note ───────────────────────────────────── */
+  .commit-note {
+    display: flex; align-items: flex-start; gap: 14px; margin-top: 24px;
+    background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--green);
+    border-radius: 14px; padding: 16px 20px; box-shadow: var(--shadow-sm);
+  }
+  .commit-note .cn-ic {
+    flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+    background: linear-gradient(145deg, rgba(31,157,85,.14), rgba(183,233,60,.1));
+    border: 1px solid rgba(31,157,85,.2); color: var(--green-deep);
+  }
+  .commit-note p { margin: 0; color: var(--text-2); font-size: 14.5px; line-height: 1.6; }
+  .commit-note b { color: var(--text); }
+
+  /* ── Tile ring (soft pulsing outline) ──────────────────── */
+  .step::before, .feature::before, .dl-card::before {
+    content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(31,157,85,.12), 0 0 16px -6px rgba(31,157,85,.2);
+    animation: tile-pulse 3.4s ease-in-out infinite;
+  }
+  .steps .step:nth-child(2)::before, .features .feature:nth-child(2)::before, .features .feature:nth-child(5)::before, .download .dl-card:nth-child(2)::before { animation-delay: 1.15s; }
+  .steps .step:nth-child(3)::before, .features .feature:nth-child(3)::before, .features .feature:nth-child(6)::before { animation-delay: 2.3s; }
+  @keyframes tile-pulse {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(31,157,85,.1), 0 0 14px -6px rgba(31,157,85,.15); }
+    50% { box-shadow: 0 0 0 1.5px rgba(31,157,85,.4), 0 0 20px -2px rgba(31,157,85,.4); }
+  }
+
+  /* ── Reveal on scroll ──────────────────────────────────── */
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.65s ease, transform 0.65s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* ── Responsive ────────────────────────────────────────── */
+  @media (max-width: 960px) {
+    .hero .wrap { grid-template-columns: 1fr; gap: 64px; }
+    .hero-visual { order: -1; }
+    .pricing { grid-template-columns: 1fr; }
+    .buy-card { max-width: 460px; }
+    .steps::before { display: none; }
+  }
+  @media (max-width: 880px) {
+    .steps, .features, .download { grid-template-columns: 1fr; }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    /* In-flow mobile menu: the header simply grows when opened. */
+    .nav-inner { flex-wrap: wrap; padding-bottom: 11px; }
+    .nav-links { display: none; flex: 1 1 100%; order: 5; flex-direction: column; align-items: stretch; gap: 4px; padding: 12px 2px 2px; margin-top: 10px; border-top: 1px solid rgba(255,255,255,.09); }
+    .site-nav.open .nav-links { display: flex; }
+    .nav-links .link { padding: 13px 2px; font-size: 16px; color: #dfe6ec; border-radius: 10px; }
+    .nav-links .link:active { background: rgba(255,255,255,.06); }
+    .nav-links .link::after { display: none; }
+    .nav-cta { margin: 10px 0 0; width: 100%; }
+    .nav-burger { display: block; }
+    .fc-a, .fc-b { display: none; }
+  }
+  @media (max-width: 520px) {
+    .wrap { padding: 0 18px; }
+    .phone { width: 274px; }
+    .phone-screen { height: 545px; }
+    .hero-trust { flex-direction: column; gap: 10px; }
+    .hero-cta .btn { width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .float-card, .hero-art img { animation: none !important; }
+    .step::before, .feature::before, .dl-card::before { animation: none; box-shadow: 0 0 0 1px rgba(31,157,85,.22); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ Navigation ═══════════ -->
+<header class="site-nav" id="site-nav">
+  <nav class="nav-inner">
+    <a class="brand" href="#top">
+      <img data-mark alt="" />
+      <span>calibr<span class="e">EAT</span></span>
+    </a>
+    <div class="nav-links">
+      <a class="link" href="#how">How it works</a>
+      <a class="link" href="#features">Features</a>
+      <a class="link" href="#pricing">Pricing</a>
+      <a class="link" href="#faq">FAQ</a>
+      <a class="btn btn-lime nav-cta" id="nav-buy" href="#">Buy lifetime</a>
+    </div>
+    <button class="nav-burger" id="nav-burger" aria-label="Menu" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </nav>
+</header>
+
+<main id="top">
+  <!-- ═══════════ Hero ═══════════ -->
+  <section class="hero" style="padding-bottom: 0;">
+    <div class="hero-grid-bg"></div>
+    <div class="wrap">
+      <div>
+        <span class="hero-eyebrow"><span class="dot"></span> Free to install · Android 8.0+</span>
+        <h1>Your eating,<br />precisely <span class="lime">calibrated</span><span class="soft">.</span></h1>
+        <p class="lede">
+          calibrEAT is a free tracker for meals, water and weight — with a barcode scanner
+          and private insights. One lifetime purchase, <b>yours forever</b>. No subscription.
+          No ads. No data sharing.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-primary btn-lg" id="hero-buy" href="#">Get lifetime access <span class="arr">→</span></a>
+          <a class="btn btn-dark btn-lg" href="#download">Download app — free</a>
+        </div>
+        <p class="hero-note">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b7e93c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="m8 10 2.5 2.5L16 8"/></svg>
+          <span class="note-text">
+            <b>One-time payment.</b>
+            <span>Your <b>permanent activation code arrives by email instantly</b>, ready to type into the app.</span>
+          </span>
+        </p>
+        <div class="hero-trust">
+          <span class="trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f9d55" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.2a15 15 0 0 1 19 0"/><path d="M5.5 12.7a10 10 0 0 1 13 0"/><path d="M8.5 16.2a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1.1" fill="#1f9d55" stroke="none"/></svg> Needs internet to fetch foods &amp; scan barcodes</span>
+          <span class="trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f9d55" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> Your data stays on your phone</span>
+          <span class="trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f9d55" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> Every future update included</span>
+        </div>
+      </div>
+
+      <!-- Phone mockup -->
+      <div class="hero-visual">
+        <div class="phone-glow"></div>
+        <div class="float-card fc-a">
+          <div class="fc-ic lime">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="M3 10h18"/><path d="m8 15 2 2 4-4"/></svg>
+          </div>
+          <div><b>Email delivered</b><span>Your code arrives instantly</span></div>
+        </div>
+        <div class="float-card fc-b">
+          <div class="fc-ic green">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+          </div>
+          <div><b>Pay once, own it</b><span>No subscription — ever</span></div>
+        </div>
+
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="statusbar">
+              <span>9:41</span>
+              <span class="sys">
+                <svg width="15" height="10" viewBox="0 0 15 10" fill="none"><rect x="0.5" y="4.5" width="8" height="5" rx="1.5" stroke="#dde5ea" opacity=".8"/><path d="M2.6 7 5 3.4l1.2 2L8 4l1.8-3.4" stroke="#dde5ea" stroke-width="1" fill="none"/><rect x="11" y="5" width="3.4" height="5" rx="0.9" fill="#dde5ea"/></svg>
+              </span>
+            </div>
+            <div class="lock-body">
+              <img class="lock-mark" data-mark alt="" />
+              <div class="lock-word">calibr<span class="e">EAT</span></div>
+              <p class="lock-sub">Enter your license code to<br />unlock calibrEAT for life</p>
+              <div class="lock-bullets">
+                <div class="lock-bullet"><span class="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#b7e93c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg></span> Food, water &amp; weight logs</div>
+                <div class="lock-bullet"><span class="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#b7e93c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg></span> Barcode scanner included</div>
+                <div class="lock-bullet"><span class="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#b7e93c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg></span> Private, on-device insights</div>
+              </div>
+              <div class="lock-field">XXXX-XXXX-XXXX</div>
+              <div class="lock-btn">Unlock lifetime</div>
+              <a class="lock-link" href="#">Get a lifetime license on the website →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ How activation works ═══════════ -->
+  <section id="how">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <span class="kicker">Simple &amp; honest</span>
+        <h2>A single payment. A lifetime license.</h2>
+        <p>calibrEAT is free to install and explore. One one-time purchase permanently unlocks the full app on your device — no subscription, no renewal, no catch.</p>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <div class="num">1</div>
+          <h3>Purchase a license</h3>
+          <p>Proceed through a secure checkout and complete a single one-time payment — that is the entire cost of calibrEAT.</p>
+        </div>
+        <div class="step reveal" style="transition-delay:.08s;">
+          <div class="num">2</div>
+          <h3>Check your inbox</h3>
+          <p>Your <b>permanent activation code</b> is emailed automatically the instant your purchase completes.</p>
+          <span class="tag-email">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="m3.5 7 8.5 6 8.5-6"/></svg>
+            Delivered instantly by email
+          </span>
+        </div>
+        <div class="step reveal" style="transition-delay:.16s;">
+          <div class="num">3</div>
+          <h3>Activate &amp; enjoy</h3>
+          <p>Open the app, enter the code on the welcome screen, and calibrEAT is unlocked on this device for life.</p>
+        </div>
+      </div>
+      <div class="commit-note reveal">
+        <span class="cn-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5.2 5.9v5.2c0 4.5 2.9 8 6.8 9.7 3.9-1.7 6.8-5.2 6.8-9.7V5.9Z"/><path d="m9.3 12.2 2 1.9 3.6-4"/></svg></span>
+        <p><b>The calibrEAT commitment.</b> calibrEAT is a one-time purchase and will remain one. There are no monthly fees, no subscription tiers, and no in-app purchases — today or in the future.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ Features ═══════════ -->
+  <section id="features" style="padding-top: 0;">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <span class="kicker">What you get</span>
+        <h2>Everything to calibrate your eating</h2>
+        <p>Built for anyone dialing in their eating lifestyle — no accounts, no clutter.</p>
+      </div>
+      <div class="features">
+        <div class="feature reveal">
+          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="12" height="15" rx="2.5"/><path d="M9.5 5V3.2h5V5"/><path d="M8.6 11h6.8M8.6 14.2h6.8M8.6 17.4h4"/></svg></div>
+          <h3>Food diary</h3><p>Log meals and snacks with calories &amp; macros — quick-add included for the foods you eat daily.</p>
+        </div>
+        <div class="feature reveal" style="transition-delay:.05s;">
+          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5.6A1.6 1.6 0 0 1 5.6 4H8M16 4h2.4A1.6 1.6 0 0 1 20 5.6V8M20 16v2.4a1.6 1.6 0 0 1-1.6 1.6H16M8 20H5.6A1.6 1.6 0 0 1 4 18.4V16"/><path d="M8.6 10v4M11.4 10v4.8M14.2 10v4M17 10v3" stroke-width="2.2"/></svg></div>
+          <h3>Barcode scanner</h3><p>Scan packaged foods straight from a free, open food database — no manual entry required.</p>
+        </div>
+        <div class="feature reveal" style="transition-delay:.1s;">
+          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.4 19.4a8.6 8.6 0 1 1 13.2 0"/><path d="M12 14.6 16 9.6"/><circle cx="12" cy="15" r="1.1" fill="currentColor" stroke="none"/></svg></div>
+          <h3>Weight &amp; goals</h3><p>Set a target, weigh in, and your daily needs recalculate automatically as you progress.</p>
+        </div>
+        <div class="feature reveal">
+          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.4c2.9 3.7 6.2 7.3 6.2 10.7a6.2 6.2 0 0 1-12.4 0C5.8 10.7 9.1 7.1 12 3.4Z"/><path d="M9.6 14.6a2.5 2.5 0 0 0 2.6 2.4"/></svg></div>
+          <h3>Water tracker</h3><p>Stay hydrated alongside your meals — glasses, litres and reminders, all in one timeline.</p>
+        </div>
+        <div class="feature reveal" style="transition-delay:.05s;">
+          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7.2 20v-5.6M12 20V6.4M16.8 20v-9.2" stroke-width="2.4"/></svg></div>
+          <h3>Insights</h3><p>Weekly trends for calories, macros and weigh-ins — computed privately on your device.</p>
+        </div>
+        <div class="feature reveal" style="transition-delay:.1s;">
+          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5.2 5.9v5.2c0 4.5 2.9 8 6.8 9.7 3.9-1.7 6.8-5.2 6.8-9.7V5.9Z"/><path d="m9.3 12.2 2 1.9 3.6-4"/></svg></div>
+          <h3>Private by design</h3><p>No account, no tracking: your logs live on your device and never leave it unless you choose to back them up.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ Pricing ═══════════ -->
+  <section class="band" id="pricing">
+    <div class="wrap">
+      <div class="pricing">
+        <div class="pricing-left reveal">
+          <span class="kicker on-dark">Lifetime access</span>
+          <h2>The whole product.<br />One price. For life.</h2>
+          <p>Every feature and future update is included in a single lifetime license. There are no in-app purchases anywhere in the app — and there never will be.</p>
+          <ul class="pricing-list">
+            <li><span class="ck"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span> One-time payment — no monthly fees, no tiers</li>
+            <li><span class="ck"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span> Permanent activation code, emailed instantly</li>
+            <li><span class="ck"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span> Reactivate on a new phone anytime</li>
+            <li><span class="ck"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span> All future features and updates included</li>
+          </ul>
+        </div>
+        <div class="reveal" style="transition-delay:.08s;">
+          <div class="buy-card">
+            <span class="buy-tag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> Lifetime license</span>
+            <h3>calibrEAT — full unlock</h3>
+            <p class="prod-sub">Everything in the app, on this device, forever.</p>
+            <div class="buy-rows">
+              <div class="buy-row"><span>Delivery</span><span class="val"><span class="ok">✓</span> <b>Instant email</b></span></div>
+              <div class="buy-row"><span>Renewals</span><span class="val"><span class="ok">✓</span> <b>None — ever</b></span></div>
+              <div class="buy-row"><span>Devices</span><span class="val"><b>Phone + tablet</b></span></div>
+              <div class="buy-row"><span>Updates</span><span class="val"><b>Included for life</b></span></div>
+            </div>
+            <div class="buy-price">
+              <div class="big"><small>€</small>—</div>
+              <p>One-time payment · price set at store launch</p>
+            </div>
+            <a class="btn btn-lime btn-lg btn-block" id="band-buy" href="#">Get lifetime access <span class="arr">→</span></a>
+            <p class="buy-fine">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="M3 10h18"/></svg>
+              Secure hosted checkout · activation code by email
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ Download ═══════════ -->
+  <section id="download">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <span class="kicker">Free to install</span>
+        <h2>Get the app</h2>
+        <p>Download the APK, install it, and meet calibrEAT on its welcome screen.</p>
+      </div>
+      <div class="download">
+        <div class="dl-card reveal">
+          <div class="dl-head">
+            <div class="os-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></div>
+            <div>
+              <div class="os-name">Android</div>
+              <small>Direct APK</small>
+            </div>
+            <span class="soon">Free</span>
+          </div>
+          <p>Sideload the APK (Android 8.0+). Your device will ask you to allow installs from unknown sources — normal for direct downloads, and easy to review before you confirm.</p>
+          <div class="dl-actions">
+            <a class="btn btn-outline" id="apk-btn" href="#">Download calibrEAT APK</a>
+          </div>
+          <small class="dl-meta">v0.1 early build · Android 8.0+</small>
+        </div>
+        <div class="dl-card reveal" style="transition-delay:.06s;">
+          <div class="dl-head">
+            <div class="os-ic soon-os"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4.4 0-7-2.8-7-6.3 0-2.5 1.5-4.6 3.4-6.4L12 3.6l3.6 3.7c1.9 1.8 3.4 3.9 3.4 6.4C19 17.2 16.4 20 12 20Z"/><path d="M12 20c2 0 3.2-2.6 3.2-6.2S14 7.6 12 7.6 8.8 11.4 8.8 13.8 10 20 12 20Z"/></svg></div>
+            <div>
+              <div class="os-name">iOS</div>
+              <small>App Store edition</small>
+            </div>
+            <span class="soon">Later</span>
+          </div>
+          <p>calibrEAT is built cross-platform — an App Store edition is planned once the store strategy is settled.</p>
+          <div class="dl-actions">
+            <a class="btn btn-outline" style="opacity:.5; pointer-events:none;" href="#">Coming soon</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ FAQ ═══════════ -->
+  <section id="faq" style="padding-top: 0;">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <span class="kicker">Questions</span>
+        <h2>Before you buy</h2>
+      </div>
+      <div class="faq reveal">
+        <details class="faq-item"><summary>Is it really a one-time payment?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Yes. A lifetime license unlocks calibrEAT forever — no subscriptions, no tiers, no in-app purchases, and every future update is included.</p></details>
+        <details class="faq-item"><summary>How do I receive my activation code?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Instantly by email at checkout. It's a permanent code that never expires. Keep it somewhere safe — it's also available in your order receipt.</p></details>
+        <details class="faq-item"><summary>Can I use my code on more than one device?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Yes. A code activates on a small number of devices (a phone + a tablet, for example). Use "Deactivate on this device" in the app to free up a slot, and contact support if you ever need a reset.</p></details>
+        <details class="faq-item"><summary>Do I need an account or internet connection?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">No account or registration needed. An internet connection is required to look up foods, scan barcodes and fetch nutrition data from the food database — your logs are stored securely on your device.</p></details>
+        <details class="faq-item"><summary>What if I lose my activation email?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Contact support with the email address you paid with and we'll resend your code.</p></details>
+        <details class="faq-item"><summary>Is my food data private?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Yes. Logs are stored on your device. calibrEAT has no servers holding your data, no ads, and no analytics tracking your eating.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ═══════════ Footer ═══════════ -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="#top">
+          <img data-mark alt="" style="width: 27px; height: 27px;" />
+          <span>calibr<span class="e">EAT</span></span>
+        </a>
+        <p class="foot-copy">Calibrate your eating lifestyle. Free to install, one lifetime unlock, and your data stays on your phone.</p>
+        <div class="foot-trust">
+          <span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#b7e93c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No ads</span>
+          <span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#b7e93c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No subscriptions</span>
+          <span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#b7e93c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No tracking</span>
+        </div>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#download">Get the app</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Support</h4>
+        <ul>
+          <li><a href="mailto:support@calibreat.app">Contact</a></li>
+          <li><a href="#">Privacy policy</a></li>
+          <li><a href="#">Terms of sale</a></li>
+          <li><a href="#">Refunds</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>The app</h4>
+        <ul>
+          <li><a href="#download">Download APK</a></li>
+          <li><a href="#">Android 8.0+</a></li>
+          <li><a href="#">iOS — coming soon</a></li>
+          <li><a href="#">Open food database</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© <span id="year">2026</span> calibrEAT · All rights reserved.</span>
+      <span>Activation codes are delivered instantly by email after a secure checkout. Made with <span class="heart">🥦</span> and a kitchen scale.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Wire configured links + footer year.
+  const buyButtons = document.querySelectorAll("#nav-buy, #hero-buy, #band-buy");
+  buyButtons.forEach((btn) => {
+    btn.href = CHECKOUT_URL;
+    btn.setAttribute("aria-label", "Buy a lifetime activation code");
+  });
+  document.getElementById("apk-btn").href = APK_URL;
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  // Inject the self-contained night mark into images + favicon.
+  const MARK_URI = "data:image/svg+xml;utf8," + encodeURIComponent(MARK_NIGHT_SVG.trim());
+  document.querySelectorAll("img[data-mark]").forEach((img) => { img.src = MARK_URI; });
+  document.querySelector('link[rel="icon"]').setAttribute("href", MARK_URI);
+
+  // Mobile menu.
+  const nav = document.getElementById("site-nav");
+  const burger = document.getElementById("nav-burger");
+  burger.addEventListener("click", () => {
+    const open = nav.classList.toggle("open");
+    burger.setAttribute("aria-expanded", String(open));
+  });
+  nav.querySelectorAll("a").forEach((a) =>
+    a.addEventListener("click", () => { nav.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); })
+  );
+
+  // Reveal-on-scroll (respects prefers-reduced-motion via CSS).
+  const io = new IntersectionObserver(
+    (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }),
+    { threshold: 0.12 }
+  );
+  document.querySelectorAll(".reveal").forEach((el, i) => {
+    if (i < 3) { el.classList.add("in"); return; } // above-the-fold content: never hide
+    io.observe(el);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>calibrEAT — brand (final)</title>
+<style>
+  :root {
+    --ink: #0b1220;
+    --green: #1f9d55;
+    --deep: #0e6b38;
+    --lime: #b7e93c;
+    --bg: #e9ece9;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    font-family: Inter, "Spline Sans", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 40px 20px 70px; }
+  header.top { margin-bottom: 30px; }
+  .kicker {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--deep);
+  }
+  h1 { font-size: 32px; margin: 8px 0 6px; letter-spacing: -1px; }
+  .sub { color: #56615a; margin: 0; font-size: 15px; line-height: 1.55; max-width: 680px; }
+  .swatches { display: flex; gap: 14px; margin-top: 16px; flex-wrap: wrap; }
+  .swatch { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #56615a; }
+  .chip { width: 22px; height: 22px; border-radius: 6px; border: 1px solid rgba(0,0,0,.08); }
+
+  section.block { margin-bottom: 30px; }
+  .block-head { display: flex; align-items: baseline; gap: 12px; margin: 0 0 8px; }
+  .block-num { font-size: 13px; font-weight: 800; letter-spacing: 1px; color: var(--green); }
+  .block-name { font-size: 21px; font-weight: 800; letter-spacing: -0.4px; margin: 0; }
+  .block-note { font-size: 14px; color: #56615a; line-height: 1.55; margin: 0 0 14px; max-width: 780px; }
+  .block-note code { background: rgba(31,157,85,.12); border-radius: 4px; padding: 0 5px; font-size: 12.5px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 10px 24px rgba(11,18,32,.06);
+  }
+  .stage { border-radius: 14px; overflow: hidden; }
+  .stage svg { display: block; width: 100%; height: auto; }
+  .stage.large svg { width: 78%; margin: 0 auto; }
+  .darkstage { background: #0b1220; }
+  .soft { background: #ffffff; }
+  .cap { margin-top: 12px; font-size: 13px; color: #56615a; line-height: 1.5; }
+  .cap b { color: var(--ink); }
+  .cap code { background: rgba(31,157,85,.1); border-radius: 4px; padding: 0 4px; font-size: 11.5px; }
+  .full { grid-column: 1 / -1; }
+  .chosen { position: relative; }
+  .chosen::after {
+    content: "✓ SELECTED";
+    position: absolute; top: 12px; right: 12px;
+    font-size: 10px; font-weight: 800; letter-spacing: 1.5px;
+    color: #0b1220; background: var(--lime);
+    border-radius: 999px; padding: 4px 10px;
+  }
+  ul.notes { margin: 0; padding-left: 18px; font-size: 13.5px; color: #56615a; line-height: 1.7; }
+  ul.notes b { color: var(--ink); }
+  .foot { margin-top: 8px; font-size: 13px; color: #56615a; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="kicker">calibrEAT · brand identity</span>
+    <h1>Final selection</h1>
+    <p class="sub">
+      The balance concept from your sketch, finalized as a two-part system in the app palette —
+      a <b>monoline mark</b> and a <b>mark + wordmark lockup</b>. The mark carries the story:
+      food (apple) on one side, energy (flame) on the other, held in balance on the calibrEAT
+      "C".
+    </p>
+    <div class="swatches">
+      <span class="swatch"><span class="chip" style="background:#0B1220"></span> ink #0B1220</span>
+      <span class="swatch"><span class="chip" style="background:#1F9D55"></span> green #1F9D55</span>
+      <span class="swatch"><span class="chip" style="background:#0E6B38"></span> deep #0E6B38</span>
+      <span class="swatch"><span class="chip" style="background:#B7E93C"></span> lime #B7E93C</span>
+      <span class="swatch"><span class="chip" style="background:#FFFFFF; border:1px solid #d7ddd7"></span> white (dark surfaces)</span>
+    </div>
+  </header>
+
+  <!-- Mark -->
+  <section class="block">
+    <div class="block-head">
+      <span class="block-num">01</span>
+      <h2 class="block-name">Primary mark — monoline</h2>
+    </div>
+    <p class="block-note">
+      For light surfaces: website header, docs, email footer, README. Green C, ink beam and
+      fulcrum, solid apple &amp; flame. File: <code>calibreat-mark-line.svg</code>.
+    </p>
+    <div class="grid">
+      <div class="card chosen">
+        <div class="stage soft large">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+            <path d="M 220 370 L 292 370 L 272 335 L 240 335 Z" fill="#0B1220"/>
+            <rect x="206" y="370" width="100" height="12" rx="6" fill="#0B1220"/>
+            <path d="M 315 185 A 75 75 0 1 0 315 315" fill="none" stroke="#1F9D55" stroke-width="22" stroke-linecap="round"/>
+            <line x1="130" y1="315" x2="382" y2="245" stroke="#0B1220" stroke-width="12" stroke-linecap="round"/>
+            <g transform="translate(135, 220)">
+              <path d="M 25 12 C 32 3, 42 8, 42 8 C 42 8, 38 20, 25 12 Z" fill="#0E6B38"/>
+              <path d="M 25 20 C 10 20, 5 33, 5 50 C 5 72, 20 82, 25 82 C 30 82, 45 72, 45 50 C 45 33, 40 20, 25 20 Z" fill="#1F9D55"/>
+            </g>
+            <g transform="translate(335, 150)">
+              <path d="M 25 75 C 10 75, 0 62, 0 45 C 0 28, 15 15, 25 0 C 30 18, 40 25, 40 42 C 40 60, 35 75, 25 75 Z" fill="#1F9D55"/>
+              <path d="M 25 75 C 18 75, 12 68, 12 55 C 12 42, 22 32, 25 25 C 28 35, 33 40, 33 52 C 33 65, 30 75, 25 75 Z" fill="#B7E93C"/>
+            </g>
+          </svg>
+        </div>
+        <div class="cap">On white. Never place on busy photos — keep it on plain light surfaces.</div>
+      </div>
+      <div class="card">
+        <div class="stage darkstage large">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+            <path d="M 220 370 L 292 370 L 272 335 L 240 335 Z" fill="#B7E93C"/>
+            <rect x="206" y="370" width="100" height="12" rx="6" fill="#B7E93C"/>
+            <path d="M 315 185 A 75 75 0 1 0 315 315" fill="none" stroke="#B7E93C" stroke-width="22" stroke-linecap="round"/>
+            <line x1="130" y1="315" x2="382" y2="245" stroke="#B7E93C" stroke-width="12" stroke-linecap="round"/>
+            <g transform="translate(135, 220)">
+              <path d="M 25 12 C 32 3, 42 8, 42 8 C 42 8, 38 20, 25 12 Z" fill="#B7E93C"/>
+              <path d="M 25 20 C 10 20, 5 33, 5 50 C 5 72, 20 82, 25 82 C 30 82, 45 72, 45 50 C 45 33, 40 20, 25 20 Z" fill="#1F9D55"/>
+            </g>
+            <g transform="translate(335, 150)">
+              <path d="M 25 75 C 10 75, 0 62, 0 45 C 0 28, 15 15, 25 0 C 30 18, 40 25, 40 42 C 40 60, 35 75, 25 75 Z" fill="#1F9D55"/>
+              <path d="M 25 75 C 18 75, 12 68, 12 55 C 12 42, 22 32, 25 25 C 28 35, 33 40, 33 52 C 33 65, 30 75, 25 75 Z" fill="#B7E93C"/>
+            </g>
+          </svg>
+        </div>
+        <div class="cap"><b>Night companion</b> for dark surfaces — app welcome screen, splash, dark site sections. File: <code>calibreat-mark-line-dark.svg</code>. Same shapes, ink swapped for lime.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Lockup -->
+  <section class="block">
+    <div class="block-head">
+      <span class="block-num">02</span>
+      <h2 class="block-name">Lockup — mark + wordmark</h2>
+    </div>
+    <p class="block-note">
+      The full logo wherever there's room: website hero &amp; footer, README, about screen.
+      Wordmark styling matches the in-app <b>calibrEAT</b> treatment (calibr in ink, EAT in
+      green). File: <code>calibreat-lockup.svg</code>.
+    </p>
+    <div class="grid">
+      <div class="card full chosen">
+        <div class="stage soft">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 200" width="100%" height="100%">
+            <g transform="translate(24, 6) scale(0.34)">
+              <path d="M 220 370 L 292 370 L 272 335 L 240 335 Z" fill="#1F9D55"/>
+              <rect x="206" y="370" width="100" height="12" rx="6" fill="#1F9D55"/>
+              <path d="M 315 185 A 75 75 0 1 0 315 315" fill="none" stroke="#1F9D55" stroke-width="26" stroke-linecap="round"/>
+              <line x1="130" y1="315" x2="382" y2="245" stroke="#0B1220" stroke-width="14" stroke-linecap="round"/>
+              <g transform="translate(135, 220)">
+                <path d="M 25 12 C 32 3, 42 8, 42 8 C 42 8, 38 20, 25 12 Z" fill="#0E6B38"/>
+                <path d="M 25 20 C 10 20, 5 33, 5 50 C 5 72, 20 82, 25 82 C 30 82, 45 72, 45 50 C 45 33, 40 20, 25 20 Z" fill="#1F9D55"/>
+              </g>
+              <g transform="translate(335, 150)">
+                <path d="M 25 75 C 10 75, 0 62, 0 45 C 0 28, 15 15, 25 0 C 30 18, 40 25, 40 42 C 40 60, 35 75, 25 75 Z" fill="#1F9D55"/>
+                <path d="M 25 75 C 18 75, 12 68, 12 55 C 12 42, 22 32, 25 25 C 28 35, 33 40, 33 52 C 33 65, 30 75, 25 75 Z" fill="#B7E93C"/>
+              </g>
+            </g>
+            <text x="188" y="131" font-family="Inter, 'Spline Sans', system-ui, -apple-system, sans-serif" font-size="88" font-weight="800" letter-spacing="-2">
+              <tspan fill="#0B1220">calibr</tspan><tspan fill="#1F9D55">EAT</tspan>
+            </text>
+          </svg>
+        </div>
+        <div class="cap">
+          <b>Minimum lockup width ≈ 130 px</b> (below that, use the mark alone). Wordmark is
+          live text here — happy to convert it to outlines for PNG/print export.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Usage -->
+  <section class="block">
+    <div class="block-head">
+      <span class="block-num">03</span>
+      <h2 class="block-name">Usage notes</h2>
+    </div>
+    <div class="grid">
+      <div class="card full">
+        <ul class="notes">
+          <li><b>Light surface</b> → <code>calibreat-mark-line.svg</code> (green C, ink beam).</li>
+          <li><b>Dark surface</b> → <code>calibreat-mark-line-dark.svg</code> (lime beam/C on ink backgrounds).</li>
+          <li><b>Lockup</b> for headers/footers; standalone mark for buttons, avatars, notifications.</li>
+          <li>Keep a clear margin around the mark equal to ~½ the C-ring height; never stretch, tilt, or recolor the art.</li>
+          <li>Apple = food in · Flame = energy out — the balance is the brand story, keep both present at sizes ≥ 24 px.</li>
+          <li>The tile concepts (<code>calibreat-mark-reference.svg</code>, <code>calibreat-mark-inverted.svg</code>) are archived here if you later want an app-icon tile.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot">
+    All assets live in <code>brand/</code> at the repo root. Next steps I can take: drop the
+    night mark into the app's welcome screen (needs a small inline-SVG component), or export
+    PNG/favicon sets from these files.
+  </p>
+</div>
+</body>
+</html>

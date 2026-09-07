@@ -1,0 +1,23 @@
+# Tooling / editor
+.freebuff/
+.DS_Store
+*.log
+
+# Node
+node_modules/
+
+# Expo / React Native
+.expo/
+dist/
+web-build/
+
+# Native build output
+android/
+ios/
+*.apk
+*.aab
+
+# Env & secrets
+.env
+.env.*
+!.env.example
