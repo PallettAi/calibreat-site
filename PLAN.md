@@ -108,16 +108,25 @@ directly — it talks to `LICENSE_API_URL`, so swapping providers later is cheap
 
 ### App ↔ server contract (already implemented client-side)
 
-`POST {licenseApiUrl}/v1/activate` with JSON `{ "code": "…", "installId": "…" }`.
+The lock screen is a three-step gate: **email → OTP → license code**. The signup email is
+verified first and persisted on-device; activation then binds the license code to it
+(1 active device per account). Endpoints:
 
-Expected response (HTTP 200):
+`POST {licenseApiUrl}/v1/request-verification` with JSON `{ "email": "…" }` — emails a 6-digit code.
+
+`POST {licenseApiUrl}/v1/verify-email` with JSON `{ "email": "…", "otp": "…" }` — validates the code.
+
+`POST {licenseApiUrl}/v1/activate` with JSON `{ "code": "…", "email": "…", "installId": "…" }`.
+
+Expected activation response (HTTP 200):
 ```json
 { "valid": true, "activatedAt": "…", "plan": "lifetime", "customerEmail": "…" }
 ```
 
 Error responses return a non-200 (or `"valid": false`) with a `"message"` the app displays.
-Until M3, the app runs in **dev-activation mode** (any well-formed code unlocks locally) —
-release builds *require* the real endpoint and fail closed otherwise.
+Until M3, the app runs in **dev-activation mode** (any valid email + any 6-digit code verifies
+locally, then any well-formed license code unlocks) — release builds *require* the real
+endpoints and fail closed otherwise.
 
 ---
 
@@ -125,8 +134,10 @@ release builds *require* the real endpoint and fail closed otherwise.
 
 - **One lifetime code per purchase**, delivered instantly by email (receipt + "My orders"
   page in the MoR storefront as backup).
-- A code is bound to **a limited number of active devices** (e.g., 3), enforced server-side by
-  counting distinct `installId`s. "Deactivate on this device" (already in the UI) frees a slot.
+- A code is bound to **1 active device per account** (the verified signup email), enforced
+  server-side by counting distinct `installId`s per `(code, email)`. "Deactivate on this
+  device" (already in the UI) frees the slot so the user can move to another phone by
+  re-entering their email + code.
 - If a user replaces their phone, they reactivate with the same code (reuse a slot) or contact
   support to reset their activation list.
 - **Refunds/chargebacks:** MoR webhook tells us to revoke; the app re-validates periodically
@@ -157,7 +168,7 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
 
 | Screen | State | Purpose |
 | --- | --- | --- |
-| **Welcome / Lock** (`src/app/index.tsx`) | Not activated | Brand hero, feature bullets, activation-code entry, "Get a lifetime license" → website. No bypass: activated users are redirected to Home before this ever paints. |
+| **Welcome / Lock** (`src/app/index.tsx`) | Not activated | Brand hero, feature bullets, and the three-step gate (email → 6-digit verification code → license code) with "Get a lifetime license" → website. No bypass: activated users are redirected to Home before this ever paints, and activation without a verified email fails even in dev. |
 | **Home** (`src/app/home.tsx`) | Activated | Activation summary + roadmap preview of modules; deactivate-this-device. Becomes the real dashboard (today's calories, macros, water) in Build 1. |
 | Food diary, Search/barcode, Water, Weight, Insights | Future | Milestone M1+ |
 
@@ -190,9 +201,10 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
 ### M3 — Licensing backend
 - Pick MoR (Lemon Squeezy or Dodo Payments); configure **lifetime product** with instant
   **email delivery of the activation code**
-- Small license API (serverless function or tiny service) implementing the §3 contract:
-  validate code, enforce device slot limit, return `plan`/`email`; webhook handler for
-  refunds/revocation
+- [x] License API implemented in `apps/api` (zero-dependency Node + TS): email→OTP
+      verification, activation binding code+email+installId, 1-device rule,
+      `/v1/validate`, and the MoR webhook for purchases/refunds. Deploy it, then
+      set `EXPO_PUBLIC_LICENSE_API_URL` in the release APK build.
 - Wire `EXPO_PUBLIC_LICENSE_API_URL` into release APK builds; test purchase → email → activate
   end-to-end on a real device
 - Replace the `Math.random()` install-id with a cryptographically random device id and send

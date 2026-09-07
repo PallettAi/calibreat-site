@@ -21,3 +21,6 @@ ios/
 .env
 .env.*
 !.env.example
+
+# License API runtime data
+apps/api/data/
