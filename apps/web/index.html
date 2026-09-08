@@ -573,7 +573,7 @@
       <a class="link" href="#features">Features</a>
       <a class="link" href="#faq">FAQ</a>
       <a class="link" href="license.html">License key</a>
-      <a class="link" href="#download">Get the app</a>
+      <a class="link" href="download.html">Download</a>
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch between light and dark theme">
         <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/></svg>
         <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg>
@@ -601,7 +601,7 @@
         </p>
         <div class="hero-cta">
           <a class="btn btn-primary btn-lg" id="hero-buy" href="license.html">Get lifetime access <span class="arr">→</span></a>
-          <a class="btn btn-dark btn-lg" href="#download">Download app — free</a>
+          <a class="btn btn-dark btn-lg" href="download.html">Download app — free</a>
         </div>
         <p class="hero-note">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="m8 10 2.5 2.5L16 8"/></svg>
@@ -697,48 +697,6 @@
     </div>
   </section>
 
-  <!-- ═══════════ Download ═══════════ -->
-  <section id="download">
-    <div class="wrap">
-      <div class="sec-head center reveal">
-        <span class="kicker">Free to install</span>
-        <h2>Get the app</h2>
-        <p>Download the APK, install it, and meet calibrEAT on its welcome screen.</p>
-      </div>
-      <div class="download">
-        <div class="dl-card reveal">
-          <div class="dl-head">
-            <div class="os-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></div>
-            <div>
-              <div class="os-name">Android</div>
-              <small>Direct APK</small>
-            </div>
-            <span class="soon">Free</span>
-          </div>
-          <p>Sideload the APK (Android 8.0+). Your device will ask you to allow installs from unknown sources — normal for direct downloads, and easy to review before you confirm.</p>
-          <div class="dl-actions">
-            <a class="btn btn-outline" id="apk-btn" href="#">Download calibrEAT APK</a>
-          </div>
-          <small class="dl-meta">v0.1 early build · Android 8.0+</small>
-        </div>
-        <div class="dl-card reveal" style="transition-delay:.06s;">
-          <div class="dl-head">
-            <div class="os-ic soon-os"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4.4 0-7-2.8-7-6.3 0-2.5 1.5-4.6 3.4-6.4L12 3.6l3.6 3.7c1.9 1.8 3.4 3.9 3.4 6.4C19 17.2 16.4 20 12 20Z"/><path d="M12 20c2 0 3.2-2.6 3.2-6.2S14 7.6 12 7.6 8.8 11.4 8.8 13.8 10 20 12 20Z"/></svg></div>
-            <div>
-              <div class="os-name">iOS</div>
-              <small>App Store edition</small>
-            </div>
-            <span class="soon">Later</span>
-          </div>
-          <p>calibrEAT is built cross-platform — an App Store edition is planned once the store strategy is settled.</p>
-          <div class="dl-actions">
-            <a class="btn btn-outline" style="opacity:.5; pointer-events:none;" href="#">Coming soon</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- ═══════════ FAQ ═══════════ -->
   <section id="faq" style="padding-top: 0;">
     <div class="wrap">
@@ -774,8 +732,8 @@
         <h4>Product</h4>
         <ul>
           <li><a href="license.html">License key</a></li>
+          <li><a href="download.html">Download</a></li>
           <li><a href="#features">Features</a></li>
-          <li><a href="#download">Get the app</a></li>
           <li><a href="#faq">FAQ</a></li>
         </ul>
       </div>
@@ -791,9 +749,9 @@
       <div>
         <h4>The app</h4>
         <ul>
-          <li><a href="#download">Download APK</a></li>
-          <li><a href="#">Android 8.0+</a></li>
-          <li><a href="#">iOS — coming soon</a></li>
+          <li><a href="download.html">Download</a></li>
+          <li><a href="download.html#android">Android APK</a></li>
+          <li><a href="download.html#ios">iOS — coming soon</a></li>
           <li><a href="#">Open food database</a></li>
         </ul>
       </div>
@@ -812,7 +770,8 @@
     btn.href = "license.html";
     btn.setAttribute("aria-label", "Buy a lifetime activation code");
   });
-  document.getElementById("apk-btn").href = APK_URL;
+  const apkBtn = document.getElementById("apk-btn");
+  if (apkBtn) apkBtn.href = APK_URL;
   document.getElementById("year").textContent = new Date().getFullYear();
 
   // Inject the self-contained night mark into images + favicon.

@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Download — calibrEAT</title>
+<meta name="description" content="Download calibrEAT for Android (APK), iOS and Mac. Free to install — one lifetime activation code delivered by email. Installation guides for every platform." />
+<meta name="theme-color" content="#0a1019" />
+<link rel="icon" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+<!--
+  CONFIG — one place to make the store live (see apps/web/README.md)
+  CHECKOUT_URL : hosted checkout for the one-time "lifetime activation code"
+  APK_URL      : direct download link for the free Android APK. Placeholder —
+                 the release APK has not been built yet.
+-->
+<script>
+  const CHECKOUT_URL = "#checkout-not-configured"; // TODO: paste MoR checkout URL
+  const APK_URL = "#apk-coming-soon"; // TODO: paste hosted APK link
+  const MARK_NIGHT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <path d="M 220 370 L 292 370 L 272 335 L 240 335 Z" fill="#B7E93C"/>
+    <rect x="206" y="370" width="100" height="12" rx="6" fill="#B7E93C"/>
+    <path d="M 315 185 A 75 75 0 1 0 315 315" fill="none" stroke="#B7E93C" stroke-width="22" stroke-linecap="round"/>
+    <line x1="130" y1="315" x2="382" y2="245" stroke="#B7E93C" stroke-width="12" stroke-linecap="round"/>
+    <g transform="translate(135, 220)">
+      <path d="M 25 12 C 32 3, 42 8, 42 8 C 42 8, 38 20, 25 12 Z" fill="#B7E93C"/>
+      <path d="M 25 20 C 10 20, 5 33, 5 50 C 5 72, 20 82, 25 82 C 30 82, 45 72, 45 50 C 45 33, 40 20, 25 20 Z" fill="#1F9D55"/>
+    </g>
+    <g transform="translate(335, 150)">
+      <path d="M 25 75 C 10 75, 0 62, 0 45 C 0 28, 15 15, 25 0 C 30 18, 40 25, 40 42 C 40 60, 35 75, 25 75 Z" fill="#1F9D55"/>
+      <path d="M 25 75 C 18 75, 12 68, 12 55 C 12 42, 22 32, 25 25 C 28 35, 33 40, 33 52 C 33 65, 30 75, 25 75 Z" fill="#B7E93C"/>
+    </g>
+  </svg>`;
+</script>
+<script>
+  (function () {
+    try {
+      if (localStorage.getItem('calibreat-theme') === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    } catch (e) {}
+  })();
+</script>
+
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #0a1019; --ink-2: #0e1623; --ink-3: #131d2d;
+    --green: #1f9d55; --green-bright: #23b25f; --green-deep: #0e6b38;
+    --lime: #b7e93c; --lime-soft: #c8f259;
+    --font-display: "Sora", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --radius-sm: 10px; --radius: 16px; --radius-lg: 22px;
+    --bg: #0a1019; --surface: #131d2d; --surface-2: #0e1623;
+    --text: #eef2f5; --text-2: #a7b2bc; --muted: #7d8a96;
+    --line: rgba(255,255,255,.09); --line-strong: rgba(255,255,255,.16);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.35), 0 4px 14px -6px rgba(0,0,0,.5);
+    --shadow-md: 0 2px 4px rgba(0,0,0,.4), 0 16px 38px -16px rgba(0,0,0,.6);
+    --accent: #b7e93c; --kicker-fg: #23b25f; --tile-fg: #3ddc7a; --tag-fg: #3ddc7a;
+    --icon-bg: #0c1420; --nav-bg: rgba(10,16,25,.78); --nav-link: #aeb9c4; --nav-link-hover: #fff; --nav-drawer-bg: #0e1623;
+    --hero-bg: var(--bg); --hero-text: #fff; --hero-soft: #cdd6dd; --hero-lede: #9fabb7; --hero-lede-b: #dbe2e8;
+    --hero-note: #84919d; --hero-note-b: #c6cfd6; --hero-trust: #9fabb7; --hero-grid: rgba(255,255,255,.035); --hero-line: rgba(255,255,255,.08);
+    --eyebrow-fg: #b7e93c; --eyebrow-bg: rgba(183,233,60,.08); --eyebrow-bd: rgba(183,233,60,.35);
+    --band-bg: var(--bg); --band-text: #fff; --band-sub: #9fabb7; --band-list: #c7d0d7; --band-kicker: #b7e93c;
+    --footer-bg: var(--bg); --footer-color: #9fabb7; --footer-link-hover: #b7e93c;
+  }
+  [data-theme="light"] {
+    color-scheme: light;
+    --bg: #f6f7f4; --surface: #fff; --surface-2: #f0f2ee; --text: #101820; --text-2: #46525c; --muted: #67727c;
+    --line: rgba(13,21,30,.09); --line-strong: rgba(13,21,30,.16);
+    --shadow-sm: 0 1px 2px rgba(10,16,25,.04), 0 4px 12px -4px rgba(10,16,25,.06);
+    --shadow-md: 0 2px 4px rgba(10,16,25,.04), 0 14px 34px -14px rgba(10,16,25,.14);
+    --accent: #0e6b38; --kicker-fg: #0e6b38; --tile-fg: #0e6b38; --tag-fg: #0e6b38; --icon-bg: #0a1019;
+    --nav-bg: rgba(255,255,255,.82); --nav-link: #46525c; --nav-link-hover: #0a1019; --nav-drawer-bg: #fff;
+    --hero-bg: var(--bg); --hero-text: #0a1019; --hero-soft: #46525c; --hero-lede: #46525c; --hero-lede-b: #101820;
+    --hero-note: #67727c; --hero-note-b: #101820; --hero-trust: #46525c; --hero-grid: rgba(13,21,30,.05); --hero-line: rgba(13,21,30,.08);
+    --eyebrow-fg: #0e6b38; --eyebrow-bg: rgba(31,157,85,.08); --eyebrow-bd: rgba(31,157,85,.25);
+    --band-bg: var(--bg); --band-text: #0a1019; --band-sub: #46525c; --band-list: #101820; --band-kicker: #0e6b38;
+    --footer-bg: var(--bg); --footer-color: #46525c; --footer-link-hover: #0e6b38;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { margin:0; font-family: var(--font-body); color: var(--text); background: var(--bg); line-height:1.6; font-size:16px; transition: background-color .3s ease, color .3s ease; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; } img, svg { display:block; }
+  .wrap { max-width:1024px; margin:0 auto; padding:0 24px; }
+  h1,h2,h3 { font-family: var(--font-display); }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:9px; border-radius:12px; font-weight:600; font-size:15px; line-height:1; text-decoration:none; cursor:pointer; border:0; font-family:inherit; padding:15px 24px; white-space:nowrap; transition: transform .12s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease; }
+  .btn:active { transform: translateY(1px) scale(.995); }
+  .btn .arr { transition: transform .18s ease; } .btn:hover .arr { transform: translateX(3px); }
+  .btn-primary { background: linear-gradient(180deg, var(--green-bright), var(--green)); color:#fff; box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 8px 20px -8px rgba(31,157,85,.6); }
+  .btn-lime { background: var(--lime); color:#0a1019; box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 8px 20px -10px rgba(183,233,60,.55); }
+  .btn-dark { background:#111a29; color:#fff; border:1px solid rgba(255,255,255,.1); }
+  .btn-outline { border:1.5px solid var(--line-strong); color: var(--text); background: var(--surface); }
+  .btn-outline:hover { border-color: var(--green); color: var(--green-deep); background: rgba(31,157,85,.04); }
+  .btn-block { width:100%; } .btn-lg { padding:17px 28px; font-size:16px; }
+  .site-nav { position:sticky; top:0; z-index:60; background: var(--nav-bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom:1px solid var(--hero-line); transition: background-color .3s ease, border-color .3s ease; }
+  .nav-inner { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:6px 24px; max-width:1024px; margin:0 auto; }
+  .brand { display:flex; align-items:center; gap:10px; font-size:24px; font-weight:700; line-height:1; letter-spacing:-.02em; font-family:var(--font-display); color:var(--text); text-decoration:none; transition: color .3s ease; }
+  .brand img, .brand svg { width:30px; height:30px; } .brand .e { color: var(--accent); }
+  .nav-links { display:flex; align-items:center; gap:20px; }
+  .nav-links .link { color: var(--nav-link); text-decoration:none; font-size:14px; font-weight:500; position:relative; padding:4px 0; transition: color .3s ease; }
+  .nav-links .link::after { content:""; position:absolute; left:0; right:100%; bottom:-1px; height:2px; background: var(--accent); border-radius:2px; transition: right .2s ease; }
+  .nav-links .link:hover { color: var(--nav-link-hover); } .nav-links .link:hover::after { right:0; }
+  .nav-cta { padding:6px 15px; font-size:13.5px; }
+  .nav-burger { display:none; background:none; border:1px solid var(--line-strong); border-radius:9px; padding:5px 8px; cursor:pointer; color:var(--text); }
+  .nav-burger svg { width:18px; height:18px; }
+  .theme-toggle { display:inline-flex; align-items:center; justify-content:center; background:none; border:1px solid var(--line-strong); border-radius:9px; padding:6px 7px; cursor:pointer; color:var(--text); line-height:0; transition: border-color .2s ease, color .3s ease, background .2s ease; }
+  .theme-toggle:hover { border-color: var(--green); background: rgba(31,157,85,.1); }
+  .theme-toggle svg { width:17px; height:17px; } .theme-toggle .moon { display:none; } [data-theme="light"] .theme-toggle .sun { display:none; } [data-theme="light"] .theme-toggle .moon { display:inline; }
+  section { padding: clamp(56px, 7vw, 88px) 0; }
+  .kicker { display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--kicker-fg); }
+  .kicker::before { content:""; width:24px; height:2px; border-radius:2px; background: linear-gradient(90deg, var(--green), var(--lime)); }
+  .sec-head { max-width:640px; margin-bottom:32px; } .sec-head.center { margin-left:auto; margin-right:auto; text-align:center; } .sec-head.center .kicker::before { display:none; } .sec-head.center .kicker { justify-content:center; }
+  .sec-head h2 { font-size: clamp(28px, 3.6vw, 40px); letter-spacing:-.025em; line-height:1.12; margin:10px 0 12px; color:var(--text); }
+  .sec-head p { color: var(--text-2); font-size:16px; margin:0; }
+  .hero { background: var(--hero-bg); color: var(--hero-text); overflow:hidden; position:relative; transition: background-color .3s ease; }
+  .hero-grid-bg { position:absolute; inset:0; pointer-events:none; background-image: linear-gradient(var(--hero-grid) 1px, transparent 1px), linear-gradient(90deg, var(--hero-grid) 1px, transparent 1px); background-size:46px 46px; -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 20%, #000 30%, transparent 75%); mask-image: radial-gradient(ellipse 90% 80% at 50% 20%, #000 30%, transparent 75%); }
+  .hero::before { content:""; position:absolute; inset:0; pointer-events:none; background: radial-gradient(720px 420px at 82% 8%, rgba(31,157,85,.28), transparent 62%), radial-gradient(640px 460px at 4% 96%, rgba(183,233,60,.10), transparent 62%); }
+  .hero .wrap { position:relative; display:grid; grid-template-columns: minmax(0,1.06fr) minmax(0,.94fr); gap:40px; align-items:center; padding-top: clamp(44px, 6vw, 68px); padding-bottom: clamp(56px, 7vw, 84px); }
+  .hero.hero-centered .wrap { display:block; max-width:760px; text-align:center; padding-top: clamp(32px, 4vw, 48px); padding-bottom: clamp(32px, 4vw, 48px); }
+  .hero h1 { font-size: clamp(40px, 5.2vw, 62px); font-weight:800; letter-spacing:-.032em; line-height:1.05; margin:20px 0 18px; color:var(--hero-text); transition: color .3s ease; }
+  .hero h1 .lime { color: var(--accent); } .hero .lede { font-size:17.5px; color:var(--hero-lede); max-width:520px; margin:0 0 26px; transition: color .3s ease; }
+  .hero.hero-centered .lede { margin-left:auto; margin-right:auto; }
+  .hero-cta { display:flex; flex-wrap:wrap; gap:12px; align-items:center; } .hero.hero-centered .hero-cta { justify-content:center; }
+  /* Download cards */
+  .download { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  .dl-card { position:relative; background: var(--surface); border:1px solid var(--line); border-radius: var(--radius-lg); padding:22px; display:flex; flex-direction:column; }
+  .dl-card::before { content:""; position:absolute; inset:-1px; border-radius:inherit; pointer-events:none; box-shadow: 0 0 0 1px rgba(31,157,85,.12), 0 0 16px -6px rgba(31,157,85,.2); animation: tile-pulse 3.4s ease-in-out infinite; }
+  .dl-card:nth-child(2)::before { animation-delay: 1.15s; }
+  @keyframes tile-pulse { 0%,100% { box-shadow: 0 0 0 1px rgba(31,157,85,.1), 0 0 14px -6px rgba(31,157,85,.15); } 50% { box-shadow: 0 0 0 1.5px rgba(31,157,85,.4), 0 0 20px -2px rgba(31,157,85,.4); } }
+  .dl-head { display:flex; align-items:center; gap:13px; margin-bottom:10px; }
+  .dl-head .os-ic { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; background: var(--icon-bg); color:#fff; flex:none; transition: background-color .3s ease; }
+  .dl-head .os-ic.soon-os { background: var(--line); color: var(--muted); }
+  .dl-head .os-name { font-family:var(--font-display); font-weight:700; font-size:18px; letter-spacing:-.01em; }
+  .dl-head .soon { font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--tag-fg); background: rgba(31,157,85,.12); border-radius:999px; padding:4px 9px; margin-left:8px; }
+  .dl-card p { color:var(--text-2); font-size:14.5px; margin:0 0 6px; flex:1; }
+  .dl-meta { display:block; margin-top:10px; color:var(--muted); font-size:12px; }
+  .dl-actions { display:flex; gap:10px; margin-top:14px; align-items:center; }
+  /* Guides */
+  .guide-grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; align-items:start; }
+  .guide-card { background: var(--surface); border:1px solid var(--line); border-radius: var(--radius-lg); padding:24px; position:relative; }
+  .guide-card.full { grid-column: 1 / -1; }
+  .guide-card h3 { margin:0 0 6px; font-size:19px; letter-spacing:-.015em; display:flex; align-items:center; gap:10px; }
+  .guide-card h3 .g-ic { width:36px; height:36px; border-radius:10px; display:grid; place-items:center; background: linear-gradient(145deg, rgba(31,157,85,.14), rgba(183,233,60,.1)); border:1px solid rgba(31,157,85,.18); color:var(--tile-fg); flex:none; }
+  .guide-card .g-sub { color: var(--muted); font-size:13px; margin:0 0 16px; }
+  .guide-steps { list-style:none; padding:0; margin:0; display:grid; gap:12px; counter-reset: step; }
+  .guide-steps li { display:flex; gap:12px; align-items:flex-start; font-size:14.5px; color:var(--text-2); line-height:1.55; }
+  .guide-steps li::before { counter-increment: step; content: counter(step); flex:none; width:28px; height:28px; border-radius:50%; display:grid; place-items:center; background: linear-gradient(150deg, var(--green-bright), var(--green-deep)); color:#fff; font-weight:700; font-size:13px; font-family: var(--font-display); margin-top:1px; }
+  .guide-steps li b { color: var(--text); font-weight:600; }
+  .guide-note { margin-top:16px; display:flex; gap:10px; align-items:flex-start; background: rgba(183,233,60,.08); border:1px solid rgba(183,233,60,.22); border-radius:12px; padding:12px 14px; font-size:13px; color:var(--text-2); line-height:1.5; }
+  .guide-note svg { flex:none; margin-top:2px; color: var(--green); }
+  .chip-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .chip-row .chip { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--text-2); border:1px solid var(--line); border-radius:999px; padding:5px 10px; }
+  /* Footer / reveal / responsive */
+  .footer { background: var(--footer-bg); color: var(--footer-color); padding:52px 0 0; font-size:14px; transition: background-color .3s ease, color .3s ease; }
+  .footer-grid { display:grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap:32px; padding-bottom:40px; }
+  .footer .brand { font-size:20px; margin-bottom:12px; }
+  .foot-copy { max-width:320px; font-size:13.5px; line-height:1.65; margin:0 0 18px; color:var(--muted); }
+  .foot-trust { display:flex; gap:12px; } .foot-trust .chip { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-2); border:1px solid var(--line); border-radius:999px; padding:5px 10px; }
+  .footer h4 { color:var(--text); font-size:12px; letter-spacing:.12em; text-transform:uppercase; margin:0 0 16px; font-family:var(--font-body); font-weight:700; }
+  .footer ul { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+  .footer ul a { color:var(--footer-color); text-decoration:none; transition: color .2s ease; }
+  .footer ul a:hover { color: var(--footer-link-hover); }
+  .footer-bottom { border-top:1px solid var(--line); padding:18px 0 22px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); }
+  .footer-bottom .heart { color: var(--accent); }
+  .reveal { opacity:0; transform: translateY(16px); transition: opacity .65s ease, transform .65s ease; }
+  .reveal.in { opacity:1; transform:none; }
+  @media (max-width: 880px) {
+    .download, .guide-grid { grid-template-columns: 1fr; }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    .nav-inner { flex-wrap:wrap; padding-bottom:11px; }
+    .nav-links { display:none; flex:1 1 100%; order:5; flex-direction:column; align-items:stretch; gap:4px; padding:12px 2px 2px; margin-top:10px; border-top:1px solid var(--line); background: var(--nav-drawer-bg); }
+    .site-nav.open .nav-links { display:flex; }
+    .nav-links .link { padding:13px 2px; font-size:16px; color:var(--text); border-radius:10px; }
+    .nav-links .link::after { display:none; }
+    .nav-cta { margin:10px 0 0; width:100%; }
+    .nav-burger { display:block; }
+  }
+  @media (max-width: 520px) { .wrap { padding:0 18px; } .hero-cta .btn { width:100%; } }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .reveal { opacity:1; transform:none; transition:none; } .dl-card::before { animation:none; } }
+</style>
+</head>
+<body>
+
+<header class="site-nav" id="site-nav">
+  <nav class="nav-inner">
+    <a class="brand" href="index.html">
+      <img data-mark alt="" />
+      <span>calibr<span class="e">EAT</span></span>
+    </a>
+    <div class="nav-links">
+      <a class="link" href="index.html#features">Features</a>
+      <a class="link" href="index.html#faq">FAQ</a>
+      <a class="link" href="license.html">License key</a>
+      <a class="link" href="download.html" aria-current="page">Download</a>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg>
+      </button>
+      <a class="btn btn-lime nav-cta" id="nav-buy" href="license.html">Buy lifetime</a>
+    </div>
+    <button class="nav-burger" id="nav-burger" aria-label="Menu" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </nav>
+</header>
+
+<main id="top">
+
+  <section class="hero hero-centered">
+    <div class="hero-grid-bg"></div>
+    <div class="wrap">
+      <h1>Download <span class="lime">calibrEAT</span></h1>
+      <p class="lede">Free to install on Android, iPhone and Mac. One lifetime purchase unlocks everything — no subscription, no ads.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary btn-lg" id="hero-dl" href="#android">Get the app free <span class="arr">→</span></a>
+        <a class="btn btn-dark btn-lg" href="license.html">Buy lifetime key</a>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-bottom:0;">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <span class="kicker">Choose your platform</span>
+        <h2>Get the app</h2>
+        <p>Same app, every device. Tap your platform below — installation takes under a minute.</p>
+      </div>
+      <div class="download">
+        <div class="dl-card reveal" id="android">
+          <div class="dl-head">
+            <div class="os-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></div>
+            <div><div class="os-name">Android</div><small>Direct APK</small></div>
+            <span class="soon">Free</span>
+          </div>
+          <p>Sideload the APK (Android 8.0+). Your device will ask you to allow installs from unknown sources — normal for direct downloads.</p>
+          <div class="dl-actions"><a class="btn btn-outline" id="apk-btn" href="#">Download APK</a><a class="btn btn-dark" href="#guide-android" style="padding:12px 16px; font-size:13.5px;">Install guide ↓</a></div>
+          <small class="dl-meta">v0.1 early build · Android 8.0+ · <a href="#guide-android" style="text-decoration:underline;">how to install</a></small>
+        </div>
+        <div class="dl-card reveal" style="transition-delay:.06s;" id="ios">
+          <div class="dl-head">
+            <div class="os-ic soon-os"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4.4 0-7-2.8-7-6.3 0-2.5 1.5-4.6 3.4-6.4L12 3.6l3.6 3.7c1.9 1.8 3.4 3.9 3.4 6.4C19 17.2 16.4 20 12 20Z"/><path d="M12 20c2 0 3.2-2.6 3.2-6.2S14 7.6 12 7.6 8.8 11.4 8.8 13.8 10 20 12 20Z"/></svg></div>
+            <div><div class="os-name">iPhone &amp; iPad</div><small>IPA · TestFlight / App Store</small></div>
+            <span class="soon">Soon</span>
+          </div>
+          <p>iOS build via TestFlight during beta, then App Store at launch. Same one-time license — no extra purchase on Apple.</p>
+          <div class="dl-actions"><a class="btn btn-outline" style="opacity:.5; pointer-events:none;" href="#">Coming soon</a><a class="btn btn-dark" href="#guide-ios" style="padding:12px 16px; font-size:13.5px;">Install guide ↓</a></div>
+          <small class="dl-meta">Requires iOS 15+ · <a href="#guide-ios" style="text-decoration:underline;">how to install</a></small>
+        </div>
+      </div>
+      <div class="download" style="margin-top:16px;">
+        <div class="dl-card reveal full" style="grid-column: 1/-1;" id="mac">
+          <div class="dl-head">
+            <div class="os-ic soon-os"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></div>
+            <div><div class="os-name">Mac</div><small>Intel &amp; Apple Silicon — same download</small></div>
+            <span class="soon">Soon</span>
+          </div>
+          <p>Mac build runs natively on both Intel and Apple Silicon. One download, same steps — no separate installer.</p>
+          <div class="dl-actions"><a class="btn btn-outline" style="opacity:.5; pointer-events:none;" href="#">Mac build soon</a><a class="btn btn-dark" href="#guide-mac" style="padding:12px 16px; font-size:13.5px;">Install guide ↓</a></div>
+          <small class="dl-meta">macOS 12+ · Universal build · <a href="#guide-mac" style="text-decoration:underline;">how to install</a></small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="guides">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <span class="kicker">Installation guides</span>
+        <h2>How to install</h2>
+        <p>Pick your device. Every guide is 30 seconds — no account needed until you unlock.</p>
+      </div>
+
+      <div class="guide-grid">
+
+        <div class="guide-card reveal" id="guide-android">
+          <h3><span class="g-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></span> Android — APK sideload</h3>
+          <p class="g-sub">Works on Android 8.0+ · No Play Store needed</p>
+          <ol class="guide-steps">
+            <li><span><b>Download the APK</b> — tap <b>Download APK</b> above. Chrome will warn “unknown file type” — tap <b>Download anyway</b>.</span></li>
+            <li><span>Open the file from your notification or <b>Downloads</b>. If prompted, tap <b>Allow from this source</b> (or enable <b>Install unknown apps</b> for your browser).</span></li>
+            <li><span>Tap <b>Install</b> → <b>Open</b>. calibrEAT opens on the welcome screen — tap <b>Enter your license code</b> when you’re ready to unlock.</span></li>
+            <li><span><b>Lost the prompt?</b> — open <b>Files → Downloads → calibrEAT.apk</b> and tap again.</span></li>
+          </ol>
+          <div class="guide-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span><b>Safety note:</b> “Unknown sources” just means outside the Play Store. The APK is signed by us — Android lets you review permissions before you tap Install. You can turn the permission off after.</span></div>
+          <div class="chip-row"><span class="chip">Android 8.0+</span><span class="chip">~30 MB</span><span class="chip">No Google account</span></div>
+        </div>
+
+        <div class="guide-card reveal" style="transition-delay:.06s;" id="guide-ios">
+          <h3><span class="g-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4.4 0-7-2.8-7-6.3 0-2.5 1.5-4.6 3.4-6.4L12 3.6l3.6 3.7c1.9 1.8 3.4 3.9 3.4 6.4C19 17.2 16.4 20 12 20Z"/><path d="M12 20c2 0 3.2-2.6 3.2-6.2S14 7.6 12 7.6 8.8 11.4 8.8 13.8 10 20 12 20Z"/></svg></span> iPhone &amp; iPad — IPA</h3>
+          <p class="g-sub">iOS 15+ · TestFlight beta → App Store at launch</p>
+          <ol class="guide-steps">
+            <li><span><b>During beta:</b> install Apple’s <b>TestFlight</b> (free, App Store), then open our invite link — tap <b>Accept → Install</b>.</span></li>
+            <li><span><b>At launch:</b> open the <b>App Store</b>, search <b>calibrEAT</b> → tap <b>Get</b>. Same one-time license, no IAP on Apple.</span></li>
+            <li><span>Open calibrEAT. On first launch it shows the welcome screen — keep it installed and you’ll keep every update automatically.</span></li>
+          </ol>
+          <div class="guide-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span>Your license is <b>cross-platform</b> — the same code you buy on the website works on Android, iOS and Mac. Enter it once per device on the welcome screen.</span></div>
+          <div class="chip-row"><span class="chip">TestFlight now</span><span class="chip">App Store soon</span><span class="chip">One license</span></div>
+        </div>
+
+        <div class="guide-card full reveal" id="guide-mac" style="transition-delay:.08s;">
+          <h3><span class="g-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></span> Mac — Intel &amp; Apple Silicon (unified)</h3>
+          <p class="g-sub">macOS 12+ · One universal download for both Intel and M1/M2/M3/M4</p>
+          <ol class="guide-steps">
+            <li><span><b>Download</b> the Mac build (single <b>.dmg</b> — works on Intel and Apple Silicon, macOS picks the right binary).</span></li>
+            <li><span>Open the <b>.dmg</b> → drag <b>calibrEAT</b> to <b>Applications</b>. Eject the disk image.</span></li>
+            <li><span>First open: <b>right-click calibrEAT → Open</b> (Gatekeeper shows “downloaded from the internet” once) → <b>Open</b>. Next time, just double-click.</span></li>
+            <li><span>App opens on the welcome screen — enter your lifetime code to unlock.</span></li>
+          </ol>
+          <div class="guide-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span><b>Not sure if you’re Intel or Silicon?</b> You don’t need to be — the same download runs natively on both. Apple → About This Mac will say <b>Chip</b> (Apple Silicon) or <b>Processor</b> (Intel), but either way the steps are identical. If macOS says “can’t verify developer”, use the right-click → Open trick — no Terminal needed.</span></div>
+          <div class="chip-row"><span class="chip">Universal — Intel + Silicon</span><span class="chip">macOS 12+</span><span class="chip">Drag to Applications</span></div>
+        </div>
+
+      </div>
+
+      <div class="guide-note reveal" style="margin-top:16px; background: var(--surface); border-color: var(--line);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5.2 5.9v5.2c0 4.5 2.9 8 6.8 9.7 3.9-1.7 6.8-5.2 6.8-9.7V5.9Z"/><path d="m9.3 12.2 2 1.9 3.6-4"/></svg>
+        <span><b>Already bought a license?</b> Your code is permanent — enter the same code on Android, iOS and Mac. Use <b>Deactivate on this device</b> in-app to free a slot, or <a href="mailto:support@calibreat.app" style="text-decoration:underline; color:var(--green);">email support</a> if you lost it.</span>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="index.html">
+          <img data-mark alt="" style="width:27px; height:27px;" />
+          <span>calibr<span class="e">EAT</span></span>
+        </a>
+        <p class="foot-copy">Calibrate your eating lifestyle. Free to install, one lifetime unlock, and your data stays on your phone.</p>
+        <div class="foot-trust"><span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No ads</span><span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No subscriptions</span><span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No tracking</span></div>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="license.html">License key</a></li>
+          <li><a href="download.html">Download</a></li>
+          <li><a href="index.html#features">Features</a></li>
+          <li><a href="index.html#faq">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Support</h4>
+        <ul>
+          <li><a href="mailto:support@calibreat.app">Contact</a></li>
+          <li><a href="#">Privacy policy</a></li>
+          <li><a href="#">Terms of sale</a></li>
+          <li><a href="#">Refunds</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>The app</h4>
+        <ul>
+          <li><a href="download.html">Download</a></li>
+          <li><a href="download.html#android">Android APK</a></li>
+          <li><a href="download.html#ios">iPhone / iPad (IPA)</a></li>
+          <li><a href="download.html#mac">Mac — Intel & Silicon</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© <span id="year">2026</span> calibrEAT · All rights reserved.</span>
+      <span>Made with <span class="heart">🥦</span> and a kitchen scale.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const buyButtons = document.querySelectorAll("#nav-buy, #hero-buy");
+  buyButtons.forEach((btn) => { btn.href = "license.html"; btn.setAttribute("aria-label", "Buy a lifetime activation code"); });
+  const apkBtn = document.getElementById("apk-btn");
+  if (apkBtn) apkBtn.href = APK_URL;
+  document.getElementById("year").textContent = new Date().getFullYear();
+  const MARK_URI = "data:image/svg+xml;utf8," + encodeURIComponent(MARK_NIGHT_SVG.trim());
+  document.querySelectorAll("img[data-mark]").forEach((img) => { img.src = MARK_URI; });
+  document.querySelector('link[rel="icon"]').setAttribute("href", MARK_URI);
+  const themeBtn = document.getElementById("theme-toggle");
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  const applyTheme = (t) => { document.documentElement.setAttribute("data-theme", t); try { localStorage.setItem("calibreat-theme", t); } catch(e){} if (themeMeta) themeMeta.setAttribute("content", t==="light" ? "#ffffff" : "#0a1019"); };
+  applyTheme(document.documentElement.getAttribute("data-theme") || "dark");
+  themeBtn.addEventListener("click", () => { const next = document.documentElement.getAttribute("data-theme")==="light" ? "dark" : "light"; applyTheme(next); });
+  const nav = document.getElementById("site-nav"); const burger = document.getElementById("nav-burger");
+  burger.addEventListener("click", () => { const open = nav.classList.toggle("open"); burger.setAttribute("aria-expanded", String(open)); });
+  nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => { nav.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); }));
+  const io = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .12 });
+  document.querySelectorAll(".reveal").forEach((el,i) => { if (i<3) { el.classList.add("in"); return; } io.observe(el); });
+</script>
+</body>
+</html>
