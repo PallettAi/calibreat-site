@@ -217,14 +217,14 @@
     </a>
     <div class="nav-links">
       <a class="link" href="index.html#features">Features</a>
+      <a class="link" href="download.html">Download</a>
+      <a class="link" href="license.html">Lifetime Activation Setup</a>
+      <a class="link" href="about.html">About us</a>
       <a class="link" href="index.html#faq">FAQ</a>
-      <a class="link" href="license.html">License key</a>
-      <a class="link" href="download.html" aria-current="page">Download</a>
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch between light and dark theme">
         <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/></svg>
         <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg>
       </button>
-      <a class="btn btn-lime nav-cta" id="nav-buy" href="license.html">Buy lifetime</a>
     </div>
     <button class="nav-burger" id="nav-burger" aria-label="Menu" aria-expanded="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
@@ -241,7 +241,7 @@
       <p class="lede">Free to install on Android and iPhone. One lifetime purchase unlocks everything — no subscription, no ads.</p>
       <div class="hero-cta">
         <a class="btn btn-primary btn-lg" id="hero-dl" href="#android">Get the app free <span class="arr">→</span></a>
-        <a class="btn btn-dark btn-lg" href="license.html">Buy lifetime key</a>
+        <a class="btn btn-dark btn-lg" href="license.html">Lifetime Activation Setup</a>
       </div>
     </div>
   </section>
@@ -342,8 +342,9 @@
       <div>
         <h4>Product</h4>
         <ul>
-          <li><a href="license.html">License key</a></li>
+          <li><a href="license.html">Lifetime Activation Setup</a></li>
           <li><a href="download.html">Download</a></li>
+          <li><a href="about.html">About us</a></li>
           <li><a href="index.html#features">Features</a></li>
           <li><a href="index.html#faq">FAQ</a></li>
         </ul>
@@ -376,8 +377,6 @@
 </footer>
 
 <script>
-  const buyButtons = document.querySelectorAll("#nav-buy");
-  buyButtons.forEach((btn) => { btn.href = "license.html"; btn.setAttribute("aria-label", "Buy a lifetime activation code"); });
   const apkBtn = document.getElementById("apk-btn");
   if (apkBtn) { apkBtn.href = APK_URL; apkBtn.addEventListener("click", (e) => { if (APK_URL.startsWith("#")) { e.preventDefault(); const g=document.getElementById("guide-android"); if(g) g.scrollIntoView({behavior:"smooth"}); } }); }
   const _y=document.getElementById("year"); if(_y) _y.textContent=new Date().getFullYear();
