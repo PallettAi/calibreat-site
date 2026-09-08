@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Refunds — calibrEAT</title>
-<meta name="description" content="calibrEAT refunds explained clearly — when orders are non-refundable after delivery, and how we help if your code hasn’t arrived, doesn’t work, or isn’t as described. Your UK statutory rights are always protected." />
+<meta name="description" content="calibrEAT refunds explained clearly — when orders are final after delivery, and how we help if your code hasn’t arrived, doesn’t work, or isn’t as described. Your UK statutory rights are always protected." />
 <meta name="theme-color" content="#0a1019" />
 <link rel="icon" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -64,7 +64,6 @@
   .legal a{color:var(--green);text-decoration:underline;text-underline-offset:2px;}
   .legal .callout{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:14px;padding:16px 18px;margin:18px 0;color:var(--text-2);font-size:14.5px;line-height:1.6;}
   .legal .callout.warn{border-left-color:#d6a400;}
-  .legal .callout.bad{border-left-color:#d83a3a;}
   .legal .toc{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:20px 0;}
   .legal .toc strong{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--text);}
   .legal .toc ol{margin:10px 0 0;padding-left:18px;}
@@ -74,9 +73,26 @@
   .legal th,.legal td{text-align:left;padding:10px 12px;border:1px solid var(--line);vertical-align:top;}
   .legal th{background:var(--surface-2);color:var(--text);font-weight:600;}
   .legal td{color:var(--text-2);}
-  .legal .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:6px 12px;margin:6px 0 14px;}
-  .legal .badge-no{background:rgba(216,58,58,.12);color:#d83a3a;border:1px solid rgba(216,58,58,.25);}
-  .legal .badge-yes{background:rgba(31,157,85,.12);color:var(--green);border:1px solid rgba(31,157,85,.22);}
+  /* help cards */
+  .help-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:18px 0 8px;}
+  .help-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 16px;position:relative;transition:border-color .2s ease,transform .2s ease;}
+  .help-card:hover{border-color:rgba(31,157,85,.28);transform:translateY(-1px);}
+  .help-card .hc-ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(145deg,rgba(31,157,85,.14),rgba(183,233,60,.10));border:1px solid rgba(31,157,85,.16);color:var(--green);margin-bottom:10px;}
+  .help-card h3{font-size:15px;margin:0 0 6px;letter-spacing:-.01em;}
+  .help-card p{font-size:13.5px;line-height:1.6;margin:0 0 10px;color:var(--text-2);}
+  .help-card .hc-link{font-size:13px;font-weight:600;color:var(--green);text-decoration:none;}
+  .help-card .hc-link:hover{text-decoration:underline;}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0;}
+  .split-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;}
+  .split-card.nope{border-left:3px solid #d83a3a;}
+  .split-card.yep{border-left:3px solid var(--green);}
+  .split-card h3{font-size:14px;letter-spacing:.04em;text-transform:uppercase;margin:0 0 10px;}
+  .split-card ul{margin:0;padding-left:18px;}
+  .split-card li{font-size:14px;}
+  .steps-mini{counter-reset:step;margin:12px 0 0;padding:0;list-style:none;display:grid;gap:10px;}
+  .steps-mini li{display:flex;gap:12px;align-items:flex-start;font-size:14.5px;color:var(--text-2);line-height:1.55;}
+  .steps-mini li::before{counter-increment:step;content:counter(step);flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(150deg,var(--green-bright),var(--green-deep));color:#fff;font-weight:700;font-size:12.5px;font-family:var(--font-display);margin-top:1px;}
+  .steps-mini li b{color:var(--text);}
   .footer{background:var(--footer-bg);color:var(--footer-color);padding:52px 0 0;font-size:14px;}
   .footer-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:32px;padding-bottom:40px;}
   .footer .brand{font-size:20px;margin-bottom:12px;}
@@ -87,7 +103,17 @@
   .footer ul a{color:var(--footer-color);text-decoration:none;transition:color .2s ease;}
   .footer ul a:hover{color:var(--footer-link-hover);}
   .footer-bottom{border-top:1px solid var(--line);padding:18px 0 22px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);}
-  @media(max-width:880px){.footer-grid{grid-template-columns:1fr 1fr;}.nav-inner{flex-wrap:wrap;padding-bottom:11px;}.nav-links{display:none;flex:1 1 100%;order:5;flex-direction:column;align-items:stretch;gap:4px;padding:12px 2px 2px;margin-top:10px;border-top:1px solid var(--line);background:var(--nav-drawer-bg);}.site-nav.open .nav-links{display:flex;}.nav-links .link{padding:13px 2px;font-size:16px;color:var(--text);border-radius:10px;}.nav-links .link::after{display:none;}.nav-cta{margin:10px 0 0;width:100%;}.nav-burger{display:block;}}
+  @media(max-width:880px){
+    .footer-grid{grid-template-columns:1fr 1fr;}
+    .nav-inner{flex-wrap:wrap;padding-bottom:11px;}
+    .nav-links{display:none;flex:1 1 100%;order:5;flex-direction:column;align-items:stretch;gap:4px;padding:12px 2px 2px;margin-top:10px;border-top:1px solid var(--line);background:var(--nav-drawer-bg);}
+    .site-nav.open .nav-links{display:flex;}
+    .nav-links .link{padding:13px 2px;font-size:16px;color:var(--text);border-radius:10px;}
+    .nav-links .link::after{display:none;}
+    .nav-cta{margin:10px 0 0;width:100%;}
+    .nav-burger{display:block;}
+    .help-grid,.split{grid-template-columns:1fr;}
+  }
   @media(max-width:520px){.wrap{padding:0 18px;}}
 </style>
 </head>
@@ -112,7 +138,7 @@
 
 <main>
   <section class="hero"><div class="hero-grid-bg"></div><div class="wrap">
-    <span class="kicker">Legal — calibrEAT</span>
+    <span class="kicker">Legal</span>
     <h1>Refunds</h1>
     <p class="lede">Your lifetime code is delivered instantly by email. To keep things fair — a code can’t be “returned” once you’ve seen it — orders are final once the code is delivered. If something hasn’t arrived or isn’t working as it should, we’re here to help and put it right quickly. This page explains how, and your UK statutory rights are always protected.</p>
     <p style="color:var(--muted);font-size:13px;margin-top:10px;">Last updated: 8 September 2026 · Effective: 8 September 2026 · <a href="#contact" style="color:var(--accent);">Contact: support@calibreat.co.uk</a></p>
@@ -121,109 +147,112 @@
   <section style="padding-top:32px;">
     <div class="wrap"><div class="legal">
 
+      <!-- FIRST BIT — kept as requested -->
       <div class="callout"><strong>Good to know before you buy:</strong> At checkout you’ll be asked to tick a box that says <em>“I consent to immediate supply of the activation code and acknowledge I will lose my right to cancel once supply has begun.”</em> As soon as your code is emailed or made available, supply has begun and the 14-day cancellation right for digital content ends (Consumer Contracts Regulations 2013, regs. 29 &amp; 37). You don’t need to have activated the code — delivery itself counts as supply. Think of it like a gift card: once you’ve seen the code it can be used straight away, so we’re unable to offer change-of-mind refunds after delivery. If anything is missing or not working, the remedies below apply and we’ll help you sort it.</div>
 
-      <div class="toc"><strong>Contents</strong>
+      <!-- RESTRUCTURED FROM HERE -->
+      <div class="toc"><strong>On this page</strong>
         <ol>
-          <li><a href="#law">How your purchase is protected</a></li>
-          <li><a href="#no-refund">When refunds aren’t available</a></li>
-          <li><a href="#yes-refund">When we’ll refund or put things right</a></li>
-          <li><a href="#duplicate">Duplicate / accidental double purchase</a></li>
-          <li><a href="#not-delivered">Not delivered / you never received the code</a></li>
-          <li><a href="#faulty">Faulty, misdescribed or incompatible — the CRA remedy ladder</a></li>
-          <li><a href="#how-to-claim">How to claim a statutory remedy</a></li>
-          <li><a href="#revocation">What happens to the code after a refund or chargeback</a></li>
-          <li><a href="#chargebacks">Chargebacks</a></li>
-          <li><a href="#contact">Contact</a></li>
+          <li><a href="#quick-help">Quick help — the 3 most common cases</a></li>
+          <li><a href="#how-it-works">How refunds work</a></li>
+          <li><a href="#put-right">When we’ll put things right</a></li>
+          <li><a href="#faulty">If something’s faulty or not as described</a></li>
+          <li><a href="#after">What happens to your code after a refund</a></li>
+          <li><a href="#contact">How to get in touch</a></li>
         </ol>
       </div>
 
-      <h2 id="law">1. How your purchase is protected</h2>
-      <p>Your purchase is protected by UK consumer law for <em>digital content</em>. Here’s how that works in practice for a lifetime code:</p>
-      <table>
-        <tr><th>Law</th><th>What it says — in plain English</th></tr>
-        <tr><td><b>Consumer Contracts Regulations 2013</b> (CCRs) — regs. 13, 16, 29, 36, 37</td><td>For digital content you buy online you normally have 14 days to cancel. <b>But</b> you lose that right if before buying you <b>(a)</b> consent to immediate supply <b>and</b> <b>(b)</b> acknowledge you will lose the cancellation right once supply begins — <em>and</em> we give you confirmation with that consent on a durable medium before supply (regs. 13, 14, 36). If we have that tick, reg. 37(2) says regs. 37(3)–(8) (refunds on cancellation) <b>do not apply</b> where supply has begun. If we <b>don’t</b> have it, or we never gave you the required pre-contract info / confirmation (regs. 12(5), 16(3)), reg. 37(4) says <b>you do not pay</b> for supply in the cancellation period.</td></tr>
-        <tr><td><b>Consumer Rights Act 2015</b> (CRA) — Chapter 3, ss. 33–47</td><td>Digital content must be <b>of satisfactory quality, fit for any particular purpose you made known to us, and as described</b> (ss. 34–36). If it isn’t, or we had no right to supply it (s. 33), or it <b>damages your device</b> through lack of reasonable care (s. 46), you have a <b>remedy</b> — but unlike goods, there is <b>no 30-day short-term right to reject</b> for digital content. The remedy is: first <b>repair or replacement</b>; if that’s impossible or not done promptly without significant inconvenience, a <b>price reduction (which can be 100%)</b> (ss. 42–45). If we fail to supply at all, different rules apply. Nothing in our policy limits these statutory rights.</td></tr>
-      </table>
-      <p class="callout"><b>About the checkout tick:</b> To deliver your code instantly we ask you to consent to immediate supply — without that tick, we hold delivery until the 14-day window has passed or we don’t conclude the contract. The tick wording, the information on <a href="license.html">License</a> and <a href="terms.html">Terms</a>, and your confirmation email together meet the legal requirements.</p>
+      <h2 id="quick-help">Quick help — the 3 most common cases</h2>
+      <p>If one of these is you, you don’t need to read the rest — just follow the card:</p>
+      <div class="help-grid">
+        <div class="help-card">
+          <div class="hc-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="m3 10 18 0"/><path d="m8 15 2 2 4-4"/></svg></div>
+          <h3>Haven’t received your code?</h3>
+          <p>The MoR usually emails within seconds. Check spam, the spelling of your email, and the MoR customer portal.</p>
+          <p>Still nothing after 30 minutes? Email us with <b>proof of purchase</b> — a screenshot showing the <b>transaction / order ID</b>, last 4 digits, date/amount &amp; buyer email — and we’ll confirm via the transaction ID and re-send within 2 business days.</p>
+          <a class="hc-link" href="#after">Details ↓</a>
+        </div>
+        <div class="help-card">
+          <div class="hc-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="16" y1="11" x2="19" y2="14"/><line x1="19" y1="11" x2="16" y2="14"/></svg></div>
+          <h3>Entered the wrong email?</h3>
+          <p>No worries — we can fix it. A code can’t be refunded just because it went to the address you typed, but we’ll re-issue it.</p>
+          <p>Please email <a href="mailto:support@calibreat.co.uk">support@calibreat.co.uk</a> with <b>proof of purchase</b> (screenshot with <b>transaction / order ID</b> clearly visible). Once verified, we’ll send your code to the correct verified email straight away.</p>
+          <a class="hc-link" href="mailto:support@calibreat.co.uk">Email support →</a>
+        </div>
+        <div class="help-card">
+          <div class="hc-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="4" width="6" height="6" rx="1.5"/><rect x="3" y="14" width="6" height="6" rx="1.5"/><rect x="15" y="14" width="6" height="6" rx="1.5"/><path d="M12 10v4"/><path d="M9 17h6"/></svg></div>
+          <h3>Bought twice by mistake?</h3>
+          <p>Double-click / refresh happens — the duplicate is refundable if it hasn’t been used.</p>
+          <p>Email us within 14 days with both order references and tell us which code to keep. We’ll verify the duplicate hasn’t been activated, then refund and revoke the spare.</p>
+          <a class="hc-link" href="#put-right">See policy ↓</a>
+        </div>
+      </div>
 
-      <h2 id="no-refund">2. When refunds aren’t available</h2>
-      <span class="badge badge-no">● Not refundable after delivery — change of mind</span>
-      <p>Once your code has been emailed or made available after you’ve consented to immediate delivery, we’re not able to offer a refund for a change of mind — even if you haven’t yet activated the code. If your situation <em>is</em> covered in <a href="#yes-refund">§3</a>, <a href="#duplicate">§4</a>, <a href="#not-delivered">§5</a> or <a href="#faulty">§6</a> below, we’ll help straight away:</p>
+      <h2 id="how-it-works">How refunds work</h2>
+      <p>We want to keep this simple and fair for everyone:</p>
+      <div class="split">
+        <div class="split-card nope">
+          <h3>🚫 Not refundable after delivery</h3>
+          <ul>
+            <li><b>Change of mind</b> — even if you haven’t activated the code yet, delivery counts as supply.</li>
+            <li><b>Device preferences</b> (e.g. prefer Play Store over sideload) where the app works as described on Android 8+, iOS 15+, macOS 12+.</li>
+            <li><b>Diet results</b> — calorie estimates vary per person; this isn’t a fault.</li>
+            <li><b>Lost the email?</b> We’ll happily re-send — just ask.</li>
+          </ul>
+        </div>
+        <div class="split-card yep">
+          <h3>✅ We’ll put it right when</h3>
+          <ul>
+            <li>Your code was <b>never delivered</b> and we can’t supply it.</li>
+            <li>Something is <b>faulty, misdescribed or incompatible</b> despite following our steps.</li>
+            <li>We <b>missed required checkout information / confirmation</b>.</li>
+            <li>You were <b>charged twice</b> by mistake (duplicate above).</li>
+            <li>Or the content <b>damaged your device</b> through our fault.</li>
+          </ul>
+        </div>
+      </div>
+      <p style="font-size:13.5px;color:var(--muted);">In the right-hand cases we’ll first try the quickest fix that gets you going. If that isn’t possible or would cause significant inconvenience, we’ll arrange a refund — including a full refund where that’s the appropriate remedy.</p>
+
+      <h2 id="put-right">When we’ll put things right — in detail</h2>
+      <p>If something hasn’t been delivered as promised or isn’t working as described, you’re covered:</p>
+      <table>
+        <tr><th>Situation</th><th>What happens</th></tr>
+        <tr><td><b>We didn’t provide required checkout information or confirmation</b>, or you never gave the consent + acknowledgement</td><td>You <b>do not pay</b> for supply in the cancellation period — full refund.</td></tr>
+        <tr><td><b>Code never supplied / not made available</b></td><td>We supply promptly; if we can’t within a reasonable time, we refund.</td></tr>
+        <tr><td><b>Not of satisfactory quality, not fit for purpose you told us about, or not as described</b></td><td><b>Repair or replacement first</b> (new code, fix, or access) — if not possible or not done promptly without significant inconvenience, <b>price reduction up to 100%</b>.</td></tr>
+        <tr><td><b>We had no right to supply it</b></td><td>Refund — please don’t use the code.</td></tr>
+        <tr><td><b>Content damages your device / other content</b> due to our failure to use reasonable care &amp; skill</td><td><b>Repair or compensation</b>.</td></tr>
+        <tr><td><b>Duplicate purchase</b> (paid twice by mistake)</td><td>One code refunded and revoked — see Quick help above.</td></tr>
+      </table>
+      <div class="callout"><b>About the checkout tick:</b> To deliver instantly we ask you to consent to immediate supply. Without that tick we hold delivery until the 14-day window has passed or we don’t conclude the contract. The tick wording, the information on <a href="license.html">License</a> and <a href="terms.html">Terms</a>, and your confirmation email together meet the legal requirements (Consumer Contracts Regulations 2013, regs. 13, 14, 36).</div>
+
+      <h2 id="faulty">If something’s faulty or not as described</h2>
+      <p>Your statutory rights are always protected. Here’s what counts and how we resolve it:</p>
+      <ol class="steps-mini">
+        <li><span><b>What counts as faulty?</b> For example: the code never unlocks on any device that meets our published requirements despite correct entry and our steps, or the unlocked app materially lacks the features described at sale (food diary, water &amp; weight, barcode scan) due to our fault. What <em>doesn’t</em> count: Open Food Facts / device / network behaviour outside our control, or a misunderstanding of what a calorie estimate is (see <a href="terms.html#not-medical">Not medical advice</a>).</span></li>
+        <li><span><b>We’ll fix it first</b> — a replacement code, a fix, or alternative access, <b>within a reasonable time and without significant inconvenience to you</b>.</span></li>
+        <li><span><b>If we can’t fix it promptly</b>, you’re entitled to a <b>price reduction — which can be the full price</b> if the content is essentially not usable for you.</span></li>
+        <li><span><b>Device damage is separate</b> — if our content damages your device through a failure to use reasonable care &amp; skill, we’ll <b>repair or compensate</b>. Please send evidence.</span></li>
+      </ol>
+      <div class="callout" style="border-left-color:rgba(255,255,255,.18);background:var(--surface-2);"><strong>Time limits:</strong> The general limitation period for contract claims in England and Wales is <b>6 years</b> (Limitation Act 1980). We assess each case reasonably on the evidence from both sides — you don’t need to quote legislation to get help.</div>
+
+      <h2 id="after">What happens to your code after a refund</h2>
+      <p>Every refunded or charged-back code is <b>revoked via webhook</b>. The license service stores codes hashed (SHA-256) and marks the binding <code>revoked = true</code>. Afterwards <code>POST /v1/activate</code> and <code>/v1/validate</code> with that code <b>fail</b> and the app re-locks on next online check.</p>
       <ul>
-        <li><b>Change of mind / “I haven’t used it yet”</b> — we understand, but once the code is delivered it has been supplied, so we can’t “take it back”.</li>
-        <li><b>Entered the wrong email at checkout</b> — please email <a href="mailto:support@calibreat.co.uk">support@calibreat.co.uk</a> with <b>proof of purchase</b> (a screenshot of your payment confirmation or receipt that clearly shows the <b>transaction / order ID</b>, last 4 digits of the card or payment method, date/amount, and the buyer email). Once we’ve confirmed the transaction, we’ll happily re-issue your code to the correct verified email address. We can’t refund in this case — the code was still delivered to the address entered — but we’ll get you unlocked quickly.</li>
-        <li><b>Compatible device complaints that are OS/app-store matters</b> (e.g. you prefer Play Store vs sideload) where the content <b>is</b> as described and works on the stated requirements (Android 8+, iOS 15+, macOS 12+).</li>
-        <li><b>Diet results</b> — the app estimates calorie needs (Mifflin-St Jeor); individual results vary. This is not a quality failure.</li>
-        <li><b>Lost or deleted the email</b> — email <a href="mailto:support@calibreat.co.uk">support@calibreat.co.uk</a> and we will re-send to the buyer address.</li>
+        <li>We keep the <b>hashed</b> code and the revocation record for fraud prevention — we never keep your card details (the MoR does).</li>
+        <li>Refunded the wrong duplicate by mistake? Email us and we’ll re-issue a fresh code free of charge.</li>
+        <li><b>Chargebacks:</b> if you ask your bank to reverse the charge, please let us know too — the MoR will notify our license service and the code will be deactivated as above. A chargeback and a refund cover the same order, so they don’t stack. If a code was delivered and used, the MoR may provide delivery and consent evidence when reviewing the dispute.</li>
       </ul>
 
-      <h2 id="yes-refund">3. When we’ll refund or put things right</h2>
-      <span class="badge badge-yes">✓ We’ll always put a genuine problem right</span>
-      <p>If something hasn’t been delivered as promised or isn’t working as described, we’ll fix it — and refund where a refund is the right remedy under UK law:</p>
-      <table>
-        <tr><th>Situation</th><th>Legal source</th><th>What you get</th></tr>
-        <tr><td><b>We failed to give the required CCR info/confirmation</b>, or you never gave the consent + acknowledgement</td><td>CCR reg. 37(4); regs. 12(5), 14, 16(3), 36</td><td>You <b>do not pay</b> for supply in the cancellation period — full refund, and we cannot enforce the contract to that extent</td></tr>
-        <tr><td><b>Code never supplied / not made available</b></td><td>CCR reg. 36 + CRA supply duty</td><td>We will supply promptly; if we can’t within a reasonable time, refund</td></tr>
-        <tr><td><b>Digital content not of satisfactory quality, not fit for purpose you told us about, or not as described</b></td><td>CRA ss. 34–36, 42–45</td><td><b>Repair/replacement first</b> (new code, fix, or access) — if impossible / not done promptly without significant inconvenience → <b>price reduction up to 100% refund</b></td></tr>
-        <tr><td><b>We had no right to supply it</b></td><td>CRA s. 33</td><td>Refund — do not use the code</td></tr>
-        <tr><td><b>Content damages your device / other digital content</b> due to our failure to use reasonable care &amp; skill</td><td>CRA s. 46</td><td><b>Repair or compensation</b></td></tr>
-        <tr><td><b>Duplicate purchase</b> (you paid twice by mistake)</td><td>General contract law — no consent to two supplies</td><td>One code refunded / revoked (see <a href="#duplicate">§4</a>)</td></tr>
-      </table>
-      <p>For quality, fitness or description issues we’ll start with the quickest fix that gets you up and running; if that isn’t possible or doesn’t help without significant inconvenience, we’ll arrange a price reduction which can be a full refund. See <a href="#faulty">§6</a> and <a href="#how-to-claim">§7</a>.</p>
-
-      <h2 id="duplicate">4. Duplicate / accidental double purchase</h2>
-      <p>Bought twice by mistake (for example, you double-clicked or refreshed at checkout)? We’ll be happy to help — the duplicate code is refundable if it hasn’t been used:</p>
-      <ul>
-        <li>Email <a href="mailto:support@calibreat.co.uk">support@calibreat.co.uk</a> within 14 days with both order references / buyer emails and state which code to keep.</li>
-        <li>We verify neither code from the duplicate order has been activated (if one has, we keep that one live and refund the other). The refunded code is then <b>revoked</b> (see <a href="#revocation">§8</a>).</li>
-        <li>If both codes from the duplicate order are already activated on different devices/emails, we cannot know which was the “mistake” — we treat the second purchase as a genuine second license and the default non-refundable rule applies unless a statutory ground in <a href="#yes-refund">§3</a> is made out.</li>
-      </ul>
-
-      <h2 id="not-delivered">5. Not delivered / you never received the code</h2>
-      <p>The MoR emails the code within seconds. If nothing arrived, we’ll get it sorted:</p>
-      <ol>
-        <li>First, check spam/junk, double-check the email you entered at checkout, and look in the MoR’s customer portal (“My orders” on the receipt). If payment didn’t succeed, there’s no code to deliver yet.</li>
-        <li>Still nothing 30 minutes after a successful payment? Please email <a href="mailto:support@calibreat.co.uk">support@calibreat.co.uk</a> with <b>proof of purchase</b> — a screenshot of your payment confirmation or receipt that clearly shows the <b>transaction / order ID</b>, last 4 digits of the card or payment method, date/amount, and the buyer email. We’ll confirm via the transaction ID and get your code to you.</li>
-        <li>We will <b>re-send or re-issue</b> within 2 business days. This is the primary remedy — we supply what you paid for.</li>
-        <li>If we genuinely <b>cannot supply</b> the content at all (system failure, provider outage), we will refund.</li>
-      </ol>
-      <p>Non-delivery emails where payment never settled with the MoR are not purchases — there is no contract and no code to refund.</p>
-
-      <h2 id="faulty">6. Faulty, misdescribed or incompatible</h2>
-      <p>If the code or the unlocked app isn’t working as it should, you’re covered — here’s how we’ll help:</p>
-      <ol>
-        <li><b>Digital content not of satisfactory quality, not fit for purpose, or not as described</b> (ss. 34–36) — examples that <em>would</em> count: the code never unlocks on any device meeting the published requirements despite correct entry and our instructions, or the app as unlocked materially lacks the features described at sale (food diary, water &amp; weight, barcode scan) due to our fault. Examples that <em>would not</em> count: Open Food Facts / device / network behaviour outside our control, or a misunderstanding of what a calorie estimate is (see <a href="terms.html#not-medical">Not medical advice</a>).</li>
-        <li><b>First remedy is repair or replacement</b> (s. 43) — we will provide a replacement code, fix the activation, or supply access another way, <b>within a reasonable time and without significant inconvenience to you</b>.</li>
-        <li>If repair/replacement is <b>impossible</b>, or we fail to do it <b>promptly / without significant inconvenience</b> (s. 44), you are entitled to a <b>price reduction — which can be the full price</b> if the content is essentially worthless to you.</li>
-        <li><b>Device damage</b> (s. 46) is separate: if the content damages your device/other content because we failed to use reasonable care &amp; skill, we must <b>repair or compensate</b> — contact us with evidence.</li>
-        <li>There is <b>no short-term right to reject</b> for digital content (unlike goods). And we are not liable for loss that was not <b>foreseeable</b> or was caused by something outside our reasonable control.</li>
-      </ol>
-      <div class="callout"><strong>Time limits &amp; burden:</strong> The CRA does not set a hard 6-year cut-off for digital remedies — but the general limitation period for contract claims in England and Wales is <b>6 years</b> (Limitation Act 1980). Within the first 6 months after supply, the evidential practical burden leans heavily on us to show the content <em>was</em> conforming — though for digital content the CRA puts the general burden on the consumer to show the content did not conform. We will act reasonably on evidence from both sides.</div>
-
-      <h2 id="how-to-claim">7. How to get help</h2>
-      <p>Just drop us an email at <a href="mailto:support@calibreat.co.uk">support@calibreat.co.uk</a> and we’ll get back to you quickly:</p>
+      <h2 id="contact">How to get in touch</h2>
+      <p>We aim to make this painless. Email <a href="mailto:support@calibreat.co.uk">support@calibreat.co.uk</a>:</p>
       <ul>
         <li><b>Subject:</b> <em>Help with my order — [order reference]</em></li>
         <li>Your buyer email, order reference / receipt, and date of purchase</li>
-        <li>A short note on what happened — and if it’s a technical issue, your device/OS, app version, and any screenshots or screen recordings that show the problem. Proof of purchase (screenshot with transaction / order ID) helps us verify and resolve things faster.</li>
+        <li>A short note on what happened — and if it’s technical, your device/OS, app version, and any screenshots or screen recordings. A screenshot of your receipt with the <b>transaction / order ID</b> helps us verify fastest.</li>
       </ul>
-      <p>We aim to reply within <b>2 business days</b> and either fix the issue or agree next steps within <b>14 days</b>.</p>
-      <p>If a refund is the right remedy, it goes via the <b>MoR (seller of record)</b> to your original payment method within 14 days of us agreeing it — the MoR processes the reversal, so please allow a few extra days for it to appear. If we don’t think a legal ground applies, we’ll explain why in writing and let you know about <b>ADR</b> (see <a href="terms.html#contact">Terms §17</a>) and your right to go to court. You can also contact the <b>Citizens Advice Consumer Service</b> (03454 04 05 06) for independent guidance — we treat every good-faith enquiry with respect.</p>
+      <p>We reply within <b>2 business days</b> and aim to fix or agree next steps within <b>14 days</b>. If a refund is the right remedy, it goes via the <b>MoR (seller of record)</b> to your original payment method within 14 days of us agreeing it — please allow a few extra days for it to appear. If we don’t think a legal ground applies, we’ll explain why in writing and let you know about <b>ADR</b> (see <a href="terms.html#contact">Terms §17</a>) and your right to go to court. You can also contact the <b>Citizens Advice Consumer Service</b> (03454 04 05 06) — we treat every genuine enquiry with respect.</p>
 
-      <h2 id="revocation">8. What happens to the code after a refund</h2>
-      <p>Every refunded or charged-back code is <b>revoked via webhook</b>. The license API stores codes hashed (SHA-256) and marks the binding <code>revoked = true</code>. Thereafter:</p>
-      <ul>
-        <li><code>POST /v1/activate</code> and <code>/v1/validate</code> with that code <b>fail</b>; the app re-locks on next online check.</li>
-        <li>We keep the <b>hashed</b> code and the revocation record for fraud prevention — we do not keep your card details (the MoR does).</li>
-        <li>If a genuine mistake happened (e.g. we refunded the wrong duplicate), email us and we will re-issue a fresh code free of charge.</li>
-      </ul>
-
-      <h2 id="chargebacks">9. Chargebacks</h2>
-      <p>If you ask your bank or card provider to reverse the charge, please let us know too — the MoR will notify our license service and the associated code will be deactivated per <a href="#revocation">§8</a>. A chargeback and a refund cover the same order, so they don’t stack. If a code was successfully delivered and used, the MoR may provide delivery and consent evidence when reviewing the dispute.</p>
-
-      <h2 id="contact">10. Contact</h2>
-      <p><b>Support &amp; legal:</b> <a href="mailto:support@calibreat.co.uk">support@calibreat.co.uk</a> — buyer email + order reference in every message. For privacy questions, see <a href="privacy.html">Privacy Policy</a>; for the underlying license contract, see <a href="terms.html">Terms of Sale</a>.</p>
       <p style="margin-top:20px;padding:12px 14px;border:1px dashed var(--line);border-radius:12px;background:var(--surface);font-size:13px;color:var(--muted);"><em>Refunds are handled in line with UK law for digital content — including the Consumer Contracts Regulations 2013 and Consumer Rights Act 2015 — with your statutory rights always preserved. Please have a solicitor review the company-details block in <a href="terms.html">Terms §1</a>, the MoR linkage and the checkout tick wording before you start taking payments. We keep a durable copy of the tick record and confirmation for each order.</em></p>
 
     </div></div>
