@@ -40,37 +40,34 @@
   .theme-toggle{display:inline-flex;align-items:center;justify-content:center;background:none;border:1px solid var(--line-strong);border-radius:9px;padding:6px 7px;cursor:pointer;color:var(--text);line-height:0;transition:border-color .2s ease,color .3s ease,background .2s ease;}
   .theme-toggle:hover{border-color:var(--green);background:rgba(31,157,85,.1);}
   .theme-toggle svg{width:17px;height:17px;}.theme-toggle .moon{display:none;}[data-theme="light"] .theme-toggle .sun{display:none;}[data-theme="light"] .theme-toggle .moon{display:inline;}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border-radius:12px;font-weight:600;font-size:15px;line-height:1;text-decoration:none;cursor:pointer;border:0;font-family:inherit;padding:15px 24px;white-space:nowrap;transition:transform .12s ease,box-shadow .18s ease,background .18s ease,border-color .18s ease;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border-radius:12px;font-weight:600;font-size:15px;line-height:1;text-decoration:none;cursor:pointer;border:0;font-family:inherit;padding:14px 22px;white-space:nowrap;transition:transform .12s ease,box-shadow .18s ease,background .18s ease,border-color .18s ease;}
   .btn:active{transform:translateY(1px) scale(.995);} .btn-primary{background:linear-gradient(180deg,var(--green-bright),var(--green));color:#fff;box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 8px 20px -8px rgba(31,157,85,.6);} .btn-dark{background:#111a29;color:#fff;border:1px solid rgba(255,255,255,.1);} .btn-outline{border:1.5px solid var(--line-strong);color:var(--text);background:var(--surface);}
-  section{padding:clamp(56px,7vw,88px) 0;}
+  section{padding:clamp(40px,6vw,64px) 0;}
   .hero{background:var(--hero-bg);color:var(--hero-text);overflow:hidden;position:relative;transition:background-color .3s ease;}
   .hero-grid-bg{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(var(--hero-grid) 1px,transparent 1px),linear-gradient(90deg,var(--hero-grid) 1px,transparent 1px);background-size:46px 46px;-webkit-mask-image:radial-gradient(ellipse 90% 80% at 50% 20%,#000 30%,transparent 75%);mask-image:radial-gradient(ellipse 90% 80% at 50% 20%,#000 30%,transparent 75%);}
   .hero::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(720px 420px at 82% 8%,rgba(31,157,85,.28),transparent 62%),radial-gradient(640px 460px at 4% 96%,rgba(183,233,60,.10),transparent 62%);}
-  .hero .wrap{position:relative;padding-top:clamp(36px,5vw,56px);padding-bottom:clamp(48px,6vw,64px);}
-  .hero h1{font-size:clamp(34px,4.6vw,52px);font-weight:800;letter-spacing:-.03em;line-height:1.06;margin:14px 0 14px;color:var(--hero-text);}
-  .hero h1 span{color:var(--accent);} .hero .lede{font-size:17.5px;color:var(--hero-lede);max-width:640px;margin:0;line-height:1.6;}
+  .hero .wrap{position:relative;padding-top:clamp(32px,5vw,48px);padding-bottom:clamp(36px,5vw,52px);}
+  .hero h1{font-size:clamp(32px,4.4vw,48px);font-weight:800;letter-spacing:-.03em;line-height:1.06;margin:12px 0 12px;color:var(--hero-text);}
+  .hero h1 span{color:var(--accent);} .hero .lede{font-size:16.5px;color:var(--hero-lede);max-width:620px;margin:0;line-height:1.6;}
   .kicker{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--kicker-fg);}
   .kicker::before{content:"";width:24px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--green),var(--lime));}
   .proof{max-width:760px;margin:0 auto;}
-  .proof h2{font-size:clamp(26px,3.2vw,32px);letter-spacing:-.02em;margin:0 0 12px;color:var(--text);line-height:1.15;}
-  .proof p{color:var(--text-2);font-size:15.5px;margin:0 0 14px;line-height:1.7;}
-  .proof ul{color:var(--text-2);font-size:15px;line-height:1.7;margin:0 0 16px;padding-left:22px;}
-  .callout{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:14px;padding:18px 20px;margin:20px 0;color:var(--text-2);font-size:15px;line-height:1.65;}
-  .callout.lime{border-left-color:var(--lime);background:linear-gradient(180deg,rgba(183,233,60,.08),var(--surface));}
-  .pillar-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:28px 0;}
-  .pillar{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px 20px;position:relative;transition:transform .2s ease,box-shadow .2s ease;}
-  .pillar:hover{transform:translateY(-2px);box-shadow:var(--shadow-sm,0 8px 24px rgba(0,0,0,.08));}
-  .pillar .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(145deg,rgba(31,157,85,.13),rgba(183,233,60,.1));border:1px solid rgba(31,157,85,.18);color:var(--tile-fg);margin-bottom:14px;}
-  .pillar h3{margin:0 0 6px;font-size:16px;letter-spacing:-.01em;color:var(--text);} .pillar p{margin:0;color:var(--text-2);font-size:14.5px;line-height:1.6;}
-  .transparency{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:0;overflow:hidden;margin:28px 0;}
-  .trans-head{padding:28px 28px 0;} .trans-head h2{margin:0 0 8px;} .trans-head p{color:var(--text-2);margin:0;}
-  .trans-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:22px;border-top:1px solid var(--line);}
-  .trans-item{padding:20px 24px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);} .trans-item:nth-child(2n){border-right:none;} .trans-item:nth-last-child(-n+2){border-bottom:none;}
-  .trans-item b{display:block;color:var(--text);font-size:14.5px;margin-bottom:4px;} .trans-item span{color:var(--text-2);font-size:14px;line-height:1.6;}
-  .trans-item svg{color:var(--green);margin-bottom:10px;}
-  .quote{margin:28px 0;padding:22px 24px;background:var(--surface-2);border:1px solid var(--line);border-radius:16px;font-size:15px;color:var(--text-2);line-height:1.65;font-style:italic;}
-  .quote b{color:var(--text);font-style:normal;}
-  .cta-strip{margin:32px 0 0;display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
+  .proof h2{font-size:clamp(24px,3vw,28px);letter-spacing:-.02em;margin:0 0 10px;color:var(--text);line-height:1.2;}
+  .proof p{color:var(--text-2);font-size:15px;margin:0 0 12px;line-height:1.65;}
+  .callout{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:14px;padding:14px 18px;margin:16px 0;color:var(--text-2);font-size:14.5px;line-height:1.6;}
+  .pillar-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0;}
+  .pillar{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 16px;}
+  .pillar .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(145deg,rgba(31,157,85,.13),rgba(183,233,60,.1));border:1px solid rgba(31,157,85,.18);color:var(--tile-fg);margin-bottom:10px;}
+  .pillar h3{margin:0 0 4px;font-size:15px;letter-spacing:-.01em;color:var(--text);} .pillar p{margin:0;color:var(--text-2);font-size:13.5px;line-height:1.55;}
+  .transparency{background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden;margin:22px 0;}
+  .trans-head{padding:22px 22px 0;} .trans-head h2{margin:0 0 6px;} .trans-head p{color:var(--text-2);margin:0;font-size:14.5px;}
+  .trans-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:18px;border-top:1px solid var(--line);}
+  .trans-item{padding:16px 18px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);} .trans-item:nth-child(2n){border-right:none;} .trans-item:nth-last-child(-n+2){border-bottom:none;}
+  .trans-item b{display:block;color:var(--text);font-size:14px;margin-bottom:3px;} .trans-item span{color:var(--text-2);font-size:13.5px;line-height:1.55;}
+  .trans-item svg{color:var(--green);margin-bottom:8px;width:18px;height:18px;}
+  .closing{margin:22px 0 0;padding:18px 20px;background:var(--surface-2);border:1px solid var(--line);border-radius:16px;}
+  .closing p{margin:0 0 10px;font-size:14.5px;color:var(--text-2);line-height:1.6;} .closing p:last-child{margin:0;}
+  .cta-strip{margin:24px 0 0;display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
   .footer{background:var(--footer-bg);color:var(--footer-color);padding:52px 0 0;font-size:14px;transition:background-color .3s ease,color .3s ease;}
   .footer-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:32px;padding-bottom:40px;}
   .footer .brand{font-size:20px;margin-bottom:12px;}
@@ -110,38 +107,33 @@
     <span class="kicker">About PallettAi · Why we exist</span>
     <h1>Everyday tools should be <span>cheap, honest, and yours.</span></h1>
     <p class="lede">We’re PallettAi — a new AI development company building software that actually lowers the cost of daily life. calibrEAT is our first proof: a proper calorie and lifestyle tracker without the subscription, without the ads, and without the data grab.</p>
-    <div class="cta-strip">
+    <div class="cta-strip" style="margin-top:18px;">
       <a class="btn btn-primary" href="download.html">Try calibrEAT free →</a>
       <a class="btn btn-dark" href="#transparency">Why transparency matters</a>
     </div>
   </div></section>
 
-  <section style="padding-top:36px;">
+  <section style="padding-top:32px;padding-bottom:48px;">
     <div class="wrap"><div class="proof">
 
-      <div class="callout">
-        <strong style="color:var(--text);">In one sentence:</strong> We use AI to build faster and cheaper — then pass that saving to you. One fair price, no tricks, your data stays on your phone. If we can’t explain a decision plainly, we haven’t earned your trust.
-      </div>
-
-      <h2>We started because the basics got too expensive</h2>
-      <p>Food logging, habit tracking, wellness tools — they all started simple and useful. Then came the £9.99/month, the “premium” paywalls, the banner ads between your meals, and the fine print that says “we may share analytics with partners.”</p>
-      <p>We’re a small team using modern AI to do what used to take a big studio. That means we can build calibrEAT properly once, charge once, and not need to rent your attention back to advertisers or bundle your health data to stay alive.</p>
+      <p style="color:var(--text);font-weight:600;font-size:15px;margin-bottom:10px;">We use AI to build faster and cheaper — then pass that saving to you.</p>
+      <p>Trackers used to be simple. Then came £9.99/month, paywalled features, ads between meals and fine print about selling your data. We’re a small AI-native team that builds what used to take a studio — so we charge once and don’t need to rent your attention.</p>
 
       <div class="pillar-grid">
         <div class="pillar">
-          <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M7 8a4 4 0 0 1 8 0c0 2.5-3 3.5-4 6"/><circle cx="12" cy="12" r="9"/></svg></div>
+          <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 3v18"/><path d="M7 8a4 4 0 0 1 8 0c0 2.5-3 3.5-4 6"/><circle cx="12" cy="12" r="9"/></svg></div>
           <h3>Cut costs, not corners</h3>
-          <p>One lifetime activation. No subscription, no “pro” tier. You pay once, your key works forever — including every future update we ship for this app.</p>
+          <p>One activation, forever. Every future update included. No pro tier, no renewal.</p>
         </div>
         <div class="pillar">
-          <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="10" rx="2"/><path d="M7 12h10"/><line x1="3" y1="12" x2="21" y2="12" stroke-dasharray="3 3"/></svg></div>
+          <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="8" width="18" height="10" rx="2"/><path d="M7 12h10"/></svg></div>
           <h3>No ads. Ever.</h3>
-          <p>We don’t run ads in the app or sell your attention. Your meals aren’t a place for someone else’s billboard.</p>
+          <p>Your meals aren’t a billboard. We don’t run ads or sell your attention.</p>
         </div>
         <div class="pillar">
-          <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5.2 5.9v5.2c0 4.5 2.9 8 6.8 9.7 3.9-1.7 6.8-5.2 6.8-9.7V5.9Z"/><path d="m9.3 12.2 2 1.9 3.6-4"/></svg></div>
+          <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 3 5.2 5.9v5.2c0 4.5 2.9 8 6.8 9.7 3.9-1.7 6.8-5.2 6.8-9.7V5.9Z"/><path d="m9.3 12.2 2 1.9 3.6-4"/></svg></div>
           <h3>No data to sell</h3>
-          <p>Your food, water and weight logs live in a local database on your device. We never host them, see them, or sell them. The only thing we store server-side is your activation (email + hashed code) to enforce one device per purchase.</p>
+          <p>Logs stay on your device. We never host, see or sell them — only your activation is stored.</p>
         </div>
       </div>
 
@@ -149,51 +141,46 @@
         <div class="trans-head">
           <span class="kicker">Our highlight · Transparency</span>
           <h2>Honesty is the feature</h2>
-          <p>Anyone can say “we’re transparent.” Here’s exactly what that means for you — in writing, before you pay.</p>
+          <p>What you see before you pay is what you get. Plain English, up front.</p>
         </div>
         <div class="trans-grid">
           <div class="trans-item">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 14h6"/><path d="M9 18h6"/></svg>
-            <b>What you actually pay for</b>
-            <span>The app is free to install. You buy one digital item — a permanent activation code delivered instantly by email. Price is shown before you tick any consent. No hidden renewal.</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 14h6"/><path d="M9 18h6"/></svg>
+            <b>What you pay for</b>
+            <span>One code by email. Price shown before consent. No hidden renewal.</span>
           </div>
           <div class="trans-item">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-            <b>What “lifetime” means</b>
-            <span>Every update we ship for calibrEAT is included. No v2 paywall for the same app. If we ever build a genuinely new product (different app/brand), that’s a separate choice — we have no such plan.</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+            <b>What lifetime means</b>
+            <span>Every calibrEAT update included. No v2 paywall for the same app.</span>
           </div>
           <div class="trans-item">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a4 4 0 0 1 8 0v3"/></svg>
-            <b>Why one device per code</b>
-            <span>One active device per email + code keeps sharing honest and supports our low price. Moving phones? Tap “Deactivate on this device” and re-enter the same code — or email us and we’ll free the slot after verifying you own the purchase.</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a4 4 0 0 1 8 0v3"/></svg>
+            <b>One device per code</b>
+            <span>Keeps it fair and cheap. Switch phones? Deactivate and reuse the same code.</span>
           </div>
           <div class="trans-item">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M12 10v6"/><path d="M12 7h.01"/></svg>
-            <b>Where your data lives</b>
-            <span>On your phone only (SQLite/AsyncStorage). No calibrEAT account, no cloud sync. Food lookups go directly to <a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener" style="color:var(--green);text-decoration:underline;">Open Food Facts</a> / USDA — not through us. See <a href="privacy.html" style="color:var(--green);text-decoration:underline;">Privacy</a>.</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M12 10v6"/><path d="M12 7h.01"/></svg>
+            <b>Where data lives</b>
+            <span>On your phone only. Lookups go direct to Open Food Facts — see <a href="privacy.html" style="color:var(--green);text-decoration:underline;">Privacy</a>.</span>
           </div>
           <div class="trans-item">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M16 8V6a4 4 0 0 0-8 0v2"/><rect x="3" y="10" width="18" height="10" rx="2"/><circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>
-            <b>Refunds without gotchas</b>
-            <span>Delivered instantly = no change-of-mind refund after the code lands (UK law, CCRs reg. 37 — you tick to consent). Faulty, misdescribed or not delivered? We put it right, including a refund where that’s the right remedy. Plain English on <a href="refunds.html" style="color:var(--green);text-decoration:underline;">Refunds</a>.</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M16 8V6a4 4 0 0 0-8 0v2"/><rect x="3" y="10" width="18" height="10" rx="2"/><circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>
+            <b>Refunds</b>
+            <span>Instant delivery = no change-of-mind after it lands. Faulty or not delivered? We put it right — see <a href="refunds.html" style="color:var(--green);text-decoration:underline;">Refunds</a>.</span>
           </div>
           <div class="trans-item">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 3v18"/><path d="M8 9h8"/><path d="M8 15h8"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 3v18"/><path d="M8 9h8"/><path d="M8 15h8"/></svg>
             <b>How to verify us</b>
-            <span>Checkout is via a Merchant of Record (seller of record, handles VAT/receipt). We link to their terms at checkout. Company details, contact and VAT status will be published in <a href="terms.html" style="color:var(--green);text-decoration:underline;">Terms</a> before we take money.</span>
+            <span>Checkout via Merchant of Record. Company details in <a href="terms.html" style="color:var(--green);text-decoration:underline;">Terms</a> before we charge.</span>
           </div>
         </div>
       </div>
 
-      <h2>Built with AI, run by people</h2>
-      <p>We’re AI-native, not AI-hype. We use code generation, automated testing and data tooling to build smaller, faster and cheaper — then we stay in the loop to review, test on real devices, and answer your emails.</p>
-      <p>That’s the impact we want: everyday software that used to cost a subscription now costs a coffee — because intelligence lowered the build cost and we chose to pass it on instead of pocketing it.</p>
-
-      <div class="quote">“If we can’t explain our pricing, our data handling, or our refund rule in one paragraph, we’ve failed. Transparency isn’t a marketing line for us — <b>it’s how we keep our price low and our conscience clear.</b>”<br><span style="font-size:13px;color:var(--muted);font-style:normal;">— PallettAi, on building calibrEAT</span></div>
-
-      <h2>Where we’re heading</h2>
-      <p>calibrEAT is the first of a small suite: basic services that should be cheap, private and done well — not bloated or addictive. We’ll ship in public, listen to your feedback, and keep the deal the same: pay once, own it, and know exactly what you signed up for.</p>
-      <p>Questions? Ideas? Want to hold us accountable? <a href="mailto:support@calibreat.co.uk" style="color:var(--green);">support@calibreat.co.uk</a> goes to a human. We read every message.</p>
+      <div class="closing">
+        <p><strong style="color:var(--text);">Built with AI, run by people.</strong> AI helps us build cheaper and faster — humans review, test on real devices and answer you at <a href="mailto:support@calibreat.co.uk" style="color:var(--green);">support@calibreat.co.uk</a>.</p>
+        <p>calibrEAT is the first of a small suite of tools that should be cheap, private and done well. Pay once, own it, know exactly what you signed up for.</p>
+      </div>
 
       <div class="cta-strip">
         <a class="btn btn-primary" href="download.html">Get the app free →</a>
