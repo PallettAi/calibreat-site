@@ -22,5 +22,6 @@ ios/
 .env.*
 !.env.example
 
-# License API runtime data
-apps/api/data/
+# Cloudflare / Wrangler (local dev only — never deploy)
+.wrangler/
+.dev.vars
