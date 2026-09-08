@@ -5,7 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Download — calibrEAT</title>
 <meta name="description" content="Download calibrEAT for Android (APK) and iOS. Free to install — one lifetime activation code delivered by email. Installation guides for both platforms." />
+<meta property="og:site_name" content="calibrEAT" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="og:title" content="Download — calibrEAT" />
+<meta property="og:url" content="https://calibreat.co.uk/download.html" />
 <meta name="theme-color" content="#0a1019" />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
+<meta http-equiv="X-Content-Type-Options" content="nosniff" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; form-action 'self' mailto: https:; frame-ancestors 'none'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://fonts.googleapis.com https://fonts.gstatic.com;" />
+<link rel="canonical" href="https://calibreat.co.uk/download.html" />
 <link rel="icon" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -188,7 +197,7 @@
 <header class="site-nav" id="site-nav">
   <nav class="nav-inner">
     <a class="brand" href="index.html">
-      <img data-mark alt="" />
+      <img data-mark alt="calibrEAT mark" />
       <span>calibr<span class="e">EAT</span></span>
     </a>
     <div class="nav-links">
@@ -237,7 +246,7 @@
             <span class="soon">Free</span>
           </div>
           <p>Sideload the APK (Android 8.0+). Your device will ask you to allow installs from unknown sources — normal for direct downloads.</p>
-          <div class="dl-actions"><a class="btn btn-outline" id="apk-btn" href="#">Download APK</a><a class="btn btn-dark" href="#guide-android" style="padding:12px 16px; font-size:13.5px;">Install guide ↓</a></div>
+          <div class="dl-actions"><a class="btn btn-outline" id="apk-btn" href="#apk-coming-soon">Download APK</a><a class="btn btn-dark" href="#guide-android" style="padding:12px 16px; font-size:13.5px;">Install guide ↓</a></div>
           <small class="dl-meta">v0.1 early build · Android 8.0+ · <a href="#guide-android" style="text-decoration:underline;">how to install</a></small>
         </div>
         <div class="dl-card reveal" style="transition-delay:.06s;" id="ios">
@@ -247,7 +256,7 @@
             <span class="soon">Soon</span>
           </div>
           <p>iOS build via TestFlight during beta, then App Store at launch. Same one-time license — no extra purchase on Apple.</p>
-          <div class="dl-actions"><a class="btn btn-outline" style="opacity:.5; pointer-events:none;" href="#">Coming soon</a><a class="btn btn-dark" href="#guide-ios" style="padding:12px 16px; font-size:13.5px;">Install guide ↓</a></div>
+          <div class="dl-actions"><span class="btn btn-outline" style="opacity:.5;" aria-disabled="true">Coming soon</span><a class="btn btn-dark" href="#guide-ios" style="padding:12px 16px; font-size:13.5px;">Install guide ↓</a></div>
           <small class="dl-meta">Requires iOS 15+ · <a href="#guide-ios" style="text-decoration:underline;">how to install</a></small>
         </div>
       </div>
@@ -309,7 +318,7 @@
     <div class="footer-grid">
       <div>
         <a class="brand" href="index.html">
-          <img data-mark alt="" style="width:27px; height:27px;" />
+          <img data-mark alt="calibrEAT mark" style="width:27px; height:27px;" />
           <span>calibr<span class="e">EAT</span></span>
         </a>
         <p class="foot-copy">Calibrate your eating lifestyle. Free to install, one lifetime unlock, and your data stays on your phone.</p>
@@ -339,6 +348,7 @@
           <li><a href="download.html">Download</a></li>
           <li><a href="download.html#android">Android APK</a></li>
           <li><a href="download.html#ios">iPhone / iPad (IPA)</a></li>
+          <li><a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open food database</a></li>
 
         </ul>
       </div>
@@ -351,22 +361,22 @@
 </footer>
 
 <script>
-  const buyButtons = document.querySelectorAll("#nav-buy, #hero-buy");
+  const buyButtons = document.querySelectorAll("#nav-buy");
   buyButtons.forEach((btn) => { btn.href = "license.html"; btn.setAttribute("aria-label", "Buy a lifetime activation code"); });
   const apkBtn = document.getElementById("apk-btn");
-  if (apkBtn) apkBtn.href = APK_URL;
-  document.getElementById("year").textContent = new Date().getFullYear();
+  if (apkBtn) { apkBtn.href = APK_URL; apkBtn.addEventListener("click", (e) => { if (APK_URL.startsWith("#")) { e.preventDefault(); const g=document.getElementById("guide-android"); if(g) g.scrollIntoView({behavior:"smooth"}); } }); }
+  const _y=document.getElementById("year"); if(_y) _y.textContent=new Date().getFullYear();
   const MARK_URI = "data:image/svg+xml;utf8," + encodeURIComponent(MARK_NIGHT_SVG.trim());
   document.querySelectorAll("img[data-mark]").forEach((img) => { img.src = MARK_URI; });
-  document.querySelector('link[rel="icon"]').setAttribute("href", MARK_URI);
+  const _ic=document.querySelector('link[rel="icon"]'); if(_ic) _ic.setAttribute("href", MARK_URI);
   const themeBtn = document.getElementById("theme-toggle");
   const themeMeta = document.querySelector('meta[name="theme-color"]');
   const applyTheme = (t) => { document.documentElement.setAttribute("data-theme", t); try { localStorage.setItem("calibreat-theme", t); } catch(e){} if (themeMeta) themeMeta.setAttribute("content", t==="light" ? "#ffffff" : "#0a1019"); };
   applyTheme(document.documentElement.getAttribute("data-theme") || "dark");
-  themeBtn.addEventListener("click", () => { const next = document.documentElement.getAttribute("data-theme")==="light" ? "dark" : "light"; applyTheme(next); });
+  if (themeBtn) themeBtn.addEventListener("click", () => { const next = document.documentElement.getAttribute("data-theme")==="light" ? "dark" : "light"; applyTheme(next); });
   const nav = document.getElementById("site-nav"); const burger = document.getElementById("nav-burger");
-  burger.addEventListener("click", () => { const open = nav.classList.toggle("open"); burger.setAttribute("aria-expanded", String(open)); });
-  nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => { nav.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); }));
+  if (burger && nav) burger.addEventListener("click", () => { const open = nav.classList.toggle("open"); burger.setAttribute("aria-expanded", String(open)); });
+  if (nav) nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => { nav.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); }));
   const io = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .12 });
   document.querySelectorAll(".reveal").forEach((el,i) => { if (i<3) { el.classList.add("in"); return; } io.observe(el); });
 </script>

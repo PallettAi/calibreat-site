@@ -5,7 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>calibrEAT — Calibrate your eating lifestyle</title>
 <meta name="description" content="Free calorie tracker for Android. Log food, scan barcodes, track water &amp; weight — no ads, no subscriptions. One lifetime activation code, delivered by email." />
+<meta property="og:site_name" content="calibrEAT" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="og:title" content="calibrEAT — Calibrate your eating lifestyle" />
+<meta property="og:url" content="https://calibreat.co.uk/" />
 <meta name="theme-color" content="#0a1019" />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
+<meta http-equiv="X-Content-Type-Options" content="nosniff" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; form-action 'self' mailto: https:; frame-ancestors 'none'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://fonts.googleapis.com https://fonts.gstatic.com;" />
+<link rel="canonical" href="https://calibreat.co.uk/" />
 <link rel="icon" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -566,7 +575,7 @@
 <header class="site-nav" id="site-nav">
   <nav class="nav-inner">
     <a class="brand" href="#top">
-      <img data-mark alt="" />
+      <img data-mark alt="calibrEAT mark" />
       <span>calibr<span class="e">EAT</span></span>
     </a>
     <div class="nav-links">
@@ -578,7 +587,7 @@
         <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/></svg>
         <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg>
       </button>
-      <a class="btn btn-lime nav-cta" id="nav-buy" href="#">Buy lifetime</a>
+      <a class="btn btn-lime nav-cta" id="nav-buy" href="license.html">Buy lifetime</a>
     </div>
     <button class="nav-burger" id="nav-burger" aria-label="Menu" aria-expanded="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
@@ -718,7 +727,7 @@
     <div class="footer-grid">
       <div>
         <a class="brand" href="#top">
-          <img data-mark alt="" style="width: 27px; height: 27px;" />
+          <img data-mark alt="calibrEAT mark" style="width: 27px; height: 27px;" />
           <span>calibr<span class="e">EAT</span></span>
         </a>
         <p class="foot-copy">Calibrate your eating lifestyle. Free to install, one lifetime unlock, and your data stays on your phone.</p>
@@ -752,7 +761,7 @@
           <li><a href="download.html">Download</a></li>
           <li><a href="download.html#android">Android APK</a></li>
           <li><a href="download.html#ios">iOS — coming soon</a></li>
-          <li><a href="#">Open food database</a></li>
+          <li><a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open food database</a></li>
         </ul>
       </div>
     </div>
@@ -765,19 +774,19 @@
 
 <script>
   // Wire links + footer year. Purchase CTAs go to the License key page.
-  const buyButtons = document.querySelectorAll("#nav-buy, #hero-buy, #band-buy");
+  const buyButtons = document.querySelectorAll("#nav-buy, #hero-buy");
   buyButtons.forEach((btn) => {
     btn.href = "license.html";
     btn.setAttribute("aria-label", "Buy a lifetime activation code");
   });
   const apkBtn = document.getElementById("apk-btn");
-  if (apkBtn) apkBtn.href = APK_URL;
-  document.getElementById("year").textContent = new Date().getFullYear();
+  if (apkBtn) { apkBtn.href = APK_URL; if (APK_URL.startsWith("#")) apkBtn.addEventListener("click", (e) => { e.preventDefault(); const el=document.getElementById("guide-android"); if(el) el.scrollIntoView({behavior:"smooth"}); }); }
+  const _y=document.getElementById("year"); if(_y) _y.textContent=new Date().getFullYear();
 
   // Inject the self-contained night mark into images + favicon.
   const MARK_URI = "data:image/svg+xml;utf8," + encodeURIComponent(MARK_NIGHT_SVG.trim());
   document.querySelectorAll("img[data-mark]").forEach((img) => { img.src = MARK_URI; });
-  document.querySelector('link[rel="icon"]').setAttribute("href", MARK_URI);
+  const _ic=document.querySelector('link[rel="icon"]'); if(_ic) _ic.setAttribute("href", MARK_URI);
 
   // Theme toggle (dark is the default).
   const themeBtn = document.getElementById("theme-toggle");
@@ -788,7 +797,7 @@
     if (themeMeta) themeMeta.setAttribute("content", t === "light" ? "#ffffff" : "#0a1019");
   };
   applyTheme(document.documentElement.getAttribute("data-theme") || "dark");
-  themeBtn.addEventListener("click", () => {
+  if (themeBtn) themeBtn.addEventListener("click", () => {
     const next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
     applyTheme(next);
   });
@@ -796,11 +805,11 @@
   // Mobile menu.
   const nav = document.getElementById("site-nav");
   const burger = document.getElementById("nav-burger");
-  burger.addEventListener("click", () => {
+  if (burger && nav) burger.addEventListener("click", () => {
     const open = nav.classList.toggle("open");
     burger.setAttribute("aria-expanded", String(open));
   });
-  nav.querySelectorAll("a").forEach((a) =>
+  if (nav) nav.querySelectorAll("a").forEach((a) =>
     a.addEventListener("click", () => { nav.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); })
   );
 

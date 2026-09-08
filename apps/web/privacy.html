@@ -5,7 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Privacy Policy — calibrEAT</title>
 <meta name="description" content="How calibrEAT handles your data. The app stores your food, water and weight logs on your device. The website is static and uses no cookies. UK GDPR." />
+<meta property="og:site_name" content="calibrEAT" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="og:title" content="Privacy Policy — calibrEAT" />
+<meta property="og:url" content="https://calibreat.co.uk/privacy.html" />
 <meta name="theme-color" content="#0a1019" />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
+<meta http-equiv="X-Content-Type-Options" content="nosniff" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; form-action 'self' mailto: https:; frame-ancestors 'none'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://fonts.googleapis.com https://fonts.gstatic.com;" />
+<link rel="canonical" href="https://calibreat.co.uk/privacy.html" />
 <link rel="icon" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -94,7 +103,7 @@
 <body>
 <header class="site-nav" id="site-nav">
   <nav class="nav-inner">
-    <a class="brand" href="index.html"><img data-mark alt="" /><span>calibr<span class="e">EAT</span></span></a>
+    <a class="brand" href="index.html"><img data-mark alt="calibrEAT mark" /><span>calibr<span class="e">EAT</span></span></a>
     <div class="nav-links">
       <a class="link" href="index.html#features">Features</a>
       <a class="link" href="index.html#faq">FAQ</a>
@@ -252,7 +261,7 @@
   <div class="wrap">
     <div class="footer-grid">
       <div>
-        <a class="brand" href="index.html"><img data-mark alt="" style="width:27px;height:27px;" /><span>calibr<span class="e">EAT</span></span></a>
+        <a class="brand" href="index.html"><img data-mark alt="calibrEAT mark" style="width:27px;height:27px;" /><span>calibr<span class="e">EAT</span></span></a>
         <p class="foot-copy">Calibrate your eating lifestyle. Free to install, one lifetime unlock, and your data stays on your phone.</p>
         <div class="foot-trust"><span class="chip">No ads</span><span class="chip">No subscriptions</span><span class="chip">No tracking</span></div>
       </div>
@@ -267,15 +276,15 @@
 <script>
   const MARK_URI="data:image/svg+xml;utf8,"+encodeURIComponent(MARK_NIGHT_SVG.trim());
   document.querySelectorAll("img[data-mark]").forEach(i=>i.src=MARK_URI);
-  document.querySelector('link[rel="icon"]').setAttribute("href",MARK_URI);
-  document.getElementById("year").textContent=new Date().getFullYear();
+  const _ic=document.querySelector('link[rel="icon"]'); if(_ic) _ic.setAttribute("href",MARK_URI);
+  const _y=document.getElementById("year"); if(_y) _y.textContent=new Date().getFullYear();
   const themeBtn=document.getElementById("theme-toggle"),themeMeta=document.querySelector('meta[name="theme-color"]');
   const applyTheme=t=>{document.documentElement.setAttribute("data-theme",t);try{localStorage.setItem("calibreat-theme",t);}catch(e){} if(themeMeta)themeMeta.setAttribute("content",t==="light"?"#ffffff":"#0a1019");};
   applyTheme(document.documentElement.getAttribute("data-theme")||"dark");
-  themeBtn.addEventListener("click",()=>{const n=document.documentElement.getAttribute("data-theme")==="light"?"dark":"light";applyTheme(n);});
+  if (themeBtn) themeBtn.addEventListener("click",()=>{const n=document.documentElement.getAttribute("data-theme")==="light"?"dark":"light";applyTheme(n);});
   const nav=document.getElementById("site-nav"),burger=document.getElementById("nav-burger");
-  burger.addEventListener("click",()=>{const o=nav.classList.toggle("open");burger.setAttribute("aria-expanded",String(o));});
-  nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>{nav.classList.remove("open");burger.setAttribute("aria-expanded","false");}));
+  if (burger && nav) burger.addEventListener("click",()=>{const o=nav.classList.toggle("open");burger.setAttribute("aria-expanded",String(o));});
+  if (nav) nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>{nav.classList.remove("open");burger.setAttribute("aria-expanded","false");}));
 </script>
 </body>
 </html>
