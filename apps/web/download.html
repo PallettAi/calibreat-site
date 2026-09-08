@@ -178,15 +178,30 @@
   .reveal { opacity:0; transform: translateY(16px); transition: opacity .65s ease, transform .65s ease; }
   .reveal.in { opacity:1; transform:none; }
   @media (max-width: 880px) {
-    .download, .guide-grid { grid-template-columns: 1fr; }
+    .steps, .features, .download { grid-template-columns: 1fr; }
     .footer-grid { grid-template-columns: 1fr 1fr; }
-    .nav-inner { flex-wrap:wrap; padding-bottom:11px; }
-    .nav-links { display:none; flex:1 1 100%; order:5; flex-direction:column; align-items:stretch; gap:4px; padding:12px 2px 2px; margin-top:10px; border-top:1px solid var(--line); background: var(--nav-drawer-bg); }
-    .site-nav.open .nav-links { display:flex; }
-    .nav-links .link { padding:13px 2px; font-size:16px; color:var(--text); border-radius:10px; }
-    .nav-links .link::after { display:none; }
-    .nav-cta { margin:10px 0 0; width:100%; }
-    .nav-burger { display:block; }
+    .nav-inner { flex-wrap: wrap; }
+    .site-nav.open { background: var(--nav-drawer-bg); backdrop-filter: none; -webkit-backdrop-filter: none; border-bottom-color: transparent; }
+    .nav-links {
+      display: none; position: fixed; inset: 0; top: var(--nav-h, 46px);
+      flex-direction: column; align-items: stretch; gap: 2px;
+      padding: 18px 0 24px; margin: 0;
+      border-top: 1px solid var(--line);
+      background: var(--nav-drawer-bg);
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      box-shadow: 0 24px 48px -16px rgba(0,0,0,.45);
+      z-index: 60;
+    }
+    .site-nav.open .nav-links { display: flex; }
+    .nav-links .link { padding: 14px 24px; font-size: 16px; color: var(--text); border-radius: 0; }
+    .nav-links .link:active { background: var(--line); }
+    .nav-links .theme-toggle { margin: 10px 24px 0; align-self: flex-start; }
+    .nav-links .link::after { display: none; }
+    .nav-cta { margin: 14px 24px 0; width: calc(100% - 48px); }
+    .nav-burger { display: block; }
+    body.nav-menu-open { overflow: hidden; }
+    body.nav-menu-open::before { content: ""; position: fixed; inset: 0; top: var(--nav-h, 46px); background: rgba(0,0,0,.32); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); z-index: 59; pointer-events: none; }
+    [data-theme="light"] body.nav-menu-open::before { background: rgba(10,16,25,.08); }
   }
   @media (max-width: 520px) { .wrap { padding:0 18px; } .hero-cta .btn { width:100%; } }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .reveal { opacity:1; transform:none; transition:none; } .dl-card::before { animation:none; } }
@@ -375,8 +390,13 @@
   applyTheme(document.documentElement.getAttribute("data-theme") || "dark");
   if (themeBtn) themeBtn.addEventListener("click", () => { const next = document.documentElement.getAttribute("data-theme")==="light" ? "dark" : "light"; applyTheme(next); });
   const nav = document.getElementById("site-nav"); const burger = document.getElementById("nav-burger");
-  if (burger && nav) burger.addEventListener("click", () => { const open = nav.classList.toggle("open"); burger.setAttribute("aria-expanded", String(open)); });
-  if (nav) nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => { nav.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); }));
+  const syncNavH = () => { if (nav) document.documentElement.style.setProperty('--nav-h', nav.getBoundingClientRect().height + 'px'); };
+  const closeNav = () => { if (!nav || !burger) return; nav.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); document.body.classList.remove("nav-menu-open"); };
+  if (burger && nav) burger.addEventListener("click", () => { const open = nav.classList.toggle("open"); burger.setAttribute("aria-expanded", String(open)); document.body.classList.toggle("nav-menu-open", open); if (open) syncNavH(); else document.documentElement.style.removeProperty('--nav-h'); });
+  if (nav) nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => { closeNav(); }));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeNav(); });
+  document.addEventListener('click', (e) => { if (!nav || !nav.classList.contains('open')) return; if (!nav.contains(e.target)) closeNav(); });
+  window.addEventListener('resize', () => { if (nav && nav.classList.contains('open')) syncNavH(); });
   const io = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .12 });
   document.querySelectorAll(".reveal").forEach((el,i) => { if (i<3) { el.classList.add("in"); return; } io.observe(el); });
 </script>
