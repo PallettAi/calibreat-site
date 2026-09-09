@@ -13,7 +13,6 @@
 <meta name="theme-color" content="#0a1019" />
 <meta name="referrer" content="strict-origin-when-cross-origin" />
 <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; form-action 'self' mailto: https:; frame-ancestors 'none'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://fonts.googleapis.com https://fonts.gstatic.com;" />
 <link rel="canonical" href="https://calibreat.co.uk/privacy.html" />
 <link rel="icon" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -43,15 +42,17 @@
   [data-theme="light"]{color-scheme:light;--bg:#f6f7f4;--surface:#fff;--surface-2:#f0f2ee;--text:#101820;--text-2:#46525c;--muted:#67727c;--line:rgba(13,21,30,.09);--line-strong:rgba(13,21,30,.16);--accent:#0e6b38;--kicker-fg:#0e6b38;--tile-fg:#0e6b38;--icon-bg:#0a1019;--nav-bg:rgba(255,255,255,.82);--nav-link:#46525c;--nav-link-hover:#0a1019;--nav-drawer-bg:#fff;--hero-bg:var(--bg);--hero-text:#0a1019;--hero-lede:#46525c;--hero-grid:rgba(13,21,30,.05);--hero-line:rgba(13,21,30,.08);--footer-bg:var(--bg);--footer-color:#46525c;--footer-link-hover:#0e6b38;}
   *{box-sizing:border-box;}html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}body{margin:0;font-family:var(--font-body);color:var(--text);background:var(--bg);line-height:1.6;font-size:16px;transition:background-color .3s ease,color .3s ease;-webkit-font-smoothing:antialiased;}a{color:inherit;}img,svg{display:block;}.wrap{max-width:1024px;margin:0 auto;padding:0 24px;}h1,h2,h3{font-family:var(--font-display);}
   .site-nav{position:sticky;top:0;z-index:60;background:var(--nav-bg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--hero-line);transition:background-color .3s ease,border-color .3s ease;}
-  .nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:6px 24px;max-width:1024px;margin:0 auto;}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:9px 24px;max-width:1024px;margin:0 auto;}
   .brand{display:flex;align-items:center;gap:10px;font-size:24px;font-weight:700;line-height:1;letter-spacing:-.02em;font-family:var(--font-display);color:var(--text);text-decoration:none;}
   .brand img{width:30px;height:30px;}.brand .e{color:var(--accent);}
   .nav-links{display:flex;align-items:center;gap:20px;}
   .nav-links .link{color:var(--nav-link);text-decoration:none;font-size:14px;font-weight:500;position:relative;padding:4px 0;transition:color .3s ease;}
   .nav-links .link::after{content:"";position:absolute;left:0;right:100%;bottom:-1px;height:2px;background:var(--accent);border-radius:2px;transition:right .2s ease;}
   .nav-links .link:hover{color:var(--nav-link-hover);}.nav-links .link:hover::after{right:0;}
-  .nav-cta{padding:6px 15px;font-size:13.5px;}
-  .nav-burger{display:none;background:none;border:1px solid var(--line-strong);border-radius:9px;padding:5px 8px;cursor:pointer;color:var(--text);}
+  .nav-links .link[aria-current="page"]{color:var(--nav-link-hover);}.nav-links .link[aria-current="page"]::after{right:0;}
+  .nav-burger{display:none;background:none;border:1px solid var(--line-strong);border-radius:9px;padding:6px 8px;cursor:pointer;color:var(--text);transition:border-color .2s ease,color .3s ease,background .2s ease;}
+  .nav-burger:hover{border-color:var(--green);background:rgba(31,157,85,.1);}
+  .nav-burger .ico-x{display:none;}.site-nav.open .nav-burger .ico-burger{display:none;}.site-nav.open .nav-burger .ico-x{display:block;}
   .nav-burger svg{width:18px;height:18px;}
   .theme-toggle{display:inline-flex;align-items:center;justify-content:center;background:none;border:1px solid var(--line-strong);border-radius:9px;padding:6px 7px;cursor:pointer;color:var(--text);line-height:0;transition:border-color .2s ease,color .3s ease,background .2s ease;}
   .theme-toggle:hover{border-color:var(--green);background:rgba(31,157,85,.1);}
@@ -96,7 +97,7 @@
   .footer ul a:hover{color:var(--footer-link-hover);}
   .footer-bottom{border-top:1px solid var(--line);padding:18px 0 22px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);}
   .footer-bottom .heart{color:var(--accent);}
-  @media(max-width:880px){.footer-grid{grid-template-columns:1fr 1fr;}.nav-inner{flex-wrap:wrap;}.site-nav.open{background:var(--nav-drawer-bg);backdrop-filter:none;-webkit-backdrop-filter:none;border-bottom-color:transparent;}.nav-links{display:none;position:fixed;inset:0;top:var(--nav-h,46px);flex-direction:column;align-items:stretch;gap:2px;padding:18px 0 24px;margin:0;border-top:1px solid var(--line);background:var(--nav-drawer-bg);overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 24px 48px -16px rgba(0,0,0,.45);z-index:60;}.site-nav.open .nav-links{display:flex;}.nav-links .link{padding:14px 24px;font-size:16px;color:var(--text);border-radius:0;}.nav-links .link:active{background:var(--line);}.nav-links .link::after{display:none;}.nav-links .theme-toggle{margin:10px 24px 0;align-self:flex-start;}.nav-cta{margin:14px 24px 0;width:calc(100% - 48px);}.nav-burger{display:block;}body.nav-menu-open{overflow:hidden;}body.nav-menu-open::before{content:"";position:fixed;inset:0;top:var(--nav-h,46px);background:rgba(0,0,0,.32);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:59;pointer-events:none;}[data-theme="light"] body.nav-menu-open::before{background:rgba(10,16,25,.08);}}
+  @media(max-width:880px){.footer-grid{grid-template-columns:1fr 1fr;}.nav-inner{flex-wrap:wrap;}.site-nav.open{background:var(--nav-drawer-bg);backdrop-filter:none;-webkit-backdrop-filter:none;border-bottom-color:transparent;}.nav-links{display:none;position:fixed;inset:0;top:var(--nav-h,46px);flex-direction:column;align-items:stretch;gap:2px;padding:18px 0 24px;margin:0;border-top:1px solid var(--line);background:var(--nav-drawer-bg);overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 24px 48px -16px rgba(0,0,0,.45);z-index:60;}.site-nav.open .nav-links{display:flex;}.nav-links .link{padding:14px 24px;font-size:16px;color:var(--text);border-radius:0;}.nav-links .link:active{background:var(--line);}.nav-links .link::after{display:none;}.nav-links .theme-toggle{margin:10px 24px 0;align-self:flex-start;}.nav-burger{display:block;}body.nav-menu-open{overflow:hidden;}body.nav-menu-open::before{content:"";position:fixed;inset:0;top:var(--nav-h,46px);background:rgba(0,0,0,.32);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:59;pointer-events:none;}[data-theme="light"] body.nav-menu-open::before{background:rgba(10,16,25,.08);}}
   @media(max-width:520px){.wrap{padding:0 18px;}}
 </style>
 </head>
@@ -115,7 +116,7 @@
         <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg>
       </button>
     </div>
-    <button class="nav-burger" id="nav-burger" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <button class="nav-burger" id="nav-burger" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><g class="ico-burger"><path d="M4 7h16M4 12h16M4 17h16"/></g><g class="ico-x"><path d="M6 6l12 12M18 6 6 18"/></g></svg></button>
   </nav>
 </header>
 
@@ -162,7 +163,7 @@
       <p>This policy covers:</p>
       <ul>
         <li><b>Website</b> — <code>calibreat.co.uk</code> and subpages (<code>index.html</code>, <code>license.html</code>, <code>download.html</code>, and these legal pages), hosted as a static site on <b>GitHub Pages</b>.</li>
-        <li><b>App</b> — calibrEAT for Android (APK sideload) and iOS (IPA/TestFlight → App Store) — currently in pre-launch. App features: food diary, barcode scan, water &amp; weight tracking, goals &amp; insights.</li>
+        <li><b>App</b> — calibrEAT for Android (APK sideload; build in progress) and iOS (App Store later) — currently in pre-launch. App features: food diary, barcode scan, water &amp; weight tracking, True Burn Learning, goals &amp; insights.</li>
         <li><b>License service</b> — the activation API (Cloudflare Worker + Durable Object) that verifies your email and binds your lifetime code to a device; and the <b>Merchant of Record</b> checkout that sells the code and emails it.</li>
       </ul>
       <p>It does not cover Open Food Facts, USDA FoodData Central, Apple, Google or your email provider — they have their own policies.</p>
@@ -192,7 +193,7 @@
       <h2 id="activation">5. Activation data we do receive</h2>
       <p>To enforce “one code, one email, one active device” we must verify ownership outside the device. The three-step gate is the <em>only</em> personal data flow from the app to our servers:</p>
       <ol>
-        <li><b><code>POST /v1/request-verification { email }</code></b> — we generate a 6-digit OTP, store only <code>hash(email|otp)</code>, and send the code via <b>Resend</b> (<code>no-reply@calibreat.app</code>). OTP: 10-minute expiry, single-use, 5-attempt lockout, 30 s resend cooldown.</li>
+        <li><b><code>POST /v1/request-verification { email }</code></b> — we generate a 6-digit OTP, store only <code>hash(email|otp)</code>, and send the code via <b>Resend</b> (<code>no-reply@calibreat.co.uk</code>). OTP: 10-minute expiry, single-use, 5-attempt lockout, 30 s resend cooldown.</li>
         <li><b><code>POST /v1/verify-email { email, otp }</code></b> — if valid we store the lower-cased verified email against the install. No password is ever set.</li>
         <li><b><code>POST /v1/activate { code, email, installId }</code></b> (and later <code>/v1/validate</code>, <code>/v1/deactivate</code>) — we store <b>hashed</b> license codes (SHA-256) bound to the buyer email and the <code>installId</code>. A different email with the same code is rejected; the same pair from a new device moves the slot (so you can switch phones). Refunds/chargebacks → the code is <b>revoked</b> and the app re-locks on next validation.</li>
       </ol>
@@ -262,7 +263,7 @@
     <div class="footer-grid">
       <div>
         <a class="brand" href="index.html"><img data-mark alt="calibrEAT mark" style="width:27px;height:27px;" /><span>calibr<span class="e">EAT</span></span></a>
-        <p class="foot-copy">Calibrate your eating lifestyle. Free to install, one lifetime unlock, and your data stays on your phone.</p>
+        <p class="foot-copy">Calibrate your eating lifestyle. One lifetime unlock, and your data stays on your phone.</p>
         <div class="foot-trust"><span class="chip">No ads</span><span class="chip">No subscriptions</span><span class="chip">No tracking</span></div>
       </div>
       <div><h4>Product</h4><ul><li><a href="license.html">Lifetime Activation Setup</a></li><li><a href="download.html">Download</a></li><li><a href="about.html">About us</a></li><li><a href="index.html#features">Features</a></li><li><a href="index.html#faq">FAQ</a></li></ul></div>
@@ -283,7 +284,7 @@
   applyTheme(document.documentElement.getAttribute("data-theme")||"dark");
   if (themeBtn) themeBtn.addEventListener("click",()=>{const n=document.documentElement.getAttribute("data-theme")==="light"?"dark":"light";applyTheme(n);});
   const nav=document.getElementById("site-nav"),burger=document.getElementById("nav-burger");
-  const syncNavH=()=>{if(nav)document.documentElement.style.setProperty("--nav-h",nav.getBoundingClientRect().height+"px")};const closeNav=()=>{if(!nav||!burger)return;nav.classList.remove("open");burger.setAttribute("aria-expanded","false");document.body.classList.remove("nav-menu-open");document.documentElement.style.removeProperty("--nav-h")};if (burger && nav) burger.addEventListener("click",()=>{const o=nav.classList.toggle("open");burger.setAttribute("aria-expanded",String(o));document.body.classList.toggle("nav-menu-open",o);if(o)syncNavH();else document.documentElement.style.removeProperty("--nav-h")});if (nav) nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>closeNav()));document.addEventListener("keydown",e=>{if(e.key==="Escape")closeNav()});document.addEventListener("click",e=>{if(!nav||!nav.classList.contains("open"))return;if(!nav.contains(e.target))closeNav()});window.addEventListener("resize",()=>{if(nav&&nav.classList.contains("open"))syncNavH()});
+  const syncNavH=()=>{if(nav)document.documentElement.style.setProperty("--nav-h",nav.getBoundingClientRect().height+"px")};const closeNav=()=>{if(!nav||!burger)return;nav.classList.remove("open");burger.setAttribute("aria-expanded","false");burger.setAttribute("aria-label","Menu");document.body.classList.remove("nav-menu-open");document.documentElement.style.removeProperty("--nav-h")};if (burger && nav) burger.addEventListener("click",()=>{const o=nav.classList.toggle("open");burger.setAttribute("aria-expanded",String(o));burger.setAttribute("aria-label",o?"Close menu":"Menu");document.body.classList.toggle("nav-menu-open",o);if(o)syncNavH();else document.documentElement.style.removeProperty("--nav-h")});if (nav) nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>closeNav()));document.addEventListener("keydown",e=>{if(e.key==="Escape")closeNav()});document.addEventListener("click",e=>{if(!nav||!nav.classList.contains("open"))return;if(!nav.contains(e.target))closeNav()});window.addEventListener("resize",()=>{if(nav&&nav.classList.contains("open"))syncNavH()});
 </script>
 </body>
 </html>

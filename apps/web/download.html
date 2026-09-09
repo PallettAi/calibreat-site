@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Download — calibrEAT</title>
-<meta name="description" content="Download calibrEAT for Android (APK) and iOS. Free to install — one lifetime activation code delivered by email. Installation guides for both platforms." />
+<meta name="description" content="Download calibrEAT for Android. The APK is a build in progress. iOS later. One lifetime activation code for £4.99 inc VAT, delivered by email." />
 <meta property="og:site_name" content="calibrEAT" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary" />
@@ -13,7 +13,6 @@
 <meta name="theme-color" content="#0a1019" />
 <meta name="referrer" content="strict-origin-when-cross-origin" />
 <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; form-action 'self' mailto: https:; frame-ancestors 'none'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://fonts.googleapis.com https://fonts.gstatic.com;" />
 <link rel="canonical" href="https://calibreat.co.uk/download.html" />
 <link rel="icon" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -106,15 +105,19 @@
   .btn-outline:hover { border-color: var(--green); color: var(--green-deep); background: rgba(31,157,85,.04); }
   .btn-block { width:100%; } .btn-lg { padding:17px 28px; font-size:16px; }
   .site-nav { position:sticky; top:0; z-index:60; background: var(--nav-bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom:1px solid var(--hero-line); transition: background-color .3s ease, border-color .3s ease; }
-  .nav-inner { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:6px 24px; max-width:1024px; margin:0 auto; }
+  .nav-inner { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:9px 24px; max-width:1024px; margin:0 auto; }
   .brand { display:flex; align-items:center; gap:10px; font-size:24px; font-weight:700; line-height:1; letter-spacing:-.02em; font-family:var(--font-display); color:var(--text); text-decoration:none; transition: color .3s ease; }
   .brand img, .brand svg { width:30px; height:30px; } .brand .e { color: var(--accent); }
   .nav-links { display:flex; align-items:center; gap:20px; }
   .nav-links .link { color: var(--nav-link); text-decoration:none; font-size:14px; font-weight:500; position:relative; padding:4px 0; transition: color .3s ease; }
   .nav-links .link::after { content:""; position:absolute; left:0; right:100%; bottom:-1px; height:2px; background: var(--accent); border-radius:2px; transition: right .2s ease; }
   .nav-links .link:hover { color: var(--nav-link-hover); } .nav-links .link:hover::after { right:0; }
-  .nav-cta { padding:6px 15px; font-size:13.5px; }
-  .nav-burger { display:none; background:none; border:1px solid var(--line-strong); border-radius:9px; padding:5px 8px; cursor:pointer; color:var(--text); }
+  .nav-links .link[aria-current="page"] { color: var(--nav-link-hover); } .nav-links .link[aria-current="page"]::after { right:0; }
+  .nav-burger { display:none; background:none; border:1px solid var(--line-strong); border-radius:9px; padding:6px 8px; cursor:pointer; color:var(--text); transition: border-color .2s ease, color .3s ease, background .2s ease; }
+  .nav-burger:hover { border-color: var(--green); background: rgba(31,157,85,.1); }
+  .nav-burger .ico-x { display:none; }
+  .site-nav.open .nav-burger .ico-burger { display:none; }
+  .site-nav.open .nav-burger .ico-x { display:block; }
   .nav-burger svg { width:18px; height:18px; }
   .theme-toggle { display:inline-flex; align-items:center; justify-content:center; background:none; border:1px solid var(--line-strong); border-radius:9px; padding:6px 7px; cursor:pointer; color:var(--text); line-height:0; transition: border-color .2s ease, color .3s ease, background .2s ease; }
   .theme-toggle:hover { border-color: var(--green); background: rgba(31,157,85,.1); }
@@ -135,22 +138,21 @@
   .hero.hero-centered .lede { margin-left:auto; margin-right:auto; }
   .hero-cta { display:flex; flex-wrap:wrap; gap:12px; align-items:center; } .hero.hero-centered .hero-cta { justify-content:center; }
   /* Download cards */
-  .download { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
-  .dl-card { position:relative; background: var(--surface); border:1px solid var(--line); border-radius: var(--radius-lg); padding:22px; display:flex; flex-direction:column; }
-  .dl-card::before { content:""; position:absolute; inset:-1px; border-radius:inherit; pointer-events:none; box-shadow: 0 0 0 1px rgba(31,157,85,.12), 0 0 16px -6px rgba(31,157,85,.2); animation: tile-pulse 3.4s ease-in-out infinite; }
-  .dl-card:nth-child(2)::before { animation-delay: 1.15s; }
-  @keyframes tile-pulse { 0%,100% { box-shadow: 0 0 0 1px rgba(31,157,85,.1), 0 0 14px -6px rgba(31,157,85,.15); } 50% { box-shadow: 0 0 0 1.5px rgba(31,157,85,.4), 0 0 20px -2px rgba(31,157,85,.4); } }
-  .dl-head { display:flex; align-items:center; gap:13px; margin-bottom:10px; }
+  .download { display:grid; grid-template-columns: 1fr 1fr; gap:18px; }
+  .dl-card { position:relative; background: var(--surface); border:1px solid var(--line); border-radius: var(--radius-lg); padding:24px 22px; display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--shadow-sm); transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease; }
+  .dl-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:rgba(31,157,85,.14); }
+  .dl-head { display:flex; align-items:center; gap:13px; margin-bottom:12px; }
   .dl-head .os-ic { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; background: var(--icon-bg); color:#fff; flex:none; transition: background-color .3s ease; }
   .dl-head .os-ic.soon-os { background: var(--line); color: var(--muted); }
   .dl-head .os-name { font-family:var(--font-display); font-weight:700; font-size:18px; letter-spacing:-.01em; }
   .dl-head .soon { font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--tag-fg); background: rgba(31,157,85,.12); border-radius:999px; padding:4px 9px; margin-left:8px; }
-  .dl-card p { color:var(--text-2); font-size:14.5px; margin:0 0 6px; flex:1; }
-  .dl-meta { display:block; margin-top:10px; color:var(--muted); font-size:12px; }
-  .dl-actions { display:flex; gap:10px; margin-top:14px; align-items:center; }
+  .dl-card p { color:var(--text-2); font-size:14.5px; margin:0 0 6px; flex:1; line-height:1.6; }
+  .dl-meta { display:block; margin-top:12px; color:var(--muted); font-size:12px; line-height:1.5; }
+  .dl-actions { display:flex; gap:10px; margin-top:16px; align-items:center; }
   /* Guides */
-  .guide-grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; align-items:start; }
-  .guide-card { background: var(--surface); border:1px solid var(--line); border-radius: var(--radius-lg); padding:24px; position:relative; }
+  .guide-grid { display:grid; grid-template-columns: 1fr 1fr; gap:18px; align-items:start; }
+  .guide-card { background: var(--surface); border:1px solid var(--line); border-radius: var(--radius-lg); padding:24px; position:relative; overflow:hidden; box-shadow:var(--shadow-sm); transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease; }
+  .guide-card:hover { transform:translateY(-1px); box-shadow:var(--shadow-md); }
   .guide-card.full { grid-column: 1 / -1; }
   .guide-card h3 { margin:0 0 6px; font-size:19px; letter-spacing:-.015em; display:flex; align-items:center; gap:10px; }
   .guide-card h3 .g-ic { width:36px; height:36px; border-radius:10px; display:grid; place-items:center; background: linear-gradient(145deg, rgba(31,157,85,.14), rgba(183,233,60,.1)); border:1px solid rgba(31,157,85,.18); color:var(--tile-fg); flex:none; }
@@ -197,14 +199,13 @@
     .nav-links .link:active { background: var(--line); }
     .nav-links .theme-toggle { margin: 10px 24px 0; align-self: flex-start; }
     .nav-links .link::after { display: none; }
-    .nav-cta { margin: 14px 24px 0; width: calc(100% - 48px); }
     .nav-burger { display: block; }
     body.nav-menu-open { overflow: hidden; }
     body.nav-menu-open::before { content: ""; position: fixed; inset: 0; top: var(--nav-h, 46px); background: rgba(0,0,0,.32); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); z-index: 59; pointer-events: none; }
     [data-theme="light"] body.nav-menu-open::before { background: rgba(10,16,25,.08); }
   }
   @media (max-width: 520px) { .wrap { padding:0 18px; } .hero-cta .btn { width:100%; } }
-  @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .reveal { opacity:1; transform:none; transition:none; } .dl-card::before { animation:none; } }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .reveal { opacity:1; transform:none; transition:none; } }
 </style>
 </head>
 <body>
@@ -217,7 +218,7 @@
     </a>
     <div class="nav-links">
       <a class="link" href="index.html#features">Features</a>
-      <a class="link" href="download.html">Download</a>
+      <a class="link" href="download.html" aria-current="page">Download</a>
       <a class="link" href="license.html">Lifetime Activation Setup</a>
       <a class="link" href="about.html">About us</a>
       <a class="link" href="index.html#faq">FAQ</a>
@@ -227,7 +228,7 @@
       </button>
     </div>
     <button class="nav-burger" id="nav-burger" aria-label="Menu" aria-expanded="false">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><g class="ico-burger"><path d="M4 7h16M4 12h16M4 17h16"/></g><g class="ico-x"><path d="M6 6l12 12M18 6 6 18"/></g></svg>
     </button>
   </nav>
 </header>
@@ -238,9 +239,9 @@
     <div class="hero-grid-bg"></div>
     <div class="wrap">
       <h1>Download <span class="lime">calibrEAT</span></h1>
-      <p class="lede">Free to install on Android and iPhone. One lifetime purchase unlocks everything — no subscription, no ads.</p>
+      <p class="lede">Android APK is a build in progress. iOS later. One lifetime purchase (£4.99 inc VAT) unlocks everything — no subscription, no ads.</p>
       <div class="hero-cta">
-        <a class="btn btn-primary btn-lg" id="hero-dl" href="#android">Get the app free <span class="arr">→</span></a>
+        <a class="btn btn-primary btn-lg" id="hero-dl" href="#android">Android status <span class="arr">→</span></a>
         <a class="btn btn-dark btn-lg" href="license.html">Lifetime Activation Setup</a>
       </div>
     </div>
@@ -256,21 +257,21 @@
       <div class="download">
         <div class="dl-card reveal" id="android">
           <div class="dl-head">
-            <div class="os-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></div>
+            <div class="os-ic soon-os"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></div>
             <div><div class="os-name">Android</div><small>Direct APK</small></div>
-            <span class="soon">Free</span>
+            <span class="soon">In progress</span>
           </div>
-          <p>Sideload the APK (Android 8.0+). Your device will ask you to allow installs from unknown sources — normal for direct downloads.</p>
-          <div class="dl-actions"><a class="btn btn-outline" id="apk-btn" href="#apk-coming-soon">Download APK</a><a class="btn btn-dark" href="#guide-android" style="padding:12px 16px; font-size:13.5px;">Install guide ↓</a></div>
-          <small class="dl-meta">v0.1 early build · Android 8.0+ · <a href="#guide-android" style="text-decoration:underline;">how to install</a></small>
+          <p>The Android APK is a build in progress (Android 8.0+). When it ships you’ll sideload it — your device will ask you to allow installs from unknown sources, which is normal for a direct download.</p>
+          <div class="dl-actions"><span class="btn btn-outline" style="opacity:.5;" aria-disabled="true">Build in progress</span><a class="btn btn-dark" href="#guide-android" style="padding:12px 16px; font-size:13.5px;">Install guide ↓</a></div>
+          <small class="dl-meta">Build in progress · Android 8.0+ · <a href="#guide-android" style="text-decoration:underline;">how to install</a></small>
         </div>
         <div class="dl-card reveal" style="transition-delay:.06s;" id="ios">
           <div class="dl-head">
             <div class="os-ic soon-os"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4.4 0-7-2.8-7-6.3 0-2.5 1.5-4.6 3.4-6.4L12 3.6l3.6 3.7c1.9 1.8 3.4 3.9 3.4 6.4C19 17.2 16.4 20 12 20Z"/><path d="M12 20c2 0 3.2-2.6 3.2-6.2S14 7.6 12 7.6 8.8 11.4 8.8 13.8 10 20 12 20Z"/></svg></div>
-            <div><div class="os-name">iPhone &amp; iPad</div><small>IPA · TestFlight / App Store</small></div>
+            <div><div class="os-name">iPhone &amp; iPad</div><small>App Store — later</small></div>
             <span class="soon">Soon</span>
           </div>
-          <p>iOS build via TestFlight during beta, then App Store at launch. Same one-time license — no extra purchase on Apple.</p>
+          <p>iOS isn’t available yet. Same one-time license when it ships — no extra purchase on Apple.</p>
           <div class="dl-actions"><span class="btn btn-outline" style="opacity:.5;" aria-disabled="true">Coming soon</span><a class="btn btn-dark" href="#guide-ios" style="padding:12px 16px; font-size:13.5px;">Install guide ↓</a></div>
           <small class="dl-meta">Requires iOS 15+ · <a href="#guide-ios" style="text-decoration:underline;">how to install</a></small>
         </div>
@@ -291,9 +292,9 @@
 
         <div class="guide-card reveal" id="guide-android">
           <h3><span class="g-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></span> Android — APK sideload</h3>
-          <p class="g-sub">Works on Android 8.0+ · No Play Store needed</p>
+          <p class="g-sub">Build in progress · Android 8.0+ · No Play Store needed</p>
           <ol class="guide-steps">
-            <li><span><b>Download the APK</b> — tap <b>Download APK</b> above. Chrome will warn “unknown file type” — tap <b>Download anyway</b>.</span></li>
+            <li><span><b>When the APK is ready</b> — tap the download on this page. Chrome may warn “unknown file type” — tap <b>Download anyway</b>.</span></li>
             <li><span>Open the file from your notification or <b>Downloads</b>. If prompted, tap <b>Allow from this source</b> (or enable <b>Install unknown apps</b> for your browser).</span></li>
             <li><span>Tap <b>Install</b> → <b>Open</b>. calibrEAT opens on the welcome screen — tap <b>Enter your license code</b> when you’re ready to unlock.</span></li>
             <li><span><b>Lost the prompt?</b> — open <b>Files → Downloads → calibrEAT.apk</b> and tap again.</span></li>
@@ -303,15 +304,15 @@
         </div>
 
         <div class="guide-card reveal" style="transition-delay:.06s;" id="guide-ios">
-          <h3><span class="g-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4.4 0-7-2.8-7-6.3 0-2.5 1.5-4.6 3.4-6.4L12 3.6l3.6 3.7c1.9 1.8 3.4 3.9 3.4 6.4C19 17.2 16.4 20 12 20Z"/><path d="M12 20c2 0 3.2-2.6 3.2-6.2S14 7.6 12 7.6 8.8 11.4 8.8 13.8 10 20 12 20Z"/></svg></span> iPhone &amp; iPad — IPA</h3>
-          <p class="g-sub">iOS 15+ · TestFlight beta → App Store at launch</p>
+          <h3><span class="g-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4.4 0-7-2.8-7-6.3 0-2.5 1.5-4.6 3.4-6.4L12 3.6l3.6 3.7c1.9 1.8 3.4 3.9 3.4 6.4C19 17.2 16.4 20 12 20Z"/><path d="M12 20c2 0 3.2-2.6 3.2-6.2S14 7.6 12 7.6 8.8 11.4 8.8 13.8 10 20 12 20Z"/></svg></span> iPhone &amp; iPad</h3>
+          <p class="g-sub">Coming later · same lifetime license</p>
           <ol class="guide-steps">
-            <li><span><b>During beta:</b> install Apple’s <b>TestFlight</b> (free, App Store), then open our invite link — tap <b>Accept → Install</b>.</span></li>
-            <li><span><b>At launch:</b> open the <b>App Store</b>, search <b>calibrEAT</b> → tap <b>Get</b>. Same one-time license, no IAP on Apple.</span></li>
-            <li><span>Open calibrEAT. On first launch it shows the welcome screen — keep it installed and you’ll keep every update automatically.</span></li>
+            <li><span><b>Not available yet.</b> There is no iOS download and no beta invite. We’ll put the App Store link here when it ships.</span></li>
+            <li><span>The <b>same lifetime code</b> you buy on this site will unlock iOS — no extra purchase on Apple, no in-app purchase.</span></li>
+            <li><span>Until then, Android is the first platform. Email <a href="mailto:support@calibreat.co.uk" style="text-decoration:underline; color:var(--green);">support@calibreat.co.uk</a> if you want to be told when iOS is ready.</span></li>
           </ol>
-          <div class="guide-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span>Your license works on both platforms — the same code you buy on the website works on Android and iOS. Enter it once per device on the welcome screen.</span></div>
-          <div class="chip-row"><span class="chip">TestFlight now</span><span class="chip">App Store soon</span><span class="chip">One license</span></div>
+          <div class="guide-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span>Your license is one active device at a time — phone / tablet. Enter it on the welcome screen. Use <b>Deactivate on this device</b> to move it.</span></div>
+          <div class="chip-row"><span class="chip">Coming later</span><span class="chip">App Store</span><span class="chip">One license</span></div>
         </div>
 
 
@@ -320,7 +321,7 @@
 
       <div class="guide-note reveal" style="margin-top:16px; background: var(--surface); border-color: var(--line);">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5.2 5.9v5.2c0 4.5 2.9 8 6.8 9.7 3.9-1.7 6.8-5.2 6.8-9.7V5.9Z"/><path d="m9.3 12.2 2 1.9 3.6-4"/></svg>
-        <span><b>Already bought a license?</b> Your code is permanent — enter the same code on Android and iOS. Use <b>Deactivate on this device</b> in-app to free a slot, or <a href="mailto:support@calibreat.co.uk" style="text-decoration:underline; color:var(--green);">email support</a> if you lost it.</span>
+        <span><b>Already bought a license?</b> Your code is permanent — enter it on the welcome screen (one active device at a time, phone / tablet). Use <b>Deactivate on this device</b> in-app to free a slot, or email <a href="mailto:support@calibreat.co.uk" style="text-decoration:underline; color:var(--green);">support@calibreat.co.uk</a> if you lost it.</span>
       </div>
 
     </div>
@@ -336,7 +337,7 @@
           <img data-mark alt="calibrEAT mark" style="width:27px; height:27px;" />
           <span>calibr<span class="e">EAT</span></span>
         </a>
-        <p class="foot-copy">Calibrate your eating lifestyle. Free to install, one lifetime unlock, and your data stays on your phone.</p>
+        <p class="foot-copy">Calibrate your eating lifestyle. One lifetime unlock, and your data stays on your phone.</p>
         <div class="foot-trust"><span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No ads</span><span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No subscriptions</span><span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No tracking</span></div>
       </div>
       <div>
@@ -390,8 +391,8 @@
   if (themeBtn) themeBtn.addEventListener("click", () => { const next = document.documentElement.getAttribute("data-theme")==="light" ? "dark" : "light"; applyTheme(next); });
   const nav = document.getElementById("site-nav"); const burger = document.getElementById("nav-burger");
   const syncNavH = () => { if (nav) document.documentElement.style.setProperty('--nav-h', nav.getBoundingClientRect().height + 'px'); };
-  const closeNav = () => { if (!nav || !burger) return; nav.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); document.body.classList.remove("nav-menu-open"); };
-  if (burger && nav) burger.addEventListener("click", () => { const open = nav.classList.toggle("open"); burger.setAttribute("aria-expanded", String(open)); document.body.classList.toggle("nav-menu-open", open); if (open) syncNavH(); else document.documentElement.style.removeProperty('--nav-h'); });
+  const closeNav = () => { if (!nav || !burger) return; nav.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); burger.setAttribute("aria-label", "Menu"); document.body.classList.remove("nav-menu-open"); };
+  if (burger && nav) burger.addEventListener("click", () => { const open = nav.classList.toggle("open"); burger.setAttribute("aria-expanded", String(open)); burger.setAttribute("aria-label", open ? "Close menu" : "Menu"); document.body.classList.toggle("nav-menu-open", open); if (open) syncNavH(); else document.documentElement.style.removeProperty('--nav-h'); });
   if (nav) nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => { closeNav(); }));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeNav(); });
   document.addEventListener('click', (e) => { if (!nav || !nav.classList.contains('open')) return; if (!nav.contains(e.target)) closeNav(); });

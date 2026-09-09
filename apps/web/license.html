@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Lifetime Activation Setup — calibrEAT</title>
-<meta name="description" content="How the calibrEAT lifetime license works: one-time payment, a permanent activation code delivered instantly by email, no subscriptions." />
+<meta name="description" content="calibrEAT lifetime license: £4.99 inc VAT, one-time payment, a permanent activation code delivered instantly by email. No subscriptions." />
 <meta property="og:site_name" content="calibrEAT" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary" />
@@ -13,7 +13,6 @@
 <meta name="theme-color" content="#0a1019" />
 <meta name="referrer" content="strict-origin-when-cross-origin" />
 <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; form-action 'self' mailto: https:; frame-ancestors 'none'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://fonts.googleapis.com https://fonts.gstatic.com;" />
 <link rel="canonical" href="https://calibreat.co.uk/license.html" />
 <link rel="icon" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -219,7 +218,7 @@
     border-bottom: 1px solid var(--hero-line);
     transition: background-color 0.3s ease, border-color 0.3s ease;
   }
-  .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 6px 24px; max-width: 1024px; margin: 0 auto; }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 9px 24px; max-width: 1024px; margin: 0 auto; }
   .brand { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; font-family: var(--font-display); color: var(--text); text-decoration: none; transition: color 0.3s ease; }
   .brand img, .brand svg { width: 30px; height: 30px; }
   .brand .e { color: var(--accent); }
@@ -231,8 +230,13 @@
   }
   .nav-links .link:hover { color: var(--nav-link-hover); }
   .nav-links .link:hover::after { right: 0; }
-  .nav-cta { padding: 6px 15px; font-size: 13.5px; }
-  .nav-burger { display: none; background: none; border: 1px solid var(--line-strong); border-radius: 9px; padding: 5px 8px; cursor: pointer; color: var(--text); transition: border-color 0.2s ease, color 0.3s ease; }
+  .nav-links .link[aria-current="page"] { color: var(--nav-link-hover); }
+  .nav-links .link[aria-current="page"]::after { right: 0; }
+  .nav-burger { display: none; background: none; border: 1px solid var(--line-strong); border-radius: 9px; padding: 6px 8px; cursor: pointer; color: var(--text); transition: border-color 0.2s ease, color 0.3s ease, background 0.2s ease; }
+  .nav-burger:hover { border-color: var(--green); background: rgba(31,157,85,.1); }
+  .nav-burger .ico-x { display: none; }
+  .site-nav.open .nav-burger .ico-burger { display: none; }
+  .site-nav.open .nav-burger .ico-x { display: block; }
   .nav-burger svg { width: 18px; height: 18px; }
   .theme-toggle {
     display: inline-flex; align-items: center; justify-content: center;
@@ -362,48 +366,51 @@
   @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
 
   /* ── Steps ─────────────────────────────────────────────── */
-  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; position: relative; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; position: relative; }
   .steps::before {
     content: ""; position: absolute; top: 49px; left: 12%; right: 12%; height: 2px;
     background: repeating-linear-gradient(90deg, var(--line-strong) 0 7px, transparent 7px 13px);
+    opacity: .7;
   }
   .step {
     position: relative; background: var(--surface); border: 1px solid var(--line);
-    border-radius: var(--radius-lg); padding: 22px 20px;
-    box-shadow: var(--shadow-sm); transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: var(--radius-lg); padding: 24px 22px;
+    box-shadow: var(--shadow-sm); transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    display: flex; flex-direction: column; overflow: hidden;
   }
-  .step:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .step:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: rgba(31,157,85,.18); }
   .step .num {
-    width: 54px; height: 54px; border-radius: 16px; margin-bottom: 16px;
+    width: 52px; height: 52px; border-radius: 14px; margin-bottom: 16px;
     display: grid; place-items: center; font-family: var(--font-display);
-    font-size: 19px; font-weight: 700; color: #fff;
+    font-size: 18px; font-weight: 700; color: #fff;
     background: linear-gradient(150deg, var(--green-bright), var(--green-deep));
     box-shadow: 0 10px 22px -8px rgba(14, 107, 56, 0.55);
     position: relative; z-index: 1;
   }
-  .step h3 { margin: 0 0 8px; font-size: 18.5px; letter-spacing: -0.015em; }
-  .step p { margin: 0; color: var(--text-2); font-size: 14.5px; }
+  .step h3 { margin: 0 0 8px; font-size: 18px; letter-spacing: -0.015em; }
+  .step p { margin: 0; color: var(--text-2); font-size: 14.5px; line-height: 1.55; }
   .step p b { color: var(--text); font-weight: 600; }
   .tag-email {
-    display: inline-flex; align-items: center; gap: 6px; margin-top: 14px;
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 16px;
     font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; color: var(--tag-fg);
     background: rgba(31,157,85,.12); border-radius: 999px; padding: 5px 11px;
   }
 
   /* ── Features ──────────────────────────────────────────── */
-  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
   .feature {
     position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
-    padding: 20px; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    padding: 22px; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    display: flex; flex-direction: column; overflow: hidden;
   }
-  .feature:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: rgba(31,157,85,.35); }
+  .feature:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: rgba(31,157,85,.22); }
   .feature .ftile {
     width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
     background: linear-gradient(145deg, rgba(31,157,85,.13), rgba(183,233,60,.1));
     border: 1px solid rgba(31,157,85,.18); color: var(--tile-fg);
   }
   .feature h3 { margin: 14px 0 6px; font-size: 16.5px; letter-spacing: -0.01em; }
-  .feature p { margin: 0; color: var(--text-2); font-size: 14.5px; }
+  .feature p { margin: 0; color: var(--text-2); font-size: 14.5px; line-height: 1.6; }
 
   /* ── Pricing band ──────────────────────────────────────── */
   .band { background: var(--band-bg); position: relative; overflow: hidden; transition: background-color 0.3s ease; }
@@ -481,6 +488,7 @@
   details.faq-item summary .chev { flex: none; width: 24px; height: 24px; border-radius: 50%; background: rgba(31,157,85,.1); color: var(--tile-fg); display: grid; place-items: center; transition: transform 0.25s ease, background 0.2s ease; }
   details.faq-item[open] summary .chev { transform: rotate(180deg); background: var(--green); color: #fff; }
   details.faq-item .ans { padding: 0 20px 16px; color: var(--text-2); font-size: 14.5px; margin: 0; }
+  details.faq-item .ans a { color: var(--green); }
 
   /* ── Footer ────────────────────────────────────────────── */
   .footer { background: var(--footer-bg); color: var(--footer-color); padding: 52px 0 0; font-size: 14px; transition: background-color 0.3s ease, color 0.3s ease; }
@@ -514,18 +522,7 @@
   .commit-note p { margin: 0; color: var(--text-2); font-size: 14.5px; line-height: 1.6; }
   .commit-note b { color: var(--text); }
 
-  /* ── Tile ring (soft pulsing outline) ──────────────────── */
-  .step::before, .feature::before, .dl-card::before {
-    content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
-    box-shadow: 0 0 0 1px rgba(31,157,85,.12), 0 0 16px -6px rgba(31,157,85,.2);
-    animation: tile-pulse 3.4s ease-in-out infinite;
-  }
-  .steps .step:nth-child(2)::before, .features .feature:nth-child(2)::before, .features .feature:nth-child(5)::before, .download .dl-card:nth-child(2)::before { animation-delay: 1.15s; }
-  .steps .step:nth-child(3)::before, .features .feature:nth-child(3)::before, .features .feature:nth-child(6)::before { animation-delay: 2.3s; }
-  @keyframes tile-pulse {
-    0%, 100% { box-shadow: 0 0 0 1px rgba(31,157,85,.1), 0 0 14px -6px rgba(31,157,85,.15); }
-    50% { box-shadow: 0 0 0 1.5px rgba(31,157,85,.4), 0 0 20px -2px rgba(31,157,85,.4); }
-  }
+  /* Tile ring removed — was the noisy pulsing outline */
 
   /* ── Reveal on scroll ──────────────────────────────────── */
   .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.65s ease, transform 0.65s ease; }
@@ -559,7 +556,6 @@
     .nav-links .link:active { background: var(--line); }
     .nav-links .theme-toggle { margin: 10px 24px 0; align-self: flex-start; }
     .nav-links .link::after { display: none; }
-    .nav-cta { margin: 14px 24px 0; width: calc(100% - 48px); }
     .nav-burger { display: block; }
     .fc-a, .fc-b { display: none; }
     body.nav-menu-open { overflow: hidden; }
@@ -577,7 +573,6 @@
     html { scroll-behavior: auto; }
     .reveal { opacity: 1; transform: none; transition: none; }
     .float-card, .hero-art img { animation: none !important; }
-    .step::before, .feature::before, .dl-card::before { animation: none; box-shadow: 0 0 0 1px rgba(31,157,85,.22); }
   }
 </style>
 </head>
@@ -601,7 +596,7 @@
       </button>
     </div>
     <button class="nav-burger" id="nav-burger" aria-label="Menu" aria-expanded="false">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><g class="ico-burger"><path d="M4 7h16M4 12h16M4 17h16"/></g><g class="ico-x"><path d="M6 6l12 12M18 6 6 18"/></g></svg>
     </button>
   </nav>
 </header>
@@ -627,7 +622,7 @@
       <div class="sec-head center reveal">
         <span class="kicker">Simple &amp; honest</span>
         <h2>A single payment. A lifetime license.</h2>
-        <p>calibrEAT is free to install and explore. One one-time purchase permanently unlocks the full app on your device — no subscription, no renewal, no catch.</p>
+        <p>One one-time purchase permanently unlocks the full app on your device — no subscription, no renewal, no catch.</p>
       </div>
       <div class="steps">
         <div class="step reveal">
@@ -675,12 +670,12 @@
             <div class="buy-rows">
               <div class="buy-row"><span>Delivery</span><span class="val"><span class="ok">✓</span> <b>Instant email</b></span></div>
               <div class="buy-row"><span>Renewals</span><span class="val"><span class="ok">✓</span> <b>None — ever</b></span></div>
-              <div class="buy-row"><span>Devices</span><span class="val"><b>Phone + tablet</b></span></div>
+              <div class="buy-row"><span>Devices</span><span class="val"><b>Phone / tablet</b></span></div>
               <div class="buy-row"><span>Updates</span><span class="val"><b>Included for life</b></span></div>
             </div>
             <div class="buy-price">
-              <div class="big"><small>€</small>—</div>
-              <p>One-time payment · price set at store launch</p>
+              <div class="big"><small>£</small>4.99</div>
+              <p>Inc VAT · one-time payment</p>
             </div>
             <a class="btn btn-lime btn-lg btn-block" id="band-buy" href="#checkout-not-configured">Get lifetime access <span class="arr">→</span></a>
             <p class="buy-fine">
@@ -701,11 +696,13 @@
         <h2>Before you buy</h2>
       </div>
       <div class="faq reveal">
-        <details class="faq-item"><summary>Is it really a one-time payment?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Yes. A lifetime license unlocks calibrEAT forever — no subscriptions, no tiers, no in-app purchases, and every future update is included.</p></details>
-        <details class="faq-item"><summary>How do I receive my activation code?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Instantly by email at checkout. It's a permanent code that never expires. Keep it somewhere safe — it's also available in your order receipt.</p></details>
-        <details class="faq-item"><summary>Can I use my code on more than one device?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Yes. A code activates on a small number of devices (a phone + a tablet, for example). Use "Deactivate on this device" in the app to free up a slot, and contact support if you ever need a reset.</p></details>
-        <details class="faq-item"><summary>Can I use the app without a license?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Yes. The app is free to install and explore. The welcome screen stays locked until you enter a valid activation code — entering one unlocks everything for life.</p></details>
-        <details class="faq-item"><summary>What if I lose my activation email?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Contact support with the email address you paid with and we'll resend your code.</p></details>
+        <details class="faq-item"><summary>Is it really a one-time payment?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Yes. £4.99 including VAT, once. A lifetime license unlocks calibrEAT forever — no subscriptions, no tiers, no in-app purchases, and every future update is included.</p></details>
+        <details class="faq-item"><summary>Does the price include VAT?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Yes. £4.99 is the amount you pay, VAT included. There is no extra charge at checkout for UK VAT.</p></details>
+        <details class="faq-item"><summary>How do I receive my activation code?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Instantly by email at checkout. It's a permanent code that never expires. Keep it somewhere safe — it's also on your order receipt.</p></details>
+        <details class="faq-item"><summary>Can I use my code on more than one device?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Your code is active on one device at a time — phone / tablet. Use “Deactivate on this device” in the app to free the slot, then activate on the new one. Email <a href="mailto:support@calibreat.co.uk">support@calibreat.co.uk</a> if you need a reset.</p></details>
+        <details class="faq-item"><summary>Can I use the app without a license?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">No. The welcome screen stays locked until you enter a valid activation code. There is no unpaid or trial mode.</p></details>
+        <details class="faq-item"><summary>What if I lose my activation email?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Email <a href="mailto:support@calibreat.co.uk">support@calibreat.co.uk</a> from the address you paid with and we’ll resend your code.</p></details>
+        <details class="faq-item"><summary>How do I get help?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Email <a href="mailto:support@calibreat.co.uk">support@calibreat.co.uk</a>. Support is email only.</p></details>
       </div>
     </div>
   </section>
@@ -720,7 +717,7 @@
           <img data-mark alt="calibrEAT mark" style="width: 27px; height: 27px;" />
           <span>calibr<span class="e">EAT</span></span>
         </a>
-        <p class="foot-copy">Calibrate your eating lifestyle. Free to install, one lifetime unlock, and your data stays on your phone.</p>
+        <p class="foot-copy">Calibrate your eating lifestyle. One lifetime unlock, and your data stays on your phone.</p>
         <div class="foot-trust">
           <span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No ads</span>
           <span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No subscriptions</span>
@@ -795,8 +792,8 @@
   const nav = document.getElementById("site-nav");
   const burger = document.getElementById("nav-burger");
   const syncNavH = () => { if (nav) document.documentElement.style.setProperty('--nav-h', nav.getBoundingClientRect().height + 'px'); };
-  const closeNav = () => { if (!nav || !burger) return; nav.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); document.body.classList.remove("nav-menu-open"); document.documentElement.style.removeProperty('--nav-h'); };
-  if (burger && nav) burger.addEventListener("click", () => { const open = nav.classList.toggle("open"); burger.setAttribute("aria-expanded", String(open)); document.body.classList.toggle("nav-menu-open", open); if (open) syncNavH(); else document.documentElement.style.removeProperty('--nav-h'); });
+  const closeNav = () => { if (!nav || !burger) return; nav.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); burger.setAttribute("aria-label", "Menu"); document.body.classList.remove("nav-menu-open"); document.documentElement.style.removeProperty('--nav-h'); };
+  if (burger && nav) burger.addEventListener("click", () => { const open = nav.classList.toggle("open"); burger.setAttribute("aria-expanded", String(open)); burger.setAttribute("aria-label", open ? "Close menu" : "Menu"); document.body.classList.toggle("nav-menu-open", open); if (open) syncNavH(); else document.documentElement.style.removeProperty('--nav-h'); });
   if (nav) nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => { closeNav(); }));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeNav(); });
   document.addEventListener('click', (e) => { if (!nav || !nav.classList.contains('open')) return; if (!nav.contains(e.target)) closeNav(); });

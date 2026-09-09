@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>calibrEAT — Calibrate your eating lifestyle</title>
-<meta name="description" content="Free calorie tracker for Android. Log food, scan barcodes, track water &amp; weight — no ads, no subscriptions. One lifetime activation code, delivered by email." />
+<meta name="description" content="Calorie tracker for Android. Log food, scan barcodes, track water &amp; weight — no ads, no subscriptions. One lifetime activation code for £4.99 inc VAT, delivered by email." />
 <meta property="og:site_name" content="calibrEAT" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary" />
@@ -13,7 +13,6 @@
 <meta name="theme-color" content="#0a1019" />
 <meta name="referrer" content="strict-origin-when-cross-origin" />
 <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; form-action 'self' mailto: https:; frame-ancestors 'none'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://fonts.googleapis.com https://fonts.gstatic.com;" />
 <link rel="canonical" href="https://calibreat.co.uk/" />
 <link rel="icon" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -219,7 +218,7 @@
     border-bottom: 1px solid var(--hero-line);
     transition: background-color 0.3s ease, border-color 0.3s ease;
   }
-  .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 6px 24px; max-width: 1024px; margin: 0 auto; }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 9px 24px; max-width: 1024px; margin: 0 auto; }
   .brand { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; font-family: var(--font-display); color: var(--text); text-decoration: none; transition: color 0.3s ease; }
   .brand img, .brand svg { width: 30px; height: 30px; }
   .brand .e { color: var(--accent); }
@@ -231,8 +230,13 @@
   }
   .nav-links .link:hover { color: var(--nav-link-hover); }
   .nav-links .link:hover::after { right: 0; }
-  .nav-cta { padding: 6px 15px; font-size: 13.5px; }
-  .nav-burger { display: none; background: none; border: 1px solid var(--line-strong); border-radius: 9px; padding: 5px 8px; cursor: pointer; color: var(--text); transition: border-color 0.2s ease, color 0.3s ease; }
+  .nav-links .link[aria-current="page"] { color: var(--nav-link-hover); }
+  .nav-links .link[aria-current="page"]::after { right: 0; }
+  .nav-burger { display: none; background: none; border: 1px solid var(--line-strong); border-radius: 9px; padding: 6px 8px; cursor: pointer; color: var(--text); transition: border-color 0.2s ease, color 0.3s ease, background 0.2s ease; }
+  .nav-burger:hover { border-color: var(--green); background: rgba(31,157,85,.1); }
+  .nav-burger .ico-x { display: none; }
+  .site-nav.open .nav-burger .ico-burger { display: none; }
+  .site-nav.open .nav-burger .ico-x { display: block; }
   .nav-burger svg { width: 18px; height: 18px; }
   .theme-toggle {
     display: inline-flex; align-items: center; justify-content: center;
@@ -362,48 +366,51 @@
   @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
 
   /* ── Steps ─────────────────────────────────────────────── */
-  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; position: relative; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; position: relative; }
   .steps::before {
     content: ""; position: absolute; top: 49px; left: 12%; right: 12%; height: 2px;
     background: repeating-linear-gradient(90deg, var(--line-strong) 0 7px, transparent 7px 13px);
+    opacity: .7;
   }
   .step {
     position: relative; background: var(--surface); border: 1px solid var(--line);
-    border-radius: var(--radius-lg); padding: 22px 20px;
-    box-shadow: var(--shadow-sm); transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: var(--radius-lg); padding: 24px 22px;
+    box-shadow: var(--shadow-sm); transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    display: flex; flex-direction: column; overflow: hidden;
   }
-  .step:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .step:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: rgba(31,157,85,.18); }
   .step .num {
-    width: 54px; height: 54px; border-radius: 16px; margin-bottom: 16px;
+    width: 52px; height: 52px; border-radius: 14px; margin-bottom: 16px;
     display: grid; place-items: center; font-family: var(--font-display);
-    font-size: 19px; font-weight: 700; color: #fff;
+    font-size: 18px; font-weight: 700; color: #fff;
     background: linear-gradient(150deg, var(--green-bright), var(--green-deep));
     box-shadow: 0 10px 22px -8px rgba(14, 107, 56, 0.55);
     position: relative; z-index: 1;
   }
-  .step h3 { margin: 0 0 8px; font-size: 18.5px; letter-spacing: -0.015em; }
-  .step p { margin: 0; color: var(--text-2); font-size: 14.5px; }
+  .step h3 { margin: 0 0 8px; font-size: 18px; letter-spacing: -0.015em; }
+  .step p { margin: 0; color: var(--text-2); font-size: 14.5px; line-height: 1.55; }
   .step p b { color: var(--text); font-weight: 600; }
   .tag-email {
-    display: inline-flex; align-items: center; gap: 6px; margin-top: 14px;
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 16px;
     font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; color: var(--tag-fg);
     background: rgba(31,157,85,.12); border-radius: 999px; padding: 5px 11px;
   }
 
   /* ── Features ──────────────────────────────────────────── */
-  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
   .feature {
     position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
-    padding: 20px; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    padding: 22px; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    display: flex; flex-direction: column; overflow: hidden;
   }
-  .feature:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: rgba(31,157,85,.35); }
+  .feature:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: rgba(31,157,85,.22); }
   .feature .ftile {
     width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
     background: linear-gradient(145deg, rgba(31,157,85,.13), rgba(183,233,60,.1));
     border: 1px solid rgba(31,157,85,.18); color: var(--tile-fg);
   }
   .feature h3 { margin: 14px 0 6px; font-size: 16.5px; letter-spacing: -0.01em; }
-  .feature p { margin: 0; color: var(--text-2); font-size: 14.5px; }
+  .feature p { margin: 0; color: var(--text-2); font-size: 14.5px; line-height: 1.6; }
 
   /* ── Pricing band ──────────────────────────────────────── */
   .band { background: var(--band-bg); position: relative; overflow: hidden; transition: background-color 0.3s ease; }
@@ -481,6 +488,7 @@
   details.faq-item summary .chev { flex: none; width: 24px; height: 24px; border-radius: 50%; background: rgba(31,157,85,.1); color: var(--tile-fg); display: grid; place-items: center; transition: transform 0.25s ease, background 0.2s ease; }
   details.faq-item[open] summary .chev { transform: rotate(180deg); background: var(--green); color: #fff; }
   details.faq-item .ans { padding: 0 20px 16px; color: var(--text-2); font-size: 14.5px; margin: 0; }
+  details.faq-item .ans a { color: var(--green); }
 
   /* ── Footer ────────────────────────────────────────────── */
   .footer { background: var(--footer-bg); color: var(--footer-color); padding: 52px 0 0; font-size: 14px; transition: background-color 0.3s ease, color 0.3s ease; }
@@ -514,18 +522,7 @@
   .commit-note p { margin: 0; color: var(--text-2); font-size: 14.5px; line-height: 1.6; }
   .commit-note b { color: var(--text); }
 
-  /* ── Tile ring (soft pulsing outline) ──────────────────── */
-  .step::before, .feature::before, .dl-card::before {
-    content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
-    box-shadow: 0 0 0 1px rgba(31,157,85,.12), 0 0 16px -6px rgba(31,157,85,.2);
-    animation: tile-pulse 3.4s ease-in-out infinite;
-  }
-  .steps .step:nth-child(2)::before, .features .feature:nth-child(2)::before, .features .feature:nth-child(5)::before, .download .dl-card:nth-child(2)::before { animation-delay: 1.15s; }
-  .steps .step:nth-child(3)::before, .features .feature:nth-child(3)::before, .features .feature:nth-child(6)::before { animation-delay: 2.3s; }
-  @keyframes tile-pulse {
-    0%, 100% { box-shadow: 0 0 0 1px rgba(31,157,85,.1), 0 0 14px -6px rgba(31,157,85,.15); }
-    50% { box-shadow: 0 0 0 1.5px rgba(31,157,85,.4), 0 0 20px -2px rgba(31,157,85,.4); }
-  }
+  /* Tile ring removed — was the noisy pulsing outline */
 
   /* ── Reveal on scroll ──────────────────────────────────── */
   .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.65s ease, transform 0.65s ease; }
@@ -559,7 +556,6 @@
     .nav-links .link:active { background: var(--line); }
     .nav-links .theme-toggle { margin: 10px 24px 0; align-self: flex-start; }
     .nav-links .link::after { display: none; }
-    .nav-cta { margin: 14px 24px 0; width: calc(100% - 48px); }
     .nav-burger { display: block; }
     .fc-a, .fc-b { display: none; }
     body.nav-menu-open { overflow: hidden; }
@@ -577,7 +573,6 @@
     html { scroll-behavior: auto; }
     .reveal { opacity: 1; transform: none; transition: none; }
     .float-card, .hero-art img { animation: none !important; }
-    .step::before, .feature::before, .dl-card::before { animation: none; box-shadow: 0 0 0 1px rgba(31,157,85,.22); }
   }
 </style>
 </head>
@@ -602,7 +597,7 @@
       </button>
     </div>
     <button class="nav-burger" id="nav-burger" aria-label="Menu" aria-expanded="false">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><g class="ico-burger"><path d="M4 7h16M4 12h16M4 17h16"/></g><g class="ico-x"><path d="M6 6l12 12M18 6 6 18"/></g></svg>
     </button>
   </nav>
 </header>
@@ -613,16 +608,16 @@
     <div class="hero-grid-bg"></div>
     <div class="wrap">
       <div>
-        <span class="hero-eyebrow"><span class="dot"></span> Free to install · Android 8.0+</span>
+        <span class="hero-eyebrow"><span class="dot"></span> £4.99 inc VAT · Android 8.0+</span>
         <h1>Your eating,<br />precisely <span class="lime">calibrated</span><span class="soft">.</span></h1>
         <p class="lede">
-          calibrEAT is a free tracker for meals, water and weight — with a barcode scanner
+          calibrEAT is a tracker for meals, water and weight — with a barcode scanner
           and private insights. One lifetime purchase, <b>yours forever</b>. No subscription.
           No ads. No data sharing.
         </p>
         <div class="hero-cta">
           <a class="btn btn-primary btn-lg" id="hero-buy" href="license.html">Get lifetime access <span class="arr">→</span></a>
-          <a class="btn btn-dark btn-lg" href="download.html">Download app — free</a>
+          <a class="btn btn-dark btn-lg" href="download.html">Download</a>
         </div>
         <p class="hero-note">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="m8 10 2.5 2.5L16 8"/></svg>
@@ -691,26 +686,30 @@
       </div>
       <div class="features">
         <div class="feature reveal">
+          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.4 14.2c-2.1 1.1-3.6 2.8-3.6 4.7 0 1.7 1.8 2.6 7.2 2.6s7.2-.9 7.2-2.6c0-1.9-1.5-3.6-3.6-4.7"/><path d="M12 3.5c1.8 2.4 4.2 5.1 4.2 7.4a4.2 4.2 0 0 1-8.4 0C7.8 8.6 10.2 5.9 12 3.5Z"/><path d="M12 8.2v2.8"/></svg></div>
+          <h3>True Burn Learning</h3><p>Weigh-ins plus what you actually eat nudge your daily burn — so the dial tracks you, not a static formula.</p>
+        </div>
+        <div class="feature reveal" style="transition-delay:.05s;">
           <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="12" height="15" rx="2.5"/><path d="M9.5 5V3.2h5V5"/><path d="M8.6 11h6.8M8.6 14.2h6.8M8.6 17.4h4"/></svg></div>
           <h3>Food diary</h3><p>Log meals and snacks with calories &amp; macros — quick-add included for the foods you eat daily.</p>
         </div>
-        <div class="feature reveal" style="transition-delay:.05s;">
+        <div class="feature reveal" style="transition-delay:.1s;">
           <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5.6A1.6 1.6 0 0 1 5.6 4H8M16 4h2.4A1.6 1.6 0 0 1 20 5.6V8M20 16v2.4a1.6 1.6 0 0 1-1.6 1.6H16M8 20H5.6A1.6 1.6 0 0 1 4 18.4V16"/><path d="M8.6 10v4M11.4 10v4.8M14.2 10v4M17 10v3" stroke-width="2.2"/></svg></div>
           <h3>Barcode scanner</h3><p>Scan packaged foods straight from a free, open food database — no manual entry required.</p>
         </div>
-        <div class="feature reveal" style="transition-delay:.1s;">
+        <div class="feature reveal">
           <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.4 19.4a8.6 8.6 0 1 1 13.2 0"/><path d="M12 14.6 16 9.6"/><circle cx="12" cy="15" r="1.1" fill="currentColor" stroke="none"/></svg></div>
           <h3>Weight &amp; goals</h3><p>Set a target, weigh in, and your daily needs recalculate automatically as you progress.</p>
         </div>
-        <div class="feature reveal">
+        <div class="feature reveal" style="transition-delay:.05s;">
           <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.4c2.9 3.7 6.2 7.3 6.2 10.7a6.2 6.2 0 0 1-12.4 0C5.8 10.7 9.1 7.1 12 3.4Z"/><path d="M9.6 14.6a2.5 2.5 0 0 0 2.6 2.4"/></svg></div>
           <h3>Water tracker</h3><p>Stay hydrated alongside your meals — glasses, litres and reminders, all in one timeline.</p>
         </div>
-        <div class="feature reveal" style="transition-delay:.05s;">
+        <div class="feature reveal" style="transition-delay:.1s;">
           <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7.2 20v-5.6M12 20V6.4M16.8 20v-9.2" stroke-width="2.4"/></svg></div>
           <h3>Insights</h3><p>Weekly trends for calories, macros and weigh-ins — computed privately on your device.</p>
         </div>
-        <div class="feature reveal" style="transition-delay:.1s;">
+        <div class="feature reveal">
           <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5.2 5.9v5.2c0 4.5 2.9 8 6.8 9.7 3.9-1.7 6.8-5.2 6.8-9.7V5.9Z"/><path d="m9.3 12.2 2 1.9 3.6-4"/></svg></div>
           <h3>Private by design</h3><p>No account, no tracking: your logs live on your device and never leave it unless you choose to back them up.</p>
         </div>
@@ -726,8 +725,16 @@
         <h2>Good to know</h2>
       </div>
       <div class="faq reveal">
-        <details class="faq-item"><summary>Do I need an account or internet connection?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">No account or registration needed. An internet connection is required to look up foods, scan barcodes and fetch nutrition data from the food database — your logs are stored securely on your device.</p></details>
-        <details class="faq-item"><summary>Is my food data private?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Yes. Logs are stored on your device. calibrEAT has no servers holding your data, no ads, and no analytics tracking your eating.</p></details>
+        <details class="faq-item"><summary>How much does calibrEAT cost?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">£4.99 including VAT. One payment unlocks the app for life — no subscription, no in-app purchases, no ads. Every future update is included.</p></details>
+        <details class="faq-item"><summary>Do I need an account?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">No. There is no account to create in the app. You verify the email you used to buy, enter your activation code, and your logs stay on the device.</p></details>
+        <details class="faq-item"><summary>Does it work offline?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Your food, water and weight logs live on the device and work without a connection. Looking up foods and scanning barcodes needs internet so we can fetch nutrition from Open Food Facts.</p></details>
+        <details class="faq-item"><summary>Is my food data private?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Yes. Logs are stored on your device. calibrEAT has no servers holding your meals, no ads, and no analytics tracking your eating.</p></details>
+        <details class="faq-item"><summary>Where do barcode calories come from?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Packaged foods are looked up in Open Food Facts, a public food database. You can still log meals by hand if a barcode is missing or you prefer to type.</p></details>
+        <details class="faq-item"><summary>What is True Burn Learning?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">After you log food and weigh in, True Burn compares predicted vs actual weight change and nudges your estimated daily burn. It needs a stretch of honest logging — it isn’t a lab measurement.</p></details>
+        <details class="faq-item"><summary>Can I use it on a phone / tablet?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Your code is active on one device at a time — phone / tablet. Use “Deactivate on this device” in the app to move it, or email support if the old device is gone.</p></details>
+        <details class="faq-item"><summary>Is there an iPhone version?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Not yet. Android is first (the APK is a build in progress). iOS will follow. The same lifetime code you buy here will unlock it when it ships — no extra purchase on Apple.</p></details>
+        <details class="faq-item"><summary>Is calibrEAT medical advice?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">No. It is a personal food, water and weight diary. It does not diagnose, treat or replace a clinician. Talk to a qualified professional before changing how you eat for a medical reason.</p></details>
+        <details class="faq-item"><summary>How do I get support?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Email <a href="mailto:support@calibreat.co.uk">support@calibreat.co.uk</a>. That is the only support channel — we reply by email.</p></details>
       </div>
     </div>
   </section>
@@ -742,7 +749,7 @@
           <img data-mark alt="calibrEAT mark" style="width: 27px; height: 27px;" />
           <span>calibr<span class="e">EAT</span></span>
         </a>
-        <p class="foot-copy">Calibrate your eating lifestyle. Free to install, one lifetime unlock, and your data stays on your phone.</p>
+        <p class="foot-copy">Calibrate your eating lifestyle. One lifetime unlock, and your data stays on your phone.</p>
         <div class="foot-trust">
           <span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No ads</span>
           <span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No subscriptions</span>
@@ -819,8 +826,8 @@
   const nav = document.getElementById("site-nav");
   const burger = document.getElementById("nav-burger");
   const syncNavH = () => { if (nav) document.documentElement.style.setProperty('--nav-h', nav.getBoundingClientRect().height + 'px'); };
-  const closeNav = () => { if (!nav || !burger) return; nav.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); document.body.classList.remove("nav-menu-open"); document.documentElement.style.removeProperty('--nav-h'); };
-  if (burger && nav) burger.addEventListener("click", () => { const open = nav.classList.toggle("open"); burger.setAttribute("aria-expanded", String(open)); document.body.classList.toggle("nav-menu-open", open); if (open) syncNavH(); else document.documentElement.style.removeProperty('--nav-h'); });
+  const closeNav = () => { if (!nav || !burger) return; nav.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); burger.setAttribute("aria-label", "Menu"); document.body.classList.remove("nav-menu-open"); document.documentElement.style.removeProperty('--nav-h'); };
+  if (burger && nav) burger.addEventListener("click", () => { const open = nav.classList.toggle("open"); burger.setAttribute("aria-expanded", String(open)); burger.setAttribute("aria-label", open ? "Close menu" : "Menu"); document.body.classList.toggle("nav-menu-open", open); if (open) syncNavH(); else document.documentElement.style.removeProperty('--nav-h'); });
   if (nav) nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => { closeNav(); }));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeNav(); });
   document.addEventListener('click', (e) => { if (!nav || !nav.classList.contains('open')) return; if (!nav.contains(e.target)) closeNav(); });
