@@ -7,14 +7,29 @@
 <meta name="description" content="Calorie tracker for Android. Log food, scan barcodes, track water &amp; weight — no ads, no subscriptions. One lifetime activation code for £4.99 inc VAT, delivered by email." />
 <meta property="og:site_name" content="calibrEAT" />
 <meta property="og:type" content="website" />
-<meta name="twitter:card" content="summary" />
+<meta property="og:locale" content="en_GB" />
 <meta property="og:title" content="calibrEAT — Calibrate your eating lifestyle" />
+<meta property="og:description" content="Calorie tracker for Android. Log food, scan barcodes, track water &amp; weight — no ads, no subscriptions. One lifetime activation code for £4.99 inc VAT, delivered by email." />
 <meta property="og:url" content="https://calibreat.co.uk/" />
+<meta property="og:image" content="https://calibreat.co.uk/assets/og-image.png" />
+<meta property="og:image:secure_url" content="https://calibreat.co.uk/assets/og-image.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="calibrEAT — Your eating, precisely calibrated. Log food, scan barcodes, track water &amp; weight. No ads, no subscriptions." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="calibrEAT — Calibrate your eating lifestyle" />
+<meta name="twitter:description" content="Calorie tracker for Android. Log food, scan barcodes, track water &amp; weight — no ads, no subscriptions. One lifetime activation code for £4.99 inc VAT, delivered by email." />
+<meta name="twitter:image" content="https://calibreat.co.uk/assets/og-image.png" />
+<meta name="twitter:image:alt" content="calibrEAT — Your eating, precisely calibrated. Log food, scan barcodes, track water &amp; weight. No ads, no subscriptions." />
 <meta name="theme-color" content="#0a1019" />
 <meta name="referrer" content="strict-origin-when-cross-origin" />
 <meta http-equiv="X-Content-Type-Options" content="nosniff" />
 <link rel="canonical" href="https://calibreat.co.uk/" />
-<link rel="icon" type="image/svg+xml" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" href="/favicon.png" sizes="32x32" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet" />
@@ -23,16 +38,13 @@
   ═══════════════════════════════════════════════════════════════════════
   CONFIG — one place to make the store live
   ───────────────────────────────────────────────────────────────────────
-  CHECKOUT_URL : hosted checkout for the one-time "lifetime activation code"
-                 product. Currently a placeholder — the Merchant of Record
-                 (provider not chosen yet) will email the permanent license
-                 key automatically on purchase.
-  APK_URL      : direct download link for the free Android APK. Placeholder —
+  CHECKOUT_URL : Dodo Payments live checkout for the lifetime license.
+  APK_URL      : direct download link for the Android APK. Placeholder —
                  the release APK has not been built yet.
   ═══════════════════════════════════════════════════════════════════════
 -->
 <script>
-  const CHECKOUT_URL = "#checkout-not-configured"; // TODO: paste MoR checkout URL
+  const CHECKOUT_URL = "https://checkout.dodopayments.com/buy/pdt_0NnJYkayhhVbOB0gyOyyE?quantity=1";
   const APK_URL = "#apk-coming-soon"; // TODO: paste hosted APK link
 
   // Inline night mark (data URI) — keeps the page self-contained. Master copy:
@@ -232,6 +244,8 @@
   .nav-links .link:hover::after { right: 0; }
   .nav-links .link[aria-current="page"] { color: var(--nav-link-hover); }
   .nav-links .link[aria-current="page"]::after { right: 0; }
+  .nav-cta { padding: 9px 15px; font-size: 13.5px; margin-left: 2px; }
+  .nav-links .nav-cta::after { display: none; }
   .nav-burger { display: none; background: none; border: 1px solid var(--line-strong); border-radius: 9px; padding: 6px 8px; cursor: pointer; color: var(--text); transition: border-color 0.2s ease, color 0.3s ease, background 0.2s ease; }
   .nav-burger:hover { border-color: var(--green); background: rgba(31,157,85,.1); }
   .nav-burger .ico-x { display: none; }
@@ -490,12 +504,126 @@
   details.faq-item .ans { padding: 0 20px 16px; color: var(--text-2); font-size: 14.5px; margin: 0; }
   details.faq-item .ans a { color: var(--green); }
 
+  /* ── Compare ───────────────────────────────────────────── */
+  .compare-section .wrap { max-width: 1120px; }
+  .compare-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    -webkit-overflow-scrolling: touch;
+  }
+  .compare {
+    width: 100%;
+    min-width: 920px;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  .compare caption {
+    caption-side: bottom;
+    text-align: left;
+    padding: 14px 18px 16px;
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+  .compare th, .compare td {
+    padding: 13px 12px;
+    border-bottom: 1px solid var(--line);
+    text-align: center;
+    vertical-align: middle;
+    color: var(--text-2);
+  }
+  .compare tbody tr:last-child th,
+  .compare tbody tr:last-child td { border-bottom: 0; }
+  .compare thead th {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--text);
+    background: var(--surface-2);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    vertical-align: bottom;
+  }
+  .compare thead th span {
+    display: block;
+    margin-top: 4px;
+    font-family: var(--font-body);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--muted);
+  }
+  .compare th:first-child,
+  .compare td:first-child {
+    text-align: left;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 600;
+    min-width: 196px;
+    max-width: 240px;
+    padding-left: 18px;
+  }
+  .compare thead th:first-child {
+    z-index: 3;
+    background: var(--surface-2);
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .compare th.is-us,
+  .compare td.is-us {
+    background: rgba(183, 233, 60, 0.08);
+    color: var(--text);
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+  .compare thead th.is-us {
+    background: rgba(183, 233, 60, 0.14);
+    color: var(--text);
+  }
+  .compare thead th.is-us span { color: var(--kicker-fg); }
+  [data-theme="light"] .compare th.is-us,
+  [data-theme="light"] .compare td.is-us { background: rgba(31, 157, 85, 0.07); }
+  [data-theme="light"] .compare thead th.is-us { background: rgba(31, 157, 85, 0.12); }
+  .compare .mark-yes {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(183, 233, 60, 0.16);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  [data-theme="light"] .compare .mark-yes { background: rgba(31, 157, 85, 0.12); color: var(--green-deep); }
+  .compare .mark-no {
+    color: var(--muted);
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .compare .qual { font-size: 12.5px; font-weight: 600; color: var(--text); }
+  .compare td.is-us .qual { color: var(--text); }
+
   /* ── Footer ────────────────────────────────────────────── */
   .footer { background: var(--footer-bg); color: var(--footer-color); padding: 52px 0 0; font-size: 14px; transition: background-color 0.3s ease, color 0.3s ease; }
   .footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 32px; padding-bottom: 40px; }
   .footer .brand { font-size: 20px; margin-bottom: 12px; }
   .foot-copy { max-width: 320px; font-size: 13.5px; line-height: 1.65; margin: 0 0 18px; color: var(--muted); }
-  .foot-trust { display: flex; gap: 12px; }
+  .foot-trust { display: flex; flex-wrap: wrap; gap: 12px; }
   .foot-trust .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-2); border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; }
   .footer h4 { color: var(--text); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 16px; font-family: var(--font-body); font-weight: 700; }
   .footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
@@ -534,6 +662,7 @@
     .hero-visual { order: -1; }
     .pricing { grid-template-columns: 1fr; }
     .buy-card { max-width: 460px; }
+    .steps { grid-template-columns: 1fr; }
     .steps::before { display: none; }
   }
   @media (max-width: 880px) {
@@ -555,6 +684,7 @@
     .nav-links .link { padding: 14px 24px; font-size: 16px; color: var(--text); border-radius: 0; }
     .nav-links .link:active { background: var(--line); }
     .nav-links .theme-toggle { margin: 10px 24px 0; align-self: flex-start; }
+    .nav-links .nav-cta { margin: 14px 24px 0; align-self: flex-start; }
     .nav-links .link::after { display: none; }
     .nav-burger { display: block; }
     .fc-a, .fc-b { display: none; }
@@ -587,10 +717,11 @@
     </a>
     <div class="nav-links">
       <a class="link" href="#features">Features</a>
+      <a class="link" href="#compare">Compare</a>
       <a class="link" href="download.html">Download</a>
-      <a class="link" href="license.html">Lifetime Activation Setup</a>
-      <a class="link" href="about.html">About us</a>
+      <a class="link" href="about.html">About</a>
       <a class="link" href="#faq">FAQ</a>
+      <a class="btn btn-primary nav-cta" id="nav-buy" href="license.html">Get access</a>
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch between light and dark theme">
         <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/></svg>
         <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg>
@@ -627,9 +758,9 @@
           </span>
         </p>
         <div class="hero-trust">
-          <span class="trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f9d55" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.2a15 15 0 0 1 19 0"/><path d="M5.5 12.7a10 10 0 0 1 13 0"/><path d="M8.5 16.2a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1.1" fill="#1f9d55" stroke="none"/></svg> Needs internet to fetch foods &amp; scan barcodes</span>
           <span class="trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f9d55" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> Your data stays on your phone</span>
           <span class="trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f9d55" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> Every future update included</span>
+          <span class="trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f9d55" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.2a15 15 0 0 1 19 0"/><path d="M5.5 12.7a10 10 0 0 1 13 0"/><path d="M8.5 16.2a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1.1" fill="#1f9d55" stroke="none"/></svg> Logs work offline · food lookup needs internet</span>
         </div>
       </div>
 
@@ -664,7 +795,7 @@
               <div class="lock-bullets">
                 <div class="lock-bullet"><span class="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#b7e93c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg></span> Food, water &amp; weight logs</div>
                 <div class="lock-bullet"><span class="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#b7e93c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg></span> Barcode scanner included</div>
-                <div class="lock-bullet"><span class="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#b7e93c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg></span> Private, on-device insights</div>
+                <div class="lock-bullet"><span class="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#b7e93c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg></span> Tools that run on your phone, never uploaded</div>
               </div>
               <div class="lock-field">XXXX-XXXX-XXXX</div>
               <div class="lock-btn">Unlock lifetime</div>
@@ -676,8 +807,36 @@
     </div>
   </section>
 
+  <!-- ═══════════ How it works ═══════════ -->
+  <section id="how">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <span class="kicker">How it works</span>
+        <h2>Pay once. Code by email. Unlock.</h2>
+        <p>No account to create. The code is yours for life.</p>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <div class="num">1</div>
+          <h3>Pay £4.99</h3>
+          <p>One payment, VAT included. No subscription and nothing else to buy in the app.</p>
+        </div>
+        <div class="step reveal" style="transition-delay:.08s;">
+          <div class="num">2</div>
+          <h3>Check your inbox</h3>
+          <p>Your <b>permanent activation code</b> is emailed as soon as payment completes.</p>
+        </div>
+        <div class="step reveal" style="transition-delay:.16s;">
+          <div class="num">3</div>
+          <h3>Unlock this device</h3>
+          <p>Enter the code in the app. Move it later with Deactivate — same code, new phone.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ═══════════ Features ═══════════ -->
-  <section id="features">
+  <section id="features" style="padding-top: 0;">
     <div class="wrap">
       <div class="sec-head center reveal">
         <span class="kicker">What you get</span>
@@ -703,15 +862,179 @@
         </div>
         <div class="feature reveal" style="transition-delay:.05s;">
           <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.4c2.9 3.7 6.2 7.3 6.2 10.7a6.2 6.2 0 0 1-12.4 0C5.8 10.7 9.1 7.1 12 3.4Z"/><path d="M9.6 14.6a2.5 2.5 0 0 0 2.6 2.4"/></svg></div>
-          <h3>Water tracker</h3><p>Stay hydrated alongside your meals — glasses, litres and reminders, all in one timeline.</p>
+          <h3>Water tracker</h3><p>Stay hydrated alongside your meals — millilitres or cups, logged with the day.</p>
         </div>
         <div class="feature reveal" style="transition-delay:.1s;">
           <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7.2 20v-5.6M12 20V6.4M16.8 20v-9.2" stroke-width="2.4"/></svg></div>
-          <h3>Insights</h3><p>Weekly trends for calories, macros and weigh-ins — computed privately on your device.</p>
+          <h3>Insights</h3><p>Calories, macros and weigh-ins, computed privately on your device.</p>
         </div>
         <div class="feature reveal">
           <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5.2 5.9v5.2c0 4.5 2.9 8 6.8 9.7 3.9-1.7 6.8-5.2 6.8-9.7V5.9Z"/><path d="m9.3 12.2 2 1.9 3.6-4"/></svg></div>
-          <h3>Private by design</h3><p>No account, no tracking: your logs live on your device and never leave it unless you choose to back them up.</p>
+          <h3>Private by design</h3><p>No account, no tracking: your logs live on your device. In-app tools (such as BMI) use that local data to calculate useful numbers — calibrEAT never collects or stores them.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ Compare ═══════════ -->
+  <section id="compare" class="compare-section" style="padding-top: 0;">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <span class="kicker">Compare</span>
+        <h2>One payment against a monthly bill</h2>
+        <p>calibrEAT is £4.99 once. The others are subscriptions.</p>
+      </div>
+      <div class="compare-scroll reveal">
+        <table class="compare">
+          <caption>Competitor prices are typical UK premium rates and can change. Subscriptions are billed monthly.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Feature</th>
+              <th scope="col" class="is-us">calibrEAT<span>£4.99 once</span></th>
+              <th scope="col">MyFitnessPal<span>£15.99/mo</span></th>
+              <th scope="col">MacroFactor<span>£10.99/mo</span></th>
+              <th scope="col">Cronometer<span>£7.99/mo</span></th>
+              <th scope="col">Nutracheck<span>£6.99/mo</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Pricing model</th>
+              <td class="is-us"><span class="qual">One-time £4.99</span></td>
+              <td><span class="qual">Subscription</span></td>
+              <td><span class="qual">Subscription</span></td>
+              <td><span class="qual">Subscription</span></td>
+              <td><span class="qual">Subscription</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Calorie &amp; macro tracking</th>
+              <td class="is-us"><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+            </tr>
+            <tr>
+              <th scope="row">AI photo food recognition</th>
+              <td class="is-us"><span class="mark-no" title="No">–</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-no" title="No">–</span></td>
+              <td><span class="mark-no" title="No">–</span></td>
+              <td><span class="mark-no" title="No">–</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Barcode scanner</th>
+              <td class="is-us"><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Expenditure / TDEE algorithm</th>
+              <td class="is-us"><span class="qual">True Burn</span></td>
+              <td><span class="qual">Basic</span></td>
+              <td><span class="qual">Advanced (dynamic)</span></td>
+              <td><span class="qual">Basic</span></td>
+              <td><span class="qual">Basic</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Detailed micronutrient tracking</th>
+              <td class="is-us"><span class="qual">Basic</span></td>
+              <td><span class="qual">Basic</span></td>
+              <td><span class="qual">Basic</span></td>
+              <td><span class="qual">Advanced (full specs)</span></td>
+              <td><span class="qual">Basic</span></td>
+            </tr>
+            <tr>
+              <th scope="row">UK supermarket food database</th>
+              <td class="is-us"><span class="qual">Standard</span></td>
+              <td><span class="qual">High</span></td>
+              <td><span class="qual">Standard</span></td>
+              <td><span class="qual">Standard</span></td>
+              <td><span class="qual">Extensive (UK focused)</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Custom recipe builder</th>
+              <td class="is-us"><span class="mark-no" title="No">–</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Meal &amp; recipe AI generator</th>
+              <td class="is-us"><span class="mark-no" title="No">–</span></td>
+              <td><span class="mark-no" title="No">–</span></td>
+              <td><span class="mark-no" title="No">–</span></td>
+              <td><span class="mark-no" title="No">–</span></td>
+              <td><span class="mark-no" title="No">–</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Wearable &amp; health syncing</th>
+              <td class="is-us"><span class="mark-no" title="No">–</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Offline food logging</th>
+              <td class="is-us"><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="qual">Limited</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-no" title="No">–</span></td>
+              <td><span class="mark-no" title="No">–</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Zero ads / premium experience</th>
+              <td class="is-us"><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes">✓</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ Buy ═══════════ -->
+  <section class="band" id="pricing">
+    <div class="wrap">
+      <div class="pricing">
+        <div class="pricing-left reveal">
+          <span class="kicker on-dark">Lifetime access</span>
+          <h2>The whole app.<br />£4.99. For life.</h2>
+          <p>One payment unlocks food, water, weight, barcode search and True Burn — including every update we ship.</p>
+          <ul class="pricing-list">
+            <li><span class="ck"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span> VAT included · no monthly fees</li>
+            <li><span class="ck"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span> Code by email, then unlock this device</li>
+            <li><span class="ck"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span> <a href="refunds.html" style="color:inherit;text-decoration:underline;">Refunds</a> if it isn’t as described</li>
+          </ul>
+        </div>
+        <div class="reveal" style="transition-delay:.08s;">
+          <div class="buy-card">
+            <span class="buy-tag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> Lifetime license</span>
+            <h3>calibrEAT — full unlock</h3>
+            <p class="prod-sub">Everything in the app, on this device, forever.</p>
+            <div class="buy-rows">
+              <div class="buy-row"><span>Delivery</span><span class="val"><span class="ok">✓</span> <b>Instant email</b></span></div>
+              <div class="buy-row"><span>Renewals</span><span class="val"><span class="ok">✓</span> <b>None — ever</b></span></div>
+              <div class="buy-row"><span>Devices</span><span class="val"><b>One at a time</b></span></div>
+              <div class="buy-row"><span>Updates</span><span class="val"><b>Included for life</b></span></div>
+            </div>
+            <div class="buy-price">
+              <div class="big"><small>£</small>4.99</div>
+              <p>Inc VAT · one-time payment</p>
+            </div>
+            <a class="btn btn-lime btn-lg btn-block" href="license.html#pricing">Get lifetime access <span class="arr">→</span></a>
+            <p class="buy-fine">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="M3 10h18"/></svg>
+              Secure checkout · code by email · <a href="refunds.html" style="color:inherit;text-decoration:underline;">Refunds</a>
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -726,7 +1049,7 @@
       </div>
       <div class="faq reveal">
         <details class="faq-item"><summary>How much does calibrEAT cost?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">£4.99 including VAT. One payment unlocks the app for life — no subscription, no in-app purchases, no ads. Every future update is included.</p></details>
-        <details class="faq-item"><summary>Do I need an account?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">No. There is no account to create in the app. You verify the email you used to buy, enter your activation code, and your logs stay on the device.</p></details>
+        <details class="faq-item"><summary>Do I need an account?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">No. There is no account to create in the app. You verify the email you used to buy, enter your activation code, and your logs stay on the device. Tools such as BMI use that local data only — calibrEAT never collects it.</p></details>
         <details class="faq-item"><summary>Does it work offline?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Your food, water and weight logs live on the device and work without a connection. Looking up foods and scanning barcodes needs internet so we can fetch nutrition from Open Food Facts.</p></details>
         <details class="faq-item"><summary>Is my food data private?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Yes. Logs are stored on your device. calibrEAT has no servers holding your meals, no ads, and no analytics tracking your eating.</p></details>
         <details class="faq-item"><summary>Where do barcode calories come from?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Packaged foods are looked up in Open Food Facts, a public food database. You can still log meals by hand if a barcode is missing or you prefer to type.</p></details>
@@ -759,10 +1082,11 @@
       <div>
         <h4>Product</h4>
         <ul>
-          <li><a href="license.html">Lifetime Activation Setup</a></li>
+          <li><a href="license.html">License</a></li>
           <li><a href="download.html">Download</a></li>
-          <li><a href="about.html">About us</a></li>
+          <li><a href="about.html">About</a></li>
           <li><a href="#features">Features</a></li>
+          <li><a href="#compare">Compare</a></li>
           <li><a href="#faq">FAQ</a></li>
         </ul>
       </div>
@@ -806,7 +1130,7 @@
   // Inject the self-contained night mark into images + favicon.
   const MARK_URI = "data:image/svg+xml;utf8," + encodeURIComponent(MARK_NIGHT_SVG.trim());
   document.querySelectorAll("img[data-mark]").forEach((img) => { img.src = MARK_URI; });
-  const _ic=document.querySelector('link[rel="icon"]'); if(_ic) _ic.setAttribute("href", MARK_URI);
+  const _ic=document.querySelector('link[rel="icon"][type="image/svg+xml"]'); if(_ic) _ic.setAttribute("href", MARK_URI);
 
   // Theme toggle (dark is the default).
   const themeBtn = document.getElementById("theme-toggle");

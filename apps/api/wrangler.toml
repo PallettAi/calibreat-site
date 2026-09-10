@@ -1,0 +1,23 @@
+name = "calibreat-license"
+main = "src/worker.ts"
+compatibility_date = "2026-09-01"
+
+# The whole license DB lives in one Durable Object instance (SQLite-backed,
+# included on the Workers Free plan). Single writer = simple, correct store.
+[durable_objects]
+bindings = [{ name = "LICENSE_STORE", class_name = "LicenseStoreDO" }]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["LicenseStoreDO"]
+
+# Non-secret tuning (defaults shown). Secrets — RESEND_API_KEY, EMAIL_FROM,
+# MOR_WEBHOOK_SECRET, DODO_WEBHOOK_SECRET, DODO_API_KEY, ADMIN_TOKEN — go in
+# `wrangler secret put <NAME>`.
+[vars]
+OTP_TTL_MS = "600000"
+REQUEST_COOLDOWN_MS = "30000"
+MAX_OTP_ATTEMPTS = "5"
+MAX_OTP_SENDS = "8"
+OTP_SEND_WINDOW_MS = "3600000"
+DODO_API_BASE = "https://live.dodopayments.com"

@@ -7,14 +7,29 @@
 <meta name="description" content="Download calibrEAT for Android. The APK is a build in progress. iOS later. One lifetime activation code for £4.99 inc VAT, delivered by email." />
 <meta property="og:site_name" content="calibrEAT" />
 <meta property="og:type" content="website" />
-<meta name="twitter:card" content="summary" />
+<meta property="og:locale" content="en_GB" />
 <meta property="og:title" content="Download — calibrEAT" />
+<meta property="og:description" content="Download calibrEAT for Android. The APK is a build in progress. iOS later. One lifetime activation code for £4.99 inc VAT, delivered by email." />
 <meta property="og:url" content="https://calibreat.co.uk/download.html" />
+<meta property="og:image" content="https://calibreat.co.uk/assets/og-image.png" />
+<meta property="og:image:secure_url" content="https://calibreat.co.uk/assets/og-image.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="calibrEAT — Download for Android. One lifetime code for £4.99." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Download — calibrEAT" />
+<meta name="twitter:description" content="Download calibrEAT for Android. The APK is a build in progress. iOS later. One lifetime activation code for £4.99 inc VAT, delivered by email." />
+<meta name="twitter:image" content="https://calibreat.co.uk/assets/og-image.png" />
+<meta name="twitter:image:alt" content="calibrEAT — Download for Android. One lifetime code for £4.99." />
 <meta name="theme-color" content="#0a1019" />
 <meta name="referrer" content="strict-origin-when-cross-origin" />
 <meta http-equiv="X-Content-Type-Options" content="nosniff" />
 <link rel="canonical" href="https://calibreat.co.uk/download.html" />
-<link rel="icon" type="image/svg+xml" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" href="/favicon.png" sizes="32x32" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet" />
@@ -26,7 +41,7 @@
                  the release APK has not been built yet.
 -->
 <script>
-  const CHECKOUT_URL = "#checkout-not-configured"; // TODO: paste MoR checkout URL
+  const CHECKOUT_URL = "https://checkout.dodopayments.com/buy/pdt_0NnJYkayhhVbOB0gyOyyE?quantity=1";
   const APK_URL = "#apk-coming-soon"; // TODO: paste hosted APK link
   const MARK_NIGHT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
     <path d="M 220 370 L 292 370 L 272 335 L 240 335 Z" fill="#B7E93C"/>
@@ -99,6 +114,8 @@
   .btn:active { transform: translateY(1px) scale(.995); }
   .btn .arr { transition: transform .18s ease; } .btn:hover .arr { transform: translateX(3px); }
   .btn-primary { background: linear-gradient(180deg, var(--green-bright), var(--green)); color:#fff; box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 8px 20px -8px rgba(31,157,85,.6); }
+  .nav-cta { padding: 9px 15px; font-size: 13.5px; margin-left: 2px; }
+  .nav-links .nav-cta::after { display: none; }
   .btn-lime { background: var(--lime); color:#0a1019; box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 8px 20px -10px rgba(183,233,60,.55); }
   .btn-dark { background:#111a29; color:#fff; border:1px solid rgba(255,255,255,.1); }
   .btn-outline { border:1.5px solid var(--line-strong); color: var(--text); background: var(--surface); }
@@ -198,6 +215,7 @@
     .nav-links .link { padding: 14px 24px; font-size: 16px; color: var(--text); border-radius: 0; }
     .nav-links .link:active { background: var(--line); }
     .nav-links .theme-toggle { margin: 10px 24px 0; align-self: flex-start; }
+    .nav-links .nav-cta { margin: 14px 24px 0; align-self: flex-start; }
     .nav-links .link::after { display: none; }
     .nav-burger { display: block; }
     body.nav-menu-open { overflow: hidden; }
@@ -218,10 +236,11 @@
     </a>
     <div class="nav-links">
       <a class="link" href="index.html#features">Features</a>
+      <a class="link" href="index.html#compare">Compare</a>
       <a class="link" href="download.html" aria-current="page">Download</a>
-      <a class="link" href="license.html">Lifetime Activation Setup</a>
-      <a class="link" href="about.html">About us</a>
+      <a class="link" href="about.html">About</a>
       <a class="link" href="index.html#faq">FAQ</a>
+      <a class="btn btn-primary nav-cta" href="license.html">Get access</a>
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch between light and dark theme">
         <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/></svg>
         <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg>
@@ -242,7 +261,7 @@
       <p class="lede">Android APK is a build in progress. iOS later. One lifetime purchase (£4.99 inc VAT) unlocks everything — no subscription, no ads.</p>
       <div class="hero-cta">
         <a class="btn btn-primary btn-lg" id="hero-dl" href="#android">Android status <span class="arr">→</span></a>
-        <a class="btn btn-dark btn-lg" href="license.html">Lifetime Activation Setup</a>
+        <a class="btn btn-dark btn-lg" href="license.html">Get a license · £4.99</a>
       </div>
     </div>
   </section>
@@ -252,7 +271,7 @@
       <div class="sec-head center reveal">
         <span class="kicker">Choose your platform</span>
         <h2>Get the app</h2>
-        <p>Same app, every device. Tap your platform below — installation takes under a minute.</p>
+        <p>Android first, iOS later. The APK isn’t ready to download yet — the install steps below are for when it ships.</p>
       </div>
       <div class="download">
         <div class="dl-card reveal" id="android">
@@ -285,7 +304,7 @@
       <div class="sec-head center reveal">
         <span class="kicker">Installation guides</span>
         <h2>How to install</h2>
-        <p>Pick your device. Every guide is 30 seconds — no account needed until you unlock.</p>
+        <p>Android install steps for when the APK is ready. iOS comes later. No account until you unlock.</p>
       </div>
 
       <div class="guide-grid">
@@ -343,10 +362,11 @@
       <div>
         <h4>Product</h4>
         <ul>
-          <li><a href="license.html">Lifetime Activation Setup</a></li>
+          <li><a href="license.html">License</a></li>
           <li><a href="download.html">Download</a></li>
-          <li><a href="about.html">About us</a></li>
+          <li><a href="about.html">About</a></li>
           <li><a href="index.html#features">Features</a></li>
+          <li><a href="index.html#compare">Compare</a></li>
           <li><a href="index.html#faq">FAQ</a></li>
         </ul>
       </div>
@@ -364,7 +384,7 @@
         <ul>
           <li><a href="download.html">Download</a></li>
           <li><a href="download.html#android">Android APK</a></li>
-          <li><a href="download.html#ios">iPhone / iPad (IPA)</a></li>
+          <li><a href="download.html#ios">iOS — coming soon</a></li>
           <li><a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open food database</a></li>
 
         </ul>
@@ -383,7 +403,7 @@
   const _y=document.getElementById("year"); if(_y) _y.textContent=new Date().getFullYear();
   const MARK_URI = "data:image/svg+xml;utf8," + encodeURIComponent(MARK_NIGHT_SVG.trim());
   document.querySelectorAll("img[data-mark]").forEach((img) => { img.src = MARK_URI; });
-  const _ic=document.querySelector('link[rel="icon"]'); if(_ic) _ic.setAttribute("href", MARK_URI);
+  const _ic=document.querySelector('link[rel="icon"][type="image/svg+xml"]'); if(_ic) _ic.setAttribute("href", MARK_URI);
   const themeBtn = document.getElementById("theme-toggle");
   const themeMeta = document.querySelector('meta[name="theme-color"]');
   const applyTheme = (t) => { document.documentElement.setAttribute("data-theme", t); try { localStorage.setItem("calibreat-theme", t); } catch(e){} if (themeMeta) themeMeta.setAttribute("content", t==="light" ? "#ffffff" : "#0a1019"); };

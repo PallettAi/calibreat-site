@@ -3,18 +3,33 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Lifetime Activation Setup — calibrEAT</title>
+<title>Lifetime license — calibrEAT</title>
 <meta name="description" content="calibrEAT lifetime license: £4.99 inc VAT, one-time payment, a permanent activation code delivered instantly by email. No subscriptions." />
 <meta property="og:site_name" content="calibrEAT" />
 <meta property="og:type" content="website" />
-<meta name="twitter:card" content="summary" />
-<meta property="og:title" content="Lifetime Activation Setup — calibrEAT" />
+<meta property="og:locale" content="en_GB" />
+<meta property="og:title" content="Lifetime license — calibrEAT" />
+<meta property="og:description" content="calibrEAT lifetime license: £4.99 inc VAT, one-time payment, a permanent activation code delivered instantly by email. No subscriptions." />
 <meta property="og:url" content="https://calibreat.co.uk/license.html" />
+<meta property="og:image" content="https://calibreat.co.uk/assets/og-image.png" />
+<meta property="og:image:secure_url" content="https://calibreat.co.uk/assets/og-image.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="calibrEAT lifetime license — £4.99 one-time. Permanent code by email." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Lifetime license — calibrEAT" />
+<meta name="twitter:description" content="calibrEAT lifetime license: £4.99 inc VAT, one-time payment, a permanent activation code delivered instantly by email. No subscriptions." />
+<meta name="twitter:image" content="https://calibreat.co.uk/assets/og-image.png" />
+<meta name="twitter:image:alt" content="calibrEAT lifetime license — £4.99 one-time. Permanent code by email." />
 <meta name="theme-color" content="#0a1019" />
 <meta name="referrer" content="strict-origin-when-cross-origin" />
 <meta http-equiv="X-Content-Type-Options" content="nosniff" />
 <link rel="canonical" href="https://calibreat.co.uk/license.html" />
-<link rel="icon" type="image/svg+xml" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" href="/favicon.png" sizes="32x32" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet" />
@@ -23,16 +38,14 @@
   ═══════════════════════════════════════════════════════════════════════
   CONFIG — one place to make the store live
   ───────────────────────────────────────────────────────────────────────
-  CHECKOUT_URL : hosted checkout for the one-time "lifetime activation code"
-                 product. Currently a placeholder — the Merchant of Record
-                 (provider not chosen yet) will email the permanent license
-                 key automatically on purchase.
-  APK_URL      : direct download link for the free Android APK. Placeholder —
+  CHECKOUT_URL : Dodo Payments live checkout for the lifetime license.
+                 Dodo emails the activation key; the Worker records it via webhook.
+  APK_URL      : direct download link for the Android APK. Placeholder —
                  the release APK has not been built yet.
   ═══════════════════════════════════════════════════════════════════════
 -->
 <script>
-  const CHECKOUT_URL = "#checkout-not-configured"; // TODO: paste MoR checkout URL
+  const CHECKOUT_URL = "https://checkout.dodopayments.com/buy/pdt_0NnJYkayhhVbOB0gyOyyE?quantity=1";
   const APK_URL = "#apk-coming-soon"; // TODO: paste hosted APK link
 
   // Inline night mark (data URI) — keeps the page self-contained. Master copy:
@@ -232,6 +245,8 @@
   .nav-links .link:hover::after { right: 0; }
   .nav-links .link[aria-current="page"] { color: var(--nav-link-hover); }
   .nav-links .link[aria-current="page"]::after { right: 0; }
+  .nav-cta { padding: 9px 15px; font-size: 13.5px; margin-left: 2px; }
+  .nav-links .nav-cta::after { display: none; }
   .nav-burger { display: none; background: none; border: 1px solid var(--line-strong); border-radius: 9px; padding: 6px 8px; cursor: pointer; color: var(--text); transition: border-color 0.2s ease, color 0.3s ease, background 0.2s ease; }
   .nav-burger:hover { border-color: var(--green); background: rgba(31,157,85,.1); }
   .nav-burger .ico-x { display: none; }
@@ -284,6 +299,9 @@
       radial-gradient(640px 460px at 4% 96%, rgba(183,233,60,.10), transparent 62%);
   }
   .hero .wrap { position: relative; display: grid; grid-template-columns: minmax(0, 1.06fr) minmax(0, 0.94fr); gap: 40px; align-items: center; padding-top: clamp(44px, 6vw, 68px); padding-bottom: clamp(56px, 7vw, 84px); }
+  .hero.hero-centered .wrap { display: block; max-width: 800px; text-align: center; padding-top: clamp(28px, 4vw, 40px); padding-bottom: clamp(28px, 4vw, 40px); }
+  .hero.hero-centered .lede { margin-left: auto; margin-right: auto; }
+  .hero.hero-centered .hero-cta { justify-content: center; }
   .hero-eyebrow {
     display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px;
     border: 1px solid var(--eyebrow-bd); border-radius: 999px;
@@ -534,6 +552,7 @@
     .hero-visual { order: -1; }
     .pricing { grid-template-columns: 1fr; }
     .buy-card { max-width: 460px; }
+    .steps { grid-template-columns: 1fr; }
     .steps::before { display: none; }
   }
   @media (max-width: 880px) {
@@ -555,6 +574,7 @@
     .nav-links .link { padding: 14px 24px; font-size: 16px; color: var(--text); border-radius: 0; }
     .nav-links .link:active { background: var(--line); }
     .nav-links .theme-toggle { margin: 10px 24px 0; align-self: flex-start; }
+    .nav-links .nav-cta { margin: 14px 24px 0; align-self: flex-start; }
     .nav-links .link::after { display: none; }
     .nav-burger { display: block; }
     .fc-a, .fc-b { display: none; }
@@ -586,10 +606,11 @@
     </a>
     <div class="nav-links">
       <a class="link" href="index.html#features">Features</a>
+      <a class="link" href="index.html#compare">Compare</a>
       <a class="link" href="download.html">Download</a>
-      <a class="link" href="license.html" aria-current="page">Lifetime Activation Setup</a>
-      <a class="link" href="about.html">About us</a>
+      <a class="link" href="about.html">About</a>
       <a class="link" href="index.html#faq">FAQ</a>
+      <a class="btn btn-primary nav-cta" id="nav-buy" href="#pricing">Get access</a>
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch between light and dark theme">
         <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/></svg>
         <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg>
@@ -603,15 +624,16 @@
 
 <main id="top">
   <!-- ═══════════ License hero ═══════════ -->
-  <section class="hero" style="padding-bottom: 0;">
-    <div class="hero-grid-bg"></div>      <div class="wrap" style="max-width: 800px; text-align: center; padding-top: clamp(28px, 4vw, 40px); padding-bottom: clamp(28px, 4vw, 40px);">
+  <section class="hero hero-centered" style="padding-bottom: 0;">
+    <div class="hero-grid-bg"></div>
+    <div class="wrap">
       <h1>One payment.<br />Your key. <span class="lime">For life.</span></h1>
-      <p class="lede" style="margin-left: auto; margin-right: auto;">
+      <p class="lede">
         Pay once and your calibrEAT license is permanent — no subscription, no renewal, no catch.
       </p>
-      <div class="hero-cta" style="justify-content: center;">
-        <a class="btn btn-primary btn-lg" id="hero-buy" href="#checkout-not-configured">Get lifetime access <span class="arr">→</span></a>
-        <a class="btn btn-dark btn-lg" href="index.html">Back to the app site</a>
+      <div class="hero-cta">
+        <a class="btn btn-primary btn-lg" id="hero-buy" href="https://checkout.dodopayments.com/buy/pdt_0NnJYkayhhVbOB0gyOyyE?quantity=1">Get lifetime access <span class="arr">→</span></a>
+        <a class="btn btn-dark btn-lg" href="index.html">Back to home</a>
       </div>
     </div>
   </section>
@@ -622,7 +644,7 @@
       <div class="sec-head center reveal">
         <span class="kicker">Simple &amp; honest</span>
         <h2>A single payment. A lifetime license.</h2>
-        <p>One one-time purchase permanently unlocks the full app on your device — no subscription, no renewal, no catch.</p>
+        <p>One purchase permanently unlocks the full app on your device — no subscription, no renewal, no catch.</p>
       </div>
       <div class="steps">
         <div class="step reveal">
@@ -677,10 +699,10 @@
               <div class="big"><small>£</small>4.99</div>
               <p>Inc VAT · one-time payment</p>
             </div>
-            <a class="btn btn-lime btn-lg btn-block" id="band-buy" href="#checkout-not-configured">Get lifetime access <span class="arr">→</span></a>
-            <p class="buy-fine">
+            <a class="btn btn-lime btn-lg btn-block" id="band-buy" href="https://checkout.dodopayments.com/buy/pdt_0NnJYkayhhVbOB0gyOyyE?quantity=1">Get lifetime access <span class="arr">→</span></a>
+            <p class="buy-fine" id="buy-fine">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="M3 10h18"/></svg>
-              Secure hosted checkout · activation code by email
+              <span>Secure hosted checkout · activation code by email · <a href="refunds.html" style="color:inherit;text-decoration:underline;">Refunds</a></span>
             </p>
           </div>
         </div>
@@ -727,10 +749,11 @@
       <div>
         <h4>Product</h4>
         <ul>
-          <li><a href="license.html">Lifetime Activation Setup</a></li>
+          <li><a href="license.html">License</a></li>
           <li><a href="download.html">Download</a></li>
-          <li><a href="about.html">About us</a></li>
+          <li><a href="about.html">About</a></li>
           <li><a href="index.html#features">Features</a></li>
+          <li><a href="index.html#compare">Compare</a></li>
           <li><a href="index.html#faq">FAQ</a></li>
         </ul>
       </div>
@@ -748,7 +771,7 @@
         <ul>
           <li><a href="download.html">Download</a></li>
           <li><a href="download.html#android">Android APK</a></li>
-          <li><a href="download.html#ios">iPhone / iPad (IPA)</a></li>
+          <li><a href="download.html#ios">iOS — coming soon</a></li>
           <li><a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open food database</a></li>
         </ul>
       </div>
@@ -761,18 +784,31 @@
 </footer>
 <script>
   // Wire configured checkout links + footer year.
+  const checkoutReady = typeof CHECKOUT_URL === "string" && CHECKOUT_URL.length > 0 && !CHECKOUT_URL.startsWith("#");
+  const supportBuy = "mailto:support@calibreat.co.uk?subject=" + encodeURIComponent("calibrEAT lifetime license (£4.99)");
   const buyButtons = document.querySelectorAll("#nav-buy, #hero-buy, #band-buy");
   buyButtons.forEach((btn) => {
-    btn.href = CHECKOUT_URL;
-    if (CHECKOUT_URL.startsWith("#")) btn.addEventListener("click", (e) => { e.preventDefault(); const f=document.getElementById("faq"); if(f) f.scrollIntoView({behavior:"smooth"}); });
-    btn.setAttribute("aria-label", "Buy a lifetime activation code");
+    if (checkoutReady) {
+      btn.href = CHECKOUT_URL;
+      btn.setAttribute("aria-label", "Buy a lifetime activation code");
+    } else if (btn.id === "nav-buy") {
+      btn.href = "#pricing";
+      btn.setAttribute("aria-label", "See lifetime license price");
+    } else {
+      btn.href = supportBuy;
+      btn.setAttribute("aria-label", "Email to buy a lifetime activation code");
+    }
   });
+  const buyFine = document.querySelector("#buy-fine span");
+  if (buyFine && !checkoutReady) {
+    buyFine.innerHTML = "Checkout isn’t live yet — this emails <a href=\"mailto:support@calibreat.co.uk\" style=\"color:inherit;text-decoration:underline;\">support@calibreat.co.uk</a> and we’ll send your code. <a href=\"refunds.html\" style=\"color:inherit;text-decoration:underline;\">Refunds</a>";
+  }
   const _y=document.getElementById("year"); if(_y) _y.textContent=new Date().getFullYear();
 
   // Inject the self-contained night mark into images + favicon.
   const MARK_URI = "data:image/svg+xml;utf8," + encodeURIComponent(MARK_NIGHT_SVG.trim());
   document.querySelectorAll("img[data-mark]").forEach((img) => { img.src = MARK_URI; });
-  const _ic=document.querySelector('link[rel="icon"]'); if(_ic) _ic.setAttribute("href", MARK_URI);
+  const _ic=document.querySelector('link[rel="icon"][type="image/svg+xml"]'); if(_ic) _ic.setAttribute("href", MARK_URI);
 
   // Theme toggle (dark is the default).
   const themeBtn = document.getElementById("theme-toggle");

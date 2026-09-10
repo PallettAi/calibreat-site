@@ -1,0 +1,25 @@
+{
+  "name": "@calibreat/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "calibrEAT license service — Cloudflare Worker + Durable Object (email verification + lifetime-code activation)",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node --experimental-strip-types --test 'test/*.test.ts'",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "svix": "^1.44.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260907.0",
+    "@types/node": "^22.10.0",
+    "typescript": "~6.0.3",
+    "wrangler": "^4.0.0"
+  }
+}
