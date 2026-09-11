@@ -19,7 +19,6 @@ const check = (label, condition, detail) => (condition ? ok(label) : bad(label, 
 
 const ARITY = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4, T: 2, A: 7, Z: 0 };
 const TOKENS = new Set(['color', 'soft', 'inner', 'white', 'line']);
-const NUM = /-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g;
 
 /** Bounding box of a path, control points included (conservative). */
 function pathBounds(d) {

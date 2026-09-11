@@ -12,6 +12,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useLicense } from '@/lib/license-context';
 import { getVerifiedEmail } from '@/lib/license';
 import { COFID_CREDIT } from '@/lib/food-search';
+import { dailyReminderFromSettings, formatDailyReminderTime } from '@/lib/daily-reminders';
 import { getSettings, saveSettings, type AppSettings } from '@/lib/settings';
 import { syncDailyReminder } from '@/lib/daily-reminder-notifications';
 import { syncWeighInReminder } from '@/lib/weigh-in-notifications';

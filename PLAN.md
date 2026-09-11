@@ -170,9 +170,13 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
 | Screen | State | Purpose |
 | --- | --- | --- |
 | **Welcome / Lock** (`src/app/index.tsx`) | Not activated | Brand hero, feature bullets, and the three-step gate (email → 6-digit verification code → license code) with "Get a lifetime license" → website. No bypass: activated users are redirected to Home before this ever paints, and activation without a verified email fails even in dev. |
-| **Home** (`src/app/home.tsx`) | Activated | Real dashboard: today's calorie goal, macro targets, water quick-add, weight summary; deactivate-this-device; first-run users are routed to `/setup`. |
-| **Profile setup** (`src/app/setup.tsx`) | Activated, no profile | 7-step wizard: sex, age, height, weight, activity, goal + pace, computed targets (Mifflin-St Jeor); saves profile + goals to the local DB. |
-| Food diary, Search/barcode, Water, Weight, Insights | Future | Milestone M1+ |
+| **Home** (`src/app/home.tsx`) | Activated | The instrument: calorie dial with True Burn, macro arcs, weight card with weigh-in entry, water mark in the header, streak flame, calendar picker and menu; first-run users are routed to `/setup`. |
+| **Profile setup** (`src/app/setup.tsx`) | Activated, no profile | 8-step wizard: sex, age, height, weight, activity, goal + pace, supplements, computed targets (Mifflin-St Jeor); saves profile + goals to the local DB. |
+| **Macros** (`src/app/macros.tsx`) | Activated | Full nutrient list for a day: protein/carbs/fat plus fibre, sugars, saturated fat and sodium wherever the pack lists them. |
+| **Train** (`src/app/train.tsx`) | Activated | Exercise picker with muscle map, sets/reps, kcal estimated from your BMR, sessions logged per day — the burn feeds the home dial's budget. |
+| **BMI** (`src/app/bmi.tsx`) | Activated | Body-mass index from height and latest weigh-in, band and healthy range, computed on device. |
+| **Settings** (`src/app/settings.tsx`) | Activated | Daily log nudge and weigh-in reminders (time + frequency), haptics, account and deactivate. |
+| **Sheets** (`meal-log-sheet`, `water-sheet`, `streak-sheet`, `license-sheet`) | Activated | Meal entry with search/barcode, editable water total, streak claim calendar, licence details. |
 
 ---
 
@@ -185,8 +189,10 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
 - [x] License module: normalization, storage (AsyncStorage), dev-activation mode,
       release builds fail closed
 - [x] Repo-level plan + READMEs
-- [ ] Replace default Expo icon/splash with calibrEAT branding
+- [x] Replace default Expo icon/splash with calibrEAT branding (`assets/images/`)
 - [ ] Build a debug **Android APK** (`npx expo run:android` / EAS) and smoke-test the gate
+      — **the release blocker, and now a commercial risk**: checkout is live, so
+      the APK must ship (or checkout must pause) before the site is promoted
 
 ### M1 — Offline MVP (the real product)
 - [x] Local data layer: SQLite (`expo-sqlite`) on native with an identical
@@ -205,19 +211,21 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
       to `/setup`
 - [x] Macros screen (`/macros`): protein, carbs, fat, plus basic micronutrients
       (fibre, sugars, saturated fat, sodium) from Open Food Facts when the pack lists them.
-- [ ] Food diary: add meal entries (quick-add calories + search later), day view with totals
-- [ ] Water tracker and weight log with simple summary screen
+- [x] Food diary: meal/snack entries by slot, quick-add calories, recents, edit and
+      delete (`meal-log-sheet.tsx`), day totals driving the home dial
+- [x] Water tracker (ml/cups, editable total, `water-sheet.tsx`) and weight log
+      (weigh-ins + trend on the home weight card)
 - [ ] Export/import of data (JSON/CSV) for backups & device migration
 
 ### M2 — Food database & barcode (UK-first, all free)
-- **UK CoFID** (McCance & Widdowson, the official UK government composition dataset,
-  ~3,300 foods, free / Open Government Licence) — bundle as the offline nutrient reference
-  for everyday foods and for the extended macros screen
-- **Open Food Facts** (free, open API) — UK barcode scanning for packaged products, with
-  offline cache; nutrients wherever the product label lists them
-- **USDA FoodData Central** (free API) — fallback / cross-check for items neither covers
-- Barcode scan via the camera (`expo-camera`) → product lookup → log
-- Search UI with recent/favorites
+- [x] **UK CoFID** (McCance & Widdowson, the official UK government composition dataset,
+      free / Open Government Licence) — bundled as the offline nutrient reference
+      (`src/data/cofid-foods.json`, searched by `src/lib/food-search.ts`)
+- [x] **Open Food Facts** (free, open API) — UK barcode scanning for packaged products with
+      a session cache and timeout; nutrients wherever the product label lists them
+- [ ] **USDA FoodData Central** (free API) — fallback / cross-check for items neither covers
+- [x] Barcode scan via the camera (`expo-camera`) → product lookup → log
+- [x] Search UI with recents
 
 ### M3 — Licensing backend
 - Pick MoR (Lemon Squeezy or Dodo Payments); configure **lifetime product** with instant
@@ -233,12 +241,12 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
   device model/OS for support
 
 ### M4 — Website
-- [x] Landing page scaffolded in `apps/web` (brand design, purchase CTA, activation explainer,
-      features, download, FAQ) — checkout/APK URLs are placeholders in the top CONFIG block
-- Marketing/sales site polish: pricing, license redemption/help, provider checkout links wired in
-- **free APK download** hosting + real domain
-- Privacy policy & terms (MoR templates help); support email
-- Optional: order-status / license-lookup helper page that calls the license API
+- [x] Site in `apps/web` on `calibreat.co.uk`: landing page, license/checkout, download +
+      install guides, about, privacy, terms, refunds, FAQ
+- [x] Dodo Payments checkout live; the URL is asserted single-source by `scripts/check-site.mjs`
+- [ ] **free APK download** hosting — the only missing piece of M4 (see M0)
+- [x] Privacy policy, terms, refunds, support email
+- [ ] Optional: order-status / license-lookup helper page that calls the license API
 
 ### M5 — iOS & hardening (parked)
 - Register Apple Developer account; set up iOS signing/icons; TestFlight beta
@@ -250,14 +258,14 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
 
 ## 8. Open decisions (need you)
 
-1. **Price** of the lifetime license.
+1. ~~Price of the lifetime license~~ **Resolved:** £4.99 inc VAT, one-time.
 2. **Free tier before purchase?** e.g., 7-day full trial, or read-only demo, or hard lock.
    (The current gate is a hard lock with no trial.)
 3. ~~Website domain~~ **Resolved:** everything consolidated on **`calibreat.co.uk`** —
    site (GitHub Pages, CNAME), app link constants, support address and OTP sender.
    (`calibreat.app` remains unused; grab it as a redirect later if desired.)
 4. **Activation code format** (current UI implies blocks like `AB12-CD34-EF56`).
-5. **MoR choice** in M3.
+5. ~~MoR choice in M3~~ **Resolved:** Dodo Payments (live checkout + license keys).
 6. **Google Play path later:** sideload-only forever, or Play billing for a store edition?
 7. **License self-service portal.** The in-app "Manage my license" menu item currently
    deep-links to the website's license page (`/license.html#faq`: lost-code FAQ + support
@@ -282,6 +290,7 @@ cd apps/mobile
 npm install
 npm run web        # web preview (dev-activation mode)
 npm run android    # Expo Go on a device/emulator (dev-activation mode)
+npm run check      # typecheck + every scripts/check-*.mjs suite
 ```
 
 Release APK builds require a real activation API (`EXPO_PUBLIC_LICENSE_API_URL`); until M3,
@@ -292,6 +301,11 @@ Repository layout:
 ```
 PLAN.md
 apps/
-  mobile/    # Expo (React Native) app — welcome/lock gate, license flow
-  # future:  web/ (marketing site), api/ (license service), shared/
+  mobile/    # Expo (React Native) app — the product
+  api/       # Cloudflare Worker + Durable Object — licence gate
+  web/       # static marketing/sales site (no build step)
+brand/       # brand system + galleries
+docs/        # operational notes
+scripts/     # repo-level checks and generators
+.github/     # CI + site deploy
 ```

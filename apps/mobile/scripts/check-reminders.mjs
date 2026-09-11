@@ -4,6 +4,11 @@
  * Next fire time is local clock math only — no OS notification APIs.
  */
 import {
+  dailyReminderFromSettings,
+  formatDailyReminderTime,
+  nextDailyReminderAt,
+} from '../src/lib/daily-reminders.ts';
+import {
   intervalDays,
   nextWeighInAt,
   parseFrequency,
@@ -54,6 +59,25 @@ const legacy = reminderFromSettings({ weighInReminders: false });
 eq('legacy off stays off', legacy.enabled, false);
 eq('legacy hour defaults morning', legacy.hour, 8);
 eq('legacy frequency defaults weekly', legacy.frequency, 'weekly');
+
+// ── Daily "log your day" nudge (the Settings switch that used to do nothing) ──
+
+const nudgeOn = dailyReminderFromSettings({ remindersEnabled: true });
+eq('daily nudge follows the switch (on)', nudgeOn.enabled, true);
+eq('daily nudge follows the switch (off)', dailyReminderFromSettings({ remindersEnabled: false }).enabled, false);
+eq('daily nudge ignores a missing switch', dailyReminderFromSettings({}).enabled, false);
+
+eq('daily nudge label', formatDailyReminderTime(nudgeOn), '20:30');
+
+eq('disabled daily nudge never fires', nextDailyReminderAt(mondayMorning, { ...nudgeOn, enabled: false }), null);
+
+const evening = { enabled: true, hour: 20, minute: 30 };
+const tonight = nextDailyReminderAt(new Date(2026, 8, 7, 9, 5, 0, 0), evening);
+eq('daily nudge lands tonight', tonight?.toISOString(), new Date(2026, 8, 7, 20, 30, 0, 0).toISOString());
+const tomorrowEvening = nextDailyReminderAt(new Date(2026, 8, 7, 21, 0, 0, 0), evening);
+eq('daily nudge rolls to tomorrow once passed', tomorrowEvening?.toISOString(), new Date(2026, 8, 8, 20, 30, 0, 0).toISOString());
+const exactly = nextDailyReminderAt(new Date(2026, 8, 7, 20, 30, 0, 0), evening);
+eq('daily nudge is strictly in the future', exactly?.toISOString(), new Date(2026, 8, 8, 20, 30, 0, 0).toISOString());
 
 console.log(fails === 0 ? '\nALL CHECKS PASSED' : `\n${fails} CHECK(S) FAILED`);
 process.exit(fails === 0 ? 0 : 1);
