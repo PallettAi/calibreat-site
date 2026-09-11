@@ -17,14 +17,16 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
-# NOTE — Content-Security-Policy: the CSP is NOT in the HTML. Meta-tag CSP is
-# ignored for `frame-ancestors` and logs a console warning on every page load.
-# It must be delivered as an HTTP header. GitHub Pages cannot send custom
-# response headers, so full CSP on production currently requires moving the
-# site to a host that can (e.g. Cloudflare Pages or Workers with a
-# _headers-equivalent). Until then, pages rely on the remaining meta
-# protections (referrer, nosniff) plus header-based CSP wherever the site is
-# served by something we control (see apps/web/serve.py for local/preview).
+# NOTE — this workflow is now the FALLBACK host. The site is moving to
+# Cloudflare Pages (deploy-cloudflare.yml) for two reasons: link-preview
+# crawlers do not follow redirects and GitHub Pages 301s every http:// request,
+# which broke every share card; and GitHub Pages cannot send custom response
+# headers, so the Content-Security-Policy could never ship as a real header
+# (a meta-tag CSP is ignored for `frame-ancestors`). The policy now lives in
+# apps/web/_headers; see docs/site-hosting.md for the cutover.
+#
+# Kept running until the DNS cutover so both hosts stay in sync and the switch
+# is reversible. After cutover: delete this file and apps/web/CNAME.
 jobs:
   deploy:
     environment:

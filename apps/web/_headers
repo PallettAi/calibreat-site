@@ -1,0 +1,26 @@
+# Security headers for calibrEAT, served by Cloudflare Pages.
+#
+# This is the single source of truth: apps/web/serve.py reads this same file for
+# local development, and scripts/check-site.mjs fails if the policy loses a
+# directive the site needs. GitHub Pages could never send these (it has no
+# custom-response-header support), which is why the site moved — a meta-tag CSP
+# is ignored for `frame-ancestors` and logs a warning on every page load.
+#
+# Syntax: a path pattern line, then indented `Name: value` lines.
+# Cloudflare Pages limits: 100 rules, 2,000 characters per header.
+#
+# NOTE: do not add `Strict-Transport-Security` here without reading
+# docs/site-hosting.md first — HSTS is honoured by browsers for a year and cannot
+# be recalled, and http:// must keep answering 200 for link-preview crawlers.
+
+/*
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; form-action 'self' mailto: https:; frame-ancestors 'none'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://fonts.googleapis.com https://fonts.gstatic.com
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# Revalidate assets rather than pinning them: the OG card is fetched by crawlers
+# that cache by URL, and a stuck stale file is exactly the failure we are fixing.
+/assets/*
+  Cache-Control: public, max-age=3600, must-revalidate

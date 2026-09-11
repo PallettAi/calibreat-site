@@ -9,7 +9,7 @@ one-time lifetime unlock — no subscriptions, no in-app purchases, no ads.
 | --- | --- |
 | `apps/mobile/` | The app — Expo SDK 57 (React Native) + TypeScript + expo-router. Lock gate, home instrument, setup wizard, macros, BMI, Train, settings, offline-first data layer. |
 | `apps/api/` | The license service — email verification + lifetime-code activation/revocation. A Cloudflare Worker + SQLite-backed Durable Object (free plan), the hard server-side gate. |
-| `apps/web/` | The marketing / sales site — hand-written static HTML, no build step: landing page, license/checkout, download + install guides, legal pages. |
+| `apps/web/` | The marketing / sales site — hand-written static HTML, no build step: landing page, license/checkout, download + install guides, legal pages. Hosted on Cloudflare Pages (migrating from GitHub Pages — see `docs/site-hosting.md`); security headers live in `apps/web/_headers`. |
 | `brand/` | Brand system — monoline balance mark, wordmark lockup, gallery, and the generated `glyph-gallery.html` icon review sheet. |
 | `docs/` | Operational notes (e.g. `support-email.md` for the Resend inbound setup). |
 | `scripts/` | Repo-level tooling — `check-site.mjs` and the OG-card generator. |

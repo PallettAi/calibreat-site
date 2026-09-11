@@ -1,0 +1,88 @@
+name: Deploy website to Cloudflare Pages
+
+# The site moved here from GitHub Pages for two reasons, both documented in
+# docs/site-hosting.md:
+#   1. Link-preview crawlers (X/Twitterbot) do not follow redirects, and Pages
+#      answered every http:// request with a 301 — so every card rendered blank.
+#      Cloudflare answers http:// with the page itself, and gives us the edge
+#      rules to keep humans on https without breaking the crawlers.
+#   2. GitHub Pages cannot send custom response headers, so the Content-Security-
+#      Policy could never ship. It now lives in apps/web/_headers.
+#
+# Until the DNS cutover completes, deploy-site.yml (GitHub Pages) still runs too,
+# so both hosts serve identical content and the switch is reversible.
+# After cutover: delete this note, deploy-site.yml, and apps/web/CNAME.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'scripts/check-site.mjs'
+      - '.github/workflows/deploy-cloudflare.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to Pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Same gate as the GitHub Pages workflow — never publish a broken site.
+      - name: Static site checks
+        run: node scripts/check-site.mjs
+
+      # Cloudflare credentials are a one-time setup step (docs/site-hosting.md).
+      # Until they exist, skip the deploy instead of failing every push: a red
+      # workflow people learn to ignore is worse than no workflow.
+      - name: Check for Cloudflare credentials
+        id: creds
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::notice title=Cloudflare deploy skipped::Set the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets to enable deploys — see docs/site-hosting.md"
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Provisioning the project here keeps setup to two secrets and nothing
+      # else: the first deploy creates `calibreat-site`, later runs find it and
+      # move on. (Without this, the project had to be created by hand before the
+      # workflow could ever succeed — a prerequisite that is easy to miss and
+      # fails the deploy with a confusing "project not found".)
+      - name: Ensure the Pages project exists
+        if: steps.creds.outputs.skip != '1'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          project=calibreat-site
+          if npx --yes wrangler@4 pages project list | grep -qw "$project"; then
+            echo "Pages project '$project' already exists - nothing to create."
+            exit 0
+          fi
+          echo "Creating Pages project '$project'."
+          npx --yes wrangler@4 pages project create "$project" --production-branch=main
+
+      - name: Deploy to Cloudflare Pages
+        if: steps.creds.outputs.skip != '1'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # No build step: apps/web is hand-written static HTML.
+          command: pages deploy apps/web --project-name=calibreat-site --branch=main

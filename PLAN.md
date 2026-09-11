@@ -190,9 +190,13 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
       release builds fail closed
 - [x] Repo-level plan + READMEs
 - [x] Replace default Expo icon/splash with calibrEAT branding (`assets/images/`)
-- [ ] Build a debug **Android APK** (`npx expo run:android` / EAS) and smoke-test the gate
-      — **the release blocker, and now a commercial risk**: checkout is live, so
-      the APK must ship (or checkout must pause) before the site is promoted
+- [x] APK build pipeline: `apps/mobile/eas.json` (APK profiles, licence API URL baked
+      in from one place), `npm run build:apk` / `npm run release:apk`, and
+      `scripts/check-release.mjs` in CI. Runbook + device test list: `docs/android-release.md`
+- [ ] **Build the release APK and smoke-test the gate on a device
+      (`docs/android-release.md` Parts 2–3)** — the release blocker, and a commercial
+      risk while checkout is live: the APK must ship (or checkout must pause) before
+      the site is promoted. This is now a build-and-test task, not a config one.
 
 ### M1 — Offline MVP (the real product)
 - [x] Local data layer: SQLite (`expo-sqlite`) on native with an identical
@@ -235,16 +239,19 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
       code+email+installId, 1-device rule, `/v1/validate`, and the MoR webhook
       for purchases/refunds. Deploy with `npm run deploy` (see `apps/api/README.md`),
       then set `EXPO_PUBLIC_LICENSE_API_URL` in the release APK build.
-- Wire `EXPO_PUBLIC_LICENSE_API_URL` into release APK builds; test purchase → email → activate
-  end-to-end on a real device
-- Replace the `Math.random()` install-id with a cryptographically random device id and send
-  device model/OS for support
+- [x] Wire `EXPO_PUBLIC_LICENSE_API_URL` into release APK builds (`eas.json` pins it for
+      both profiles; `scripts/check-release.mjs` asserts it is set and matches the deployed
+      Worker). The purchase → email → activate test on a real device is M0's build task.
+- [x] Cryptographically random install-id (`createInstallId` → `crypto.randomUUID`, covered
+      by `npm run check:license`) and device model/OS sent as `deviceLabel` on activation
 
 ### M4 — Website
 - [x] Site in `apps/web` on `calibreat.co.uk`: landing page, license/checkout, download +
       install guides, about, privacy, terms, refunds, FAQ
 - [x] Dodo Payments checkout live; the URL is asserted single-source by `scripts/check-site.mjs`
-- [ ] **free APK download** hosting — the only missing piece of M4 (see M0)
+- [ ] **free APK download** hosting — the only missing piece of M4 (see M0). The
+      download page is one constant away: set `APK_URL` in `apps/web/download.html` and
+      the button, chip and meta line all go live (`docs/android-release.md` Part 4)
 - [x] Privacy policy, terms, refunds, support email
 - [ ] Optional: order-status / license-lookup helper page that calls the license API
 
@@ -262,8 +269,12 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
 2. **Free tier before purchase?** e.g., 7-day full trial, or read-only demo, or hard lock.
    (The current gate is a hard lock with no trial.)
 3. ~~Website domain~~ **Resolved:** everything consolidated on **`calibreat.co.uk`** —
-   site (GitHub Pages, CNAME), app link constants, support address and OTP sender.
+   site, app link constants, support address and OTP sender.
    (`calibreat.app` remains unused; grab it as a redirect later if desired.)
+   **Hosting:** moving from GitHub Pages to **Cloudflare Pages** (`docs/site-hosting.md`)
+   because Pages 301s every `http://` request and link-preview crawlers do not follow
+   redirects (so every share card rendered blank), and because Pages cannot send the
+   `Content-Security-Policy` header the site needs.
 4. **Activation code format** (current UI implies blocks like `AB12-CD34-EF56`).
 5. ~~MoR choice in M3~~ **Resolved:** Dodo Payments (live checkout + license keys).
 6. **Google Play path later:** sideload-only forever, or Play billing for a store edition?
@@ -291,6 +302,7 @@ npm install
 npm run web        # web preview (dev-activation mode)
 npm run android    # Expo Go on a device/emulator (dev-activation mode)
 npm run check      # typecheck + every scripts/check-*.mjs suite
+npm run build:apk  # signed Android APK on EAS — see docs/android-release.md
 ```
 
 Release APK builds require a real activation API (`EXPO_PUBLIC_LICENSE_API_URL`); until M3,
