@@ -17,16 +17,14 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
-# NOTE — this workflow is now the FALLBACK host. The site is moving to
-# Cloudflare Pages (deploy-cloudflare.yml) for two reasons: link-preview
-# crawlers do not follow redirects and GitHub Pages 301s every http:// request,
-# which broke every share card; and GitHub Pages cannot send custom response
-# headers, so the Content-Security-Policy could never ship as a real header
-# (a meta-tag CSP is ignored for `frame-ancestors`). The policy now lives in
-# apps/web/_headers; see docs/site-hosting.md for the cutover.
+# This is the live host. A move to Cloudflare Pages was measured and parked: the
+# redirect theory behind it did not survive testing (see docs/site-hosting.md).
 #
-# Kept running until the DNS cutover so both hosts stay in sync and the switch
-# is reversible. After cutover: delete this file and apps/web/CNAME.
+# One real limitation remains, and it is not a bug anyone will notice: GitHub
+# Pages cannot send response headers, so the Content-Security-Policy in
+# apps/web/_headers does not ship from here (a meta-tag CSP is ignored for
+# `frame-ancestors` and warns on every page load). If that is ever worth a host
+# move, deploy-cloudflare.yml is parked on manual dispatch and ready.
 jobs:
   deploy:
     environment:

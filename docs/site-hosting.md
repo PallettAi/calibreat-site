@@ -1,35 +1,81 @@
-# Site hosting: GitHub Pages → Cloudflare Pages
+# Site hosting: staying on GitHub Pages
 
-The marketing site in `apps/web` is moving to **Cloudflare Pages**. This document
-exists because the move has one sharp edge (email records) and one footgun that
-would silently undo the whole reason for it.
+**Status: parked — not moving. Decided 12 September 2026.**
 
-## Why we moved
+The site stays on **GitHub Pages**. This document records why a move to Cloudflare
+Pages was started, why the reason did not survive testing, and what is kept in the
+repo in case the one surviving benefit is ever wanted. It is written down so this
+ground is not re-trodden from scratch.
 
-**1. Share cards were blank, and no amount of correct markup could fix it.**
-X stores a bare domain (`calibreat.co.uk`) as `http://…`, and its card crawler
-fetches that URL **once without following redirects**. GitHub Pages answered
-every `http://` (and `www.`) request with a 301, so the crawler gave up before it
-ever read the meta tags — and X cached "this URL has no card" permanently:
+## Why we started
 
-| What the crawler asked for | GitHub Pages | Card |
+The share-card preview was blank, and the theory the work was built on was:
+
+1. X stores a bare domain (`calibreat.co.uk`) as `http://…`
+2. its card crawler fetches **once and does not follow redirects**
+3. GitHub Pages answers `http://` with a 301
+4. so the crawler never reads the meta tags, and X caches "this URL has no card"
+5. therefore the site must answer **200 on `http://`**, which GitHub Pages cannot
+
+Steps 2–4 came from a single third-party blog post, and they are wrong.
+
+## Why we stopped
+
+**Every form of the URL is one hop, and one hop is followed.** Measured with
+`Twitterbot/1.0`:
+
+| URL form | Hops to 200 | Lands on |
 | --- | --- | --- |
-| `https://calibreat.co.uk/` | 200 | ✅ |
-| `http://calibreat.co.uk/` | **301** | ❌ |
-| `https://www.calibreat.co.uk/` | **301** | ❌ |
+| `http://calibreat.co.uk/` | **1** | `https://calibreat.co.uk/` |
+| `http://www.calibreat.co.uk/` | **1** | `https://calibreat.co.uk/` |
+| `https://www.calibreat.co.uk/` | **1** | `https://calibreat.co.uk/` |
+| `https://calibreat.co.uk/` | 0 | `https://calibreat.co.uk/` |
 
-Every validator and `curl` that used the `https://` URL saw a perfect card, which
-is exactly why this was invisible for so long. Cloudflare serves the page on
-`http://` with a 200, which is what the crawler needs.
+The page it lands on serves `twitter:card=summary_large_image`, `og:image` and
+`twitter:image`. The accurate rule is the one from a case X support debugged
+themselves: **the crawler follows one redirect, but not a chain** (X support
+reported the crawler "gets the content" after following; Netlify's staff
+summarised the limit in the same thread). Our redirect is a single hop straight
+to the canonical page, so it was never the problem.
 
-**2. The Content-Security-Policy could never ship.** GitHub Pages cannot send
-custom response headers, and a meta-tag CSP is ignored for `frame-ancestors` and
-warns on every page load. That limitation was already documented in
-`deploy-site.yml`; Pages removes it.
+**Cloudflare would not have changed that.** `*.pages.dev` answers `http://` with a
+301 too, in exactly one hop — measured on the first deployment. X gets an
+identical experience on either host, so the move could not have fixed a card even
+if the redirect theory had held.
 
-**3. Bonus:** Cloudflare analytics show crawler hits and their status codes —
-that is how the blank-card cause was eventually found by someone else. It also
-makes putting the licence API on `license.calibreat.co.uk` straightforward later.
+**What actually caused the blank preview is in the git history.** From Sep 8
+19:06 every page declared `twitter:card = summary` with **no `og:image` and no
+image file in the repo at all**; the image only landed Sep 10 19:04 (`32d38e7`).
+For two days the site advertised a card it had no image for — and X caches card
+data **per URL**, so anything shared in that window keeps rendering blank until X
+re-crawls that specific URL. The fix was the og-image work, not a host change.
+
+The cheap confirmation, if the question ever comes up again: post
+`https://calibreat.co.uk/?v=5` — a URL X has never seen — and see whether the full
+card renders.
+
+## What is kept anyway
+
+- **`apps/web/_headers`** — the CSP and framing headers. `serve.py` reads the same
+  file, so local development matches what a headers-capable host would send, and
+  `check-site.mjs` fails if a directive the site needs goes missing. Dormant on
+  GitHub Pages (which cannot send response headers) but not wasted: real security
+  headers are the one genuine benefit a move would buy.
+- **`.github/workflows/deploy-cloudflare.yml`** — parked on `workflow_dispatch`
+  only, so it never runs on a push and never nags with a notice. It provisions its
+  own Pages project, so resuming is two secrets and nothing else.
+- **The Pages project** `calibreat-site` exists with one deployment, free and
+  detached from `calibreat.co.uk`. Delete it with
+  `npx wrangler pages project delete calibreat-site` if it is clutter.
+
+## If you ever resume
+
+The surviving reason is the security headers, and they are worth having but not
+urgent: this is a static marketing site with no forms, no logins and no user
+input, so a CSP is hardening rather than a fix for something a visitor noticed.
+It is **not** worth risking the mail records on a whim — the MX for
+`support@calibreat.co.uk` and Resend's SPF/DKIM are what deliver activation codes,
+and losing them stops people unlocking the app.
 
 Free plan is genuinely free for this site: unlimited requests and bandwidth,
 500 builds/month, 20,000 files, 25 MiB per file, 100 custom domains.
@@ -104,8 +150,9 @@ session that deploys the licence Worker is scoped to Workers only
 
 ## Test the apex BEFORE moving nameservers
 
-This is the step that decides whether the move actually fixes share cards, so do
-it before the cutover and do not skip it. Once `calibreat.co.uk` exists as a zone
+If the move is ever resumed, this is the step that decides whether it delivers
+anything at all for crawlers — so do it before the cutover and do not skip it.
+Once `calibreat.co.uk` exists as a zone
 on Cloudflare (step 2 below) but *before* the nameservers move, you can send a
 request straight to Cloudflare's edge with the apex in the `Host` header, and see
 exactly what it would answer:

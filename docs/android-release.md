@@ -180,9 +180,9 @@ than usual for a sideloaded paid app — trim the unused ones with
 
    `check-release.mjs` will now require `APK_URL` to be https, end in `.apk`, and
    contain the app version — so the hosted file and the build cannot silently diverge.
-   Deploying is automatic once `apps/web` lands on `main` — `deploy-cloudflare.yml`,
-   with `deploy-site.yml` still serving as the fallback host until the DNS cutover in
-   `docs/site-hosting.md`.
+   Deploying is automatic once `apps/web` lands on `main` — `deploy-site.yml` publishes
+   to the live host (GitHub Pages). A move to Cloudflare Pages was measured and parked;
+   see `docs/site-hosting.md`.
 
 ## Part 5 — when something goes wrong
 

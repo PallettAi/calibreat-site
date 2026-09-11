@@ -271,10 +271,15 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
 3. ~~Website domain~~ **Resolved:** everything consolidated on **`calibreat.co.uk`** —
    site, app link constants, support address and OTP sender.
    (`calibreat.app` remains unused; grab it as a redirect later if desired.)
-   **Hosting:** moving from GitHub Pages to **Cloudflare Pages** (`docs/site-hosting.md`)
-   because Pages 301s every `http://` request and link-preview crawlers do not follow
-   redirects (so every share card rendered blank), and because Pages cannot send the
-   `Content-Security-Policy` header the site needs.
+   **Hosting:** **staying on GitHub Pages** (`docs/site-hosting.md`). A move to
+   Cloudflare Pages was started to fix blank share cards, on the theory that X's
+   crawler refuses redirects. Measured and disproved: every form of the URL is a
+   single hop, the crawler follows one redirect, and `*.pages.dev` 301s `http://`
+   the same way — so Cloudflare gives the crawler an identical experience. The
+   blank card was the two-day window where the pages declared a card with no
+   `og:image`, plus X's per-URL cache. The only surviving reason to move would be
+   real security headers (GitHub Pages cannot send them); `apps/web/_headers` and
+   a parked `deploy-cloudflare.yml` are kept in case that is ever wanted.
 4. **Activation code format** (current UI implies blocks like `AB12-CD34-EF56`).
 5. ~~MoR choice in M3~~ **Resolved:** Dodo Payments (live checkout + license keys).
 6. **Google Play path later:** sideload-only forever, or Play billing for a store edition?

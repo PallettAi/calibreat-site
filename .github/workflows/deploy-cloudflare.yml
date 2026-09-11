@@ -1,25 +1,23 @@
 name: Deploy website to Cloudflare Pages
 
-# The site moved here from GitHub Pages for two reasons, both documented in
-# docs/site-hosting.md:
-#   1. Link-preview crawlers (X/Twitterbot) do not follow redirects, and Pages
-#      answered every http:// request with a 301 — so every card rendered blank.
-#      Cloudflare answers http:// with the page itself, and gives us the edge
-#      rules to keep humans on https without breaking the crawlers.
-#   2. GitHub Pages cannot send custom response headers, so the Content-Security-
-#      Policy could never ship. It now lives in apps/web/_headers.
+# PARKED — manual only, on purpose. The site stays on GitHub Pages; the full
+# reasoning and the measurements behind it are in docs/site-hosting.md.
 #
-# Until the DNS cutover completes, deploy-site.yml (GitHub Pages) still runs too,
-# so both hosts serve identical content and the switch is reversible.
-# After cutover: delete this note, deploy-site.yml, and apps/web/CNAME.
+# The move was started because share-card previews were blank and the theory was
+# that X's crawler refuses redirects, so the site had to answer 200 on http://.
+# Measurement disproved it: every form of the URL is a single hop, the crawler
+# follows one redirect, and *.pages.dev 301s http:// exactly the same way — so
+# Cloudflare gives the crawler an identical experience. The blank card was the
+# two-day window where the pages declared a card with no og:image (see the git
+# history around 32d38e7) plus X's per-URL cache.
+#
+# Kept because the one real benefit survives: GitHub Pages cannot send response
+# headers, so the Content-Security-Policy in apps/web/_headers can only ship from
+# a host like this one. Two repository secrets switch it back on, and the step
+# below provisions its own Pages project, so no dashboard setup is needed first.
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'apps/web/**'
-      - 'scripts/check-site.mjs'
-      - '.github/workflows/deploy-cloudflare.yml'
+  # Deliberately manual: parked work should never run, or nag, on a push.
   workflow_dispatch:
 
 permissions:
