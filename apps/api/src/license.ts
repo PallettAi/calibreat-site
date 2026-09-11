@@ -85,3 +85,18 @@ export function generateCode(): string {
   };
   return `${group()}-${group()}-${group()}-${group()}`;
 }
+
+/** Cap and tidy a client-supplied phone label. Empty / junk → null. */
+export const DEVICE_LABEL_MAX = 40;
+
+export function sanitizeDeviceLabel(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const cleaned = raw.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!cleaned) return null;
+  return cleaned.slice(0, DEVICE_LABEL_MAX);
+}
+
+export function alreadyActiveMessage(label: string | null): string {
+  const where = label ? ` on ${label}` : ' on another device';
+  return `This license is already active${where}. Deactivate there first, or use “I don’t have that device” on this screen if it’s gone.`;
+}

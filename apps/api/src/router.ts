@@ -10,6 +10,8 @@ import {
   isValidEmail,
   normalizeCode,
   safeEqual,
+  sanitizeDeviceLabel,
+  alreadyActiveMessage,
 } from './license.ts';
 import { type LicenseStore } from './store.ts';
 // svix ships as CommonJS; Webhook.verify() is the signature-checking entry point.
@@ -24,13 +26,15 @@ import { Webhook } from 'svix';
  * Endpoints (see apps/api/README.md):
  *   POST /v1/request-verification  { email }
  *   POST /v1/verify-email          { email, otp }
- *   POST /v1/activate              { code, email, installId }
+ *   POST /v1/activate              { code, email, installId, deviceLabel? }
  *   POST /v1/deactivate            { code, email, installId }
+ *   POST /v1/release               { code, email } — OTP-gated slot clear from a new phone
  *   POST /v1/validate              { code, email, installId }
  *   POST /v1/webhook/mor           MoR purchase/refund events
  *   POST /v1/webhook/dodo          Dodo Payments Standard Webhooks
  *   POST /v1/webhook/inbound       Resend Inbound: received support email (Svix-signed)
  *   POST /v1/admin/licenses        { email, code? } — needs adminToken
+ *   POST /v1/admin/clear-activation { code } — needs adminToken (lost-device slot reset)
  *   GET  /v1/admin/inbound?limit=  recent inbound support emails — needs adminToken
  *   GET  /health
  */
@@ -55,12 +59,35 @@ function ok(body: Record<string, unknown> = {}): HttpResponse {
   return { status: 200, body: { ok: true, ...body } };
 }
 
-function fail(status: number, message: string): HttpResponse {
-  return { status, body: { ok: false, message } };
+function fail(
+  status: number,
+  message: string,
+  extra: Record<string, unknown> = {},
+): HttpResponse {
+  return { status, body: { ok: false, message, ...extra } };
 }
 
 function str(value: unknown): string {
   return typeof value === 'string' ? value : '';
+}
+
+function requireAdmin(ctx: Context, headers: Record<string, string> | undefined): HttpResponse | null {
+  const presented = str(headers?.authorization ?? '').replace(/^Bearer\s+/i, '');
+  if (!ctx.config.adminToken || !safeEqual(presented, ctx.config.adminToken)) {
+    return fail(401, 'Invalid admin token.');
+  }
+  return null;
+}
+
+async function requireRecentVerification(
+  ctx: Context,
+  email: string,
+): Promise<HttpResponse | null> {
+  const verifiedAt = await ctx.store.getEmailVerifiedAt(await hashEmail(email));
+  if (verifiedAt === null || Date.now() - verifiedAt > ctx.config.verifiedTtlMs) {
+    return fail(403, 'Verify your email first — request a code on the welcome screen.');
+  }
+  return null;
 }
 
 /* ── Endpoints ────────────────────────────────────────────────────── */
@@ -133,7 +160,7 @@ async function verifyEmail(ctx: Context, body: Record<string, unknown>): Promise
 }
 
 async function activate(ctx: Context, body: Record<string, unknown>): Promise<HttpResponse> {
-  const { store, config } = ctx;
+  const { store } = ctx;
   const code = normalizeCode(str(body.code));
   const email = str(body.email).trim().toLowerCase();
   const installId = str(body.installId).trim();
@@ -161,24 +188,32 @@ async function activate(ctx: Context, body: Record<string, unknown>): Promise<Ht
 
   const now = new Date().toISOString();
   const existing = await store.getActivation(license.codeHash);
+  const deviceLabel = sanitizeDeviceLabel(body.deviceLabel);
   const sameDevice = existing !== null && existing.email === email && existing.installId === installId;
   if (!sameDevice) {
-    const verifiedAt = await store.getEmailVerifiedAt(await hashEmail(email));
-    if (verifiedAt === null || Date.now() - verifiedAt > config.verifiedTtlMs) {
-      return fail(403, 'Verify your email first — request a code on the welcome screen.');
-    }
+    const unverified = await requireRecentVerification(ctx, email);
+    if (unverified) return unverified;
   }
 
   // Same email + same device → idempotent success (re-activation after an app
-  // reinstall). Same email + new device → the slot moves (the user owns the
-  // account via their email and can transfer between phones).
+  // reinstall that kept the install id). A different installId while the slot
+  // is taken is a second-device attempt — reject until the holder deactivates,
+  // the owner releases from a verified new phone, or support clears the slot.
   if (existing && existing.installId !== installId) {
-    console.log(`[calibrEAT] license ${code.slice(0, 8)}… moved from ${existing.installId} to ${installId}`);
+    const label = existing.deviceLabel ?? null;
+    console.log(
+      `[calibrEAT] license ${code.slice(0, 8)}… rejected second device ${installId} (held by ${existing.installId}${label ? ` / ${label}` : ''})`,
+    );
+    return fail(409, alreadyActiveMessage(label), {
+      conflict: 'active_elsewhere',
+      activeDevice: { label, activatedAt: existing.activatedAt },
+    });
   }
   await store.setActivation(license.codeHash, {
     email,
     installId,
     activatedAt: existing?.activatedAt ?? now,
+    deviceLabel: deviceLabel ?? existing?.deviceLabel,
   });
 
   return ok({
@@ -206,6 +241,35 @@ async function deactivate(ctx: Context, body: Record<string, unknown>): Promise<
     return ok({ message: 'License deactivated on this device.' });
   }
   return ok({ message: 'License is not active on this device.' });
+}
+
+async function release(ctx: Context, body: Record<string, unknown>): Promise<HttpResponse> {
+  const code = normalizeCode(str(body.code));
+  const email = str(body.email).trim().toLowerCase();
+
+  if (!isWellFormedCode(code)) {
+    return fail(400, "That code doesn't look complete. Example: AB12-CD34-EF56.");
+  }
+  if (!isValidEmail(email)) {
+    return fail(400, 'Please provide a valid email address.');
+  }
+
+  const license = await ctx.store.getLicense(await hashCode(code));
+  if (!license) {
+    return fail(404, 'This code is not recognized. Double-check it or contact support.');
+  }
+  if (license.revoked) {
+    return fail(403, 'This license has been revoked. Contact support if you believe this is a mistake.');
+  }
+  if (license.email !== email) {
+    return fail(403, 'This license code is tied to a different email address.');
+  }
+
+  const unverified = await requireRecentVerification(ctx, email);
+  if (unverified) return unverified;
+
+  await ctx.store.clearActivation(license.codeHash);
+  return ok({ message: 'Activation slot cleared.' });
 }
 
 async function validate(ctx: Context, body: Record<string, unknown>): Promise<HttpResponse> {
@@ -241,6 +305,10 @@ async function validate(ctx: Context, body: Record<string, unknown>): Promise<Ht
     activatedAt: activation?.activatedAt ?? null,
     plan: PLAN,
     customerEmail: license.email,
+    activeDevice:
+      activation && !active && !license.revoked
+        ? { label: activation.deviceLabel ?? null, activatedAt: activation.activatedAt }
+        : undefined,
   });
 }
 
@@ -427,14 +495,10 @@ async function dodoWebhook(ctx: Context, req: HttpRequest): Promise<HttpResponse
 }
 
 async function adminAddLicense(ctx: Context, req: HttpRequest): Promise<HttpResponse> {
-  const { store, config } = ctx;
+  const { store } = ctx;
   const body = req.body;
-  const headers = req.headers ?? {};
-
-  const presented = str(headers.authorization ?? '').replace(/^Bearer\s+/i, '');
-  if (!config.adminToken || !safeEqual(presented, config.adminToken)) {
-    return fail(401, 'Invalid admin token.');
-  }
+  const unauthorized = requireAdmin(ctx, req.headers);
+  if (unauthorized) return unauthorized;
 
   const email = str(body.email).trim().toLowerCase();
   if (!isValidEmail(email)) {
@@ -460,6 +524,24 @@ async function adminAddLicense(ctx: Context, req: HttpRequest): Promise<HttpResp
   });
 
   return ok({ message: `License bound to ${email}.`, code: generated ? code : undefined });
+}
+
+async function adminClearActivation(ctx: Context, req: HttpRequest): Promise<HttpResponse> {
+  const unauthorized = requireAdmin(ctx, req.headers);
+  if (unauthorized) return unauthorized;
+
+  const code = normalizeCode(str(req.body.code));
+  if (!isWellFormedCode(code)) {
+    return fail(400, "That code doesn't look complete. Example: AB12-CD34-EF56.");
+  }
+
+  const license = await ctx.store.getLicense(await hashCode(code));
+  if (!license) {
+    return fail(404, 'This code is not recognized.');
+  }
+
+  await ctx.store.clearActivation(license.codeHash);
+  return ok({ message: 'Activation slot cleared.' });
 }
 
 /* ── Inbound support mail (Resend Inbound) ───────────────────────────── */
@@ -559,11 +641,9 @@ async function inboundWebhook(ctx: Context, req: HttpRequest): Promise<HttpRespo
 }
 
 async function adminListInbound(ctx: Context, req: HttpRequest): Promise<HttpResponse> {
-  const { store, config } = ctx;
-  const presented = str((req.headers ?? {}).authorization ?? '').replace(/^Bearer\s+/i, '');
-  if (!config.adminToken || !safeEqual(presented, config.adminToken)) {
-    return fail(401, 'Invalid admin token.');
-  }
+  const { store } = ctx;
+  const unauthorized = requireAdmin(ctx, req.headers);
+  if (unauthorized) return unauthorized;
 
   const limitRaw = Number(str(req.body.limit) || '50');
   const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(Math.floor(limitRaw), 100) : 50;
@@ -594,6 +674,9 @@ export async function handleHttp(
   if (method === 'POST' && path === '/v1/deactivate') {
     return deactivate(ctx, req.body);
   }
+  if (method === 'POST' && path === '/v1/release') {
+    return release(ctx, req.body);
+  }
   if (method === 'POST' && path === '/v1/validate') {
     return validate(ctx, req.body);
   }
@@ -611,6 +694,9 @@ export async function handleHttp(
   }
   if (method === 'POST' && path === '/v1/admin/licenses') {
     return adminAddLicense(ctx, req);
+  }
+  if (method === 'POST' && path === '/v1/admin/clear-activation') {
+    return adminClearActivation(ctx, req);
   }
   return fail(404, 'Not found.');
 }

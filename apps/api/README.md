@@ -30,19 +30,23 @@ App lock screen                 Worker (this repo)
 | --- | --- | --- | --- |
 | POST | `/v1/request-verification` | `{ email }` | 200 `{ ok, message }` · 429 on cooldown (30 s) |
 | POST | `/v1/verify-email` | `{ email, otp }` | 200 `{ ok, verified }` · 400 invalid/expired/used · 429 after 5 failed attempts |
-| POST | `/v1/activate` | `{ code, email, installId }` | 200 `{ ok, valid, activatedAt, plan, customerEmail }` · 403 wrong email / revoked / email not recently verified |
+| POST | `/v1/activate` | `{ code, email, installId, deviceLabel? }` | 200 `{ ok, valid, activatedAt, plan, customerEmail }` · 403 wrong email / revoked / email not recently verified · **409** `{ conflict: "active_elsewhere", activeDevice }` if another device already holds the slot |
 | POST | `/v1/deactivate` | `{ code, email, installId }` | 200 `{ ok }` — frees the device slot (idempotent) |
-| POST | `/v1/validate` | `{ code, email, installId }` | 200 `{ ok, valid, revoked, activatedAt, plan, customerEmail }` |
+| POST | `/v1/release` | `{ code, email }` | 200 `{ ok }` — OTP-gated slot clear from a new phone (lost / reinstall) |
+| POST | `/v1/validate` | `{ code, email, installId }` | 200 `{ ok, valid, revoked, activatedAt, plan, customerEmail, activeDevice? }` |
 | POST | `/v1/webhook/mor` | MoR purchase/refund events + `x-webhook-secret` (or `Authorization: Bearer`) | 200 registers / revokes · 401 bad secret · 503 if `MOR_WEBHOOK_SECRET` is unset |
 | POST | `/v1/webhook/dodo` | Dodo Payments Standard Webhooks (`license_key.created`, `entitlement_grant.delivered` / `.revoked`) | 200 registers / revokes · 401 bad signature · 503 if `DODO_WEBHOOK_SECRET` is unset. Purchase events often omit email; with `DODO_API_KEY` the Worker looks up `customer_id` via `GET /customers/{id}`. |
 | POST | `/v1/webhook/inbound` | Resend Inbound event (Svix-signed) | stores support mail metadata + auto-acks the sender |
 | GET | `/v1/admin/inbound` | `Authorization: Bearer <ADMIN_TOKEN>` | recent support emails (newest first, ≤100) |
 | POST | `/v1/admin/licenses` | `Authorization: Bearer <ADMIN_TOKEN>` + `{ email, code? }` | registers a code (generates one if omitted) |
+| POST | `/v1/admin/clear-activation` | `Authorization: Bearer <ADMIN_TOKEN>` + `{ code }` | frees the device slot (lost/broken phone) without revoking the license |
 | GET | `/health` | — | 200 `{ ok }` |
 
-**Device policy:** one code + one email = **1 active device**. Activating the same
-`(code, email)` from a new `installId` moves the slot (that's the "transferable to
-other devices via your email" promise); a different email with the same code is rejected.
+**Device policy:** one code + one email = **1 active device**. A second `installId`
+is rejected with 409 (naming the holding phone when known) until the holder
+deactivates, the owner posts `/v1/release` after email OTP, or support clears
+the slot (`POST /v1/admin/clear-activation`). A different email with the same
+code is rejected.
 
 ## Security model
 
@@ -115,6 +119,12 @@ curl -X POST https://<your-url>/v1/admin/licenses \
   -H "Content-Type: application/json" \
   -d '{"email":"buyer@x.com"}'          # returns a generated code
 # or supply your own:  -d '{"email":"buyer@x.com","code":"AB12-CD34-EF56"}'
+
+# Lost/broken phone: free the slot so they can activate on a replacement.
+curl -X POST https://<your-url>/v1/admin/clear-activation \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"code":"AB12-CD34-EF56"}'
 ```
 
 ## Email (Resend free tier)

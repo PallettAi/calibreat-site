@@ -1,6 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Device from 'expo-device';
+import { Platform } from 'react-native';
 
 import { LicenseConfig } from '@/constants/app';
+import {
+  createInstallId,
+  formatDeviceLabel,
+  interpretDeactivateResponse,
+  interpretValidateResponse,
+  localValidateShortcut,
+  type ActiveDevice,
+  type LicenseCheckResult,
+} from '@/lib/license-check';
+import { isWellFormedCode, normalizeCode } from '@/lib/license-code';
 
 /**
  * calibrEAT license + activation.
@@ -22,6 +34,7 @@ import { LicenseConfig } from '@/constants/app';
 
 const LICENSE_STORAGE_KEY = 'calibreat.license.v1';
 const INSTALL_ID_STORAGE_KEY = 'calibreat.install-id.v1';
+const VERIFIED_EMAIL_STORAGE_KEY = 'calibreat.verified-email.v1';
 
 export type LicenseState = {
   /** Normalized code, e.g. "AB12-CD34-EF56". */
@@ -38,35 +51,117 @@ export type LicenseState = {
 
 export type ActivationResult =
   | { ok: true; license: LicenseState }
-  | { ok: false; message: string };
+  | { ok: false; message: string; conflict?: 'active_elsewhere'; activeDevice?: ActiveDevice };
+
+export type { ActiveDevice };
+
+export type SimpleResult = { ok: true; message?: string } | { ok: false; message: string };
 
 /**
- * Uppercases input and turns spaces/typos into dash-separated blocks so
- * "ab12 cd34 ef56" and "AB12-CD34-EF56" both normalize the same way.
+ * Result of a server re-attestation (validateLicense). `ok: false` means the
+ * server could not be reached — callers fail OPEN on that (the stored license
+ * stays) so paying users are never locked out of an app they already have
+ * on-device. `ok: true, valid: false` is the server's definitive verdict that
+ * this device no longer holds the slot, and the app must lock itself.
  */
-export function normalizeCode(raw: string): string {
-  const trimmed = raw.trim().toUpperCase();
-  if (trimmed.includes('-')) {
-    return trimmed
-      .split('-')
-      .map((block) => block.replace(/[^A-Z0-9]/g, ''))
-      .filter(Boolean)
-      .join('-');
+export type { LicenseCheckResult };
+
+/** Give up waiting for a validate response after this long (fail-open). */
+const VALIDATE_TIMEOUT_MS = 8000;
+
+/**
+ * Loose email shape check. The real gate is the verification/activation
+ * server (M3); this only stops obvious typos before a network call.
+ */
+export function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+/**
+ * Step 1 of the signup gate: ask the activation server to email a 6-digit
+ * verification code to `email`. Dev builds (no API URL) simulate success.
+ */
+export async function requestEmailVerification(email: string): Promise<SimpleResult> {
+  const apiUrl = LicenseConfig.apiBaseUrl.trim();
+  if (!apiUrl) {
+    if (!__DEV__) {
+      return {
+        ok: false,
+        message: 'Activation is not configured on this build yet. Please update the app.',
+      };
+    }
+    console.warn('[calibrEAT] No EXPO_PUBLIC_LICENSE_API_URL set — simulating email verification in dev.');
+    return {
+      ok: true,
+      message: `Verification code sent to ${email} (dev mode — any 6-digit code works).`,
+    };
   }
-  const cleaned = trimmed.replace(/[^A-Z0-9]/g, '');
-  return (cleaned.match(/.{1,4}/g) ?? []).join('-');
+  try {
+    const response = await fetch(`${apiUrl}/v1/request-verification`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const body: unknown = await response.json().catch(() => null);
+    const data = (body ?? {}) as { message?: string };
+    if (!response.ok) {
+      return {
+        ok: false,
+        message: data.message ?? "Couldn't send the verification code. Please try again.",
+      };
+    }
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      message: "Couldn't reach the activation server. Check your connection and try again.",
+    };
+  }
 }
 
 /**
- * Loose shape check only (alphanumeric blocks separated by dashes, ≥ 8 chars).
- * The exact code format is defined by the activation server in M3.
+ * Step 2 of the signup gate: confirm the 6-digit code sent to `email`.
+ * On success the email is persisted as the device's verified identity, and
+ * activation (step 3) binds the license code to it. Dev builds (no API URL)
+ * accept any 6-digit code.
  */
-export function isWellFormedCode(code: string): boolean {
-  if (!code) return false;
-  const blocks = code.split('-');
-  const totalLength = code.replace(/-/g, '').length;
-  return totalLength >= 8 && blocks.every((block) => /^[A-Z0-9]{3,6}$/.test(block));
+export async function verifyEmailCode(email: string, otp: string): Promise<SimpleResult> {
+  const apiUrl = LicenseConfig.apiBaseUrl.trim();
+  if (!apiUrl) {
+    if (!__DEV__) {
+      return {
+        ok: false,
+        message: 'Activation is not configured on this build yet. Please update the app.',
+      };
+    }
+    await saveVerifiedEmail(email);
+    return { ok: true };
+  }
+  try {
+    const response = await fetch(`${apiUrl}/v1/verify-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp }),
+    });
+    const body: unknown = await response.json().catch(() => null);
+    const data = (body ?? {}) as { message?: string };
+    if (!response.ok) {
+      return {
+        ok: false,
+        message: data.message ?? "That code didn't work. Please try again.",
+      };
+    }
+    await saveVerifiedEmail(email);
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      message: "Couldn't reach the activation server. Check your connection and try again.",
+    };
+  }
 }
+
+export { isWellFormedCode, normalizeCode } from '@/lib/license-code';
 
 /**
  * Runs the activation handshake for a raw code and, on success, persists the
@@ -78,7 +173,18 @@ export async function activateLicense(rawCode: string): Promise<ActivationResult
   if (!isWellFormedCode(code)) {
     return {
       ok: false,
-      message: "That code doesn't look complete. Example: AB12-CD34-EF56.",
+      message: "That code doesn't look complete. Check you pasted the whole key.",
+    };
+  }
+
+  // The license is bound to a verified email (the signup gate) — activation
+  // without one fails even in dev, so there is no path past the lock screen
+  // that skips email verification.
+  const email = await getVerifiedEmail();
+  if (!email) {
+    return {
+      ok: false,
+      message: 'Verify your email first — enter it on the welcome screen to receive a code.',
     };
   }
 
@@ -106,12 +212,13 @@ export async function activateLicense(rawCode: string): Promise<ActivationResult
   }
 
   const installId = await getInstallId();
+  const deviceLabel = currentDeviceLabel();
 
   try {
     const response = await fetch(`${apiUrl}/v1/activate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, installId }),
+      body: JSON.stringify({ code, email, installId, deviceLabel }),
     });
     const body: unknown = await response.json().catch(() => null);
     const data = (body ?? {}) as {
@@ -120,6 +227,8 @@ export async function activateLicense(rawCode: string): Promise<ActivationResult
       activatedAt?: string;
       plan?: string;
       customerEmail?: string;
+      conflict?: string;
+      activeDevice?: ActiveDevice;
     };
 
     if (!response.ok || data.valid !== true) {
@@ -128,6 +237,8 @@ export async function activateLicense(rawCode: string): Promise<ActivationResult
         message:
           data.message ??
           'This code could not be activated. Please double-check it or contact support.',
+        conflict: data.conflict === 'active_elsewhere' ? 'active_elsewhere' : undefined,
+        activeDevice: data.activeDevice,
       };
     }
 
@@ -168,6 +279,149 @@ export async function clearLicense(): Promise<void> {
 }
 
 /**
+ * Re-attests a stored license against the server: is THIS device still the
+ * one holding the slot for (code, email)? Called on launch and periodically
+ * (M5) so a displaced or revoked device locks itself instead of trusting the
+ * stored license forever. Fail-open on network trouble; fail-closed only on
+ * a definitive server verdict.
+ */
+export async function validateLicense(license: LicenseState): Promise<LicenseCheckResult> {
+  const apiUrl = LicenseConfig.apiBaseUrl.trim();
+
+  // Dev builds have no server slot to check — the locally activated license
+  // is trusted (same simulation as activation). Release builds without an
+  // API URL fail-open (keep the stored license) instead of pretending the
+  // server said valid.
+  const shortcut = localValidateShortcut(apiUrl, __DEV__);
+  if (shortcut) return shortcut;
+
+  // The license is bound to a verified email; without it we can't re-attest,
+  // and a stored license with no bound email is an inconsistent state.
+  const email = await getVerifiedEmail();
+  if (!email) {
+    return {
+      ok: true,
+      valid: false,
+      revoked: false,
+      reason:
+        'The email tied to this license is no longer on this device. Verify your email again to re-lock it.',
+    };
+  }
+
+  try {
+    const installId = await getInstallId();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), VALIDATE_TIMEOUT_MS);
+    let response: Response;
+    try {
+      response = await fetch(`${apiUrl}/v1/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: license.code, email, installId }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+
+    const body: unknown = await response.json().catch(() => null);
+    const data = (body ?? {}) as {
+      valid?: boolean;
+      revoked?: boolean;
+      message?: string;
+      activeDevice?: { label?: string | null };
+    };
+    return interpretValidateResponse(response.status, data);
+  } catch {
+    // Network failure / timeout — fail open; the next foreground check retries.
+    return { ok: false, message: "Couldn't reach the activation server." };
+  }
+}
+
+/**
+ * Frees the server-side slot only if this install currently holds it.
+ * Returns ok:false on network / HTTP failure so the caller can keep the
+ * local license instead of locking a user who never actually released.
+ */
+export async function deactivateLicense(code: string): Promise<SimpleResult> {
+  const apiUrl = LicenseConfig.apiBaseUrl.trim();
+  if (!apiUrl) return { ok: true }; // dev mode has no server slot
+  const email = await getVerifiedEmail();
+  if (!email) {
+    return { ok: false, message: 'Verify your email first, then try deactivating again.' };
+  }
+  try {
+    const installId = await getInstallId();
+    const response = await fetch(`${apiUrl}/v1/deactivate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, email, installId }),
+    });
+    return interpretDeactivateResponse(response.status, true);
+  } catch {
+    return interpretDeactivateResponse(0, false);
+  }
+}
+
+/**
+ * OTP-gated slot clear from a new phone (lost / reinstall). Does not require
+ * the old installId. Caller should then retry activate.
+ */
+export async function releaseLicense(rawCode: string): Promise<SimpleResult> {
+  const code = normalizeCode(rawCode);
+  const apiUrl = LicenseConfig.apiBaseUrl.trim();
+  if (!apiUrl) return { ok: true };
+  const email = await getVerifiedEmail();
+  if (!email) {
+    return { ok: false, message: 'Verify your email first — enter it on the welcome screen to receive a code.' };
+  }
+  try {
+    const response = await fetch(`${apiUrl}/v1/release`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, email }),
+    });
+    const body: unknown = await response.json().catch(() => null);
+    const data = (body ?? {}) as { message?: string };
+    if (!response.ok) {
+      return {
+        ok: false,
+        message: data.message ?? "Couldn't free the other device. Check your connection and try again.",
+      };
+    }
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      message: "Couldn't reach the activation server. Check your connection and try again.",
+    };
+  }
+}
+
+export function currentDeviceLabel(): string {
+  return formatDeviceLabel({
+    modelName: Device.modelName,
+    osName: Device.osName,
+    osVersion: Device.osVersion,
+    platform: Platform.OS,
+  });
+}
+
+/** The verified signup email on this device, or null if not verified yet. */
+export async function getVerifiedEmail(): Promise<string | null> {
+  const raw = await AsyncStorage.getItem(VERIFIED_EMAIL_STORAGE_KEY);
+  return raw || null;
+}
+
+export async function saveVerifiedEmail(email: string): Promise<void> {
+  await AsyncStorage.setItem(VERIFIED_EMAIL_STORAGE_KEY, email.trim().toLowerCase());
+}
+
+export async function clearVerifiedEmail(): Promise<void> {
+  await AsyncStorage.removeItem(VERIFIED_EMAIL_STORAGE_KEY);
+}
+
+/**
  * Stable per-install identifier, generated once and persisted. Sent to the
  * activation server so a single code can only be bound to a limited number
  * of devices (activation-limit policy lives server-side, see PLAN.md).
@@ -175,19 +429,7 @@ export async function clearLicense(): Promise<void> {
 export async function getInstallId(): Promise<string> {
   const existing = await AsyncStorage.getItem(INSTALL_ID_STORAGE_KEY);
   if (existing) return existing;
-  const id = randomId();
+  const id = createInstallId();
   await AsyncStorage.setItem(INSTALL_ID_STORAGE_KEY, id);
   return id;
-}
-
-/** Cheap v4-shaped UUID. Replace with expo-crypto/randomUUID when available. */
-function randomId(): string {
-  const hex = (length: number) => {
-    let out = '';
-    for (let i = 0; i < length; i += 1) {
-      out += Math.floor(Math.random() * 16).toString(16);
-    }
-    return out;
-  };
-  return `${hex(8)}-${hex(4)}-4${hex(3)}-${hex(4)}-${hex(12)}`;
 }

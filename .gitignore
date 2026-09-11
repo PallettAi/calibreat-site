@@ -1,5 +1,6 @@
 # Tooling / editor
 .freebuff/
+.superpowers/
 .DS_Store
 *.log
 

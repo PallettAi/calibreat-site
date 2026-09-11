@@ -1,6 +1,17 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * calibrEAT design tokens — an exact port of the website's CSS custom
+ * properties (apps/web/index.html `:root` / `[data-theme="light"]`), so the
+ * app and the marketing site always render the same palette.
+ *
+ * Key values (dark default, light opt-in — same as the website):
+ *   background      → --bg           (ink)
+ *   backgroundElement → --surface
+ *   backgroundSelected → --surface-2
+ *   text            → --text
+ *   textSecondary   → --text-2
+ *   muted           → --muted
+ *   line / lineStrong → --line / --line-strong
+ *   inputBackground → the lock-field surface used by the site's phone mockup
  */
 
 import '@/global.css';
@@ -9,18 +20,26 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#101820',
+    background: '#F6F7F4',
+    backgroundElement: '#FFFFFF',
+    backgroundSelected: '#F0F2EE',
+    textSecondary: '#46525C',
+    muted: '#67727C',
+    line: 'rgba(13, 21, 30, 0.09)',
+    lineStrong: 'rgba(13, 21, 30, 0.16)',
+    inputBackground: '#FFFFFF',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: '#EEF2F5',
+    background: '#0A1019',
+    backgroundElement: '#131D2D',
+    backgroundSelected: '#0E1623',
+    textSecondary: '#A7B2BC',
+    muted: '#7D8A96',
+    line: 'rgba(255, 255, 255, 0.09)',
+    lineStrong: 'rgba(255, 255, 255, 0.16)',
+    inputBackground: '#0C1420',
   },
 } as const;
 

@@ -69,11 +69,13 @@ export default {
       '/v1/verify-email',
       '/v1/activate',
       '/v1/deactivate',
+      '/v1/release',
       '/v1/validate',
       '/v1/webhook/mor',
       '/v1/webhook/dodo',
       '/v1/webhook/inbound',
       '/v1/admin/licenses',
+      '/v1/admin/clear-activation',
       '/v1/admin/inbound',
     ]);
     if (!allowed.has(url.pathname)) {

@@ -17,6 +17,8 @@ export type ActivationRecord = {
   email: string;
   installId: string;
   activatedAt: string;
+  /** Best-effort phone label from the client, e.g. "Pixel 8". */
+  deviceLabel?: string;
 };
 
 export type OtpRecord = {

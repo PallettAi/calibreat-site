@@ -134,12 +134,13 @@ endpoints and fail closed otherwise.
 
 - **One lifetime code per purchase**, delivered instantly by email (receipt + "My orders"
   page in the MoR storefront as backup).
-- A code is bound to **1 active device per account** (the verified signup email), enforced
-  server-side by counting distinct `installId`s per `(code, email)`. "Deactivate on this
-  device" (already in the UI) frees the slot so the user can move to another phone by
-  re-entering their email + code.
-- If a user replaces their phone, they reactivate with the same code (reuse a slot) or contact
-  support to reset their activation list.
+- A code is bound to **1 active device per account** (the verified signup email). A second
+  `installId` is rejected until "Deactivate on this device" frees the slot, the owner uses
+  “I don’t have that device” (OTP-gated `/v1/release`), or support clears it
+  (`POST /v1/admin/clear-activation`). Activations store an optional device label (e.g. Pixel 8).
+- If a user replaces their phone, they deactivate on the old device then reactivate with
+  the same code and email. If the old device is gone, they verify email on the new one and
+  tap “I don’t have that device”, or contact support to reset the slot.
 - **Refunds/chargebacks:** MoR webhook tells us to revoke; the app re-validates periodically
   and locks again if a license is revoked (see hardening in §7).
 
@@ -169,7 +170,8 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
 | Screen | State | Purpose |
 | --- | --- | --- |
 | **Welcome / Lock** (`src/app/index.tsx`) | Not activated | Brand hero, feature bullets, and the three-step gate (email → 6-digit verification code → license code) with "Get a lifetime license" → website. No bypass: activated users are redirected to Home before this ever paints, and activation without a verified email fails even in dev. |
-| **Home** (`src/app/home.tsx`) | Activated | Activation summary + roadmap preview of modules; deactivate-this-device. Becomes the real dashboard (today's calories, macros, water) in Build 1. |
+| **Home** (`src/app/home.tsx`) | Activated | Real dashboard: today's calorie goal, macro targets, water quick-add, weight summary; deactivate-this-device; first-run users are routed to `/setup`. |
+| **Profile setup** (`src/app/setup.tsx`) | Activated, no profile | 7-step wizard: sex, age, height, weight, activity, goal + pace, computed targets (Mifflin-St Jeor); saves profile + goals to the local DB. |
 | Food diary, Search/barcode, Water, Weight, Insights | Future | Milestone M1+ |
 
 ---
@@ -187,24 +189,44 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
 - [ ] Build a debug **Android APK** (`npx expo run:android` / EAS) and smoke-test the gate
 
 ### M1 — Offline MVP (the real product)
-- Local SQLite schema + migrations; profile & goals setup flow
-- Food diary: add meal entries (quick-add calories + search later), day view with totals
-- Water tracker and weight log with simple summary screen
-- Export/import of data (JSON/CSV) for backups & device migration
+- [x] Local data layer: SQLite (`expo-sqlite`) on native with an identical
+      localStorage-backed implementation for the web preview (`db.ts` /
+      `db.web.ts`); profile, goals and water tables
+- [x] Profile & goals setup flow (`/setup`): sex → age → height → weight →
+      activity → goal+pace → summary; computes BMR/TDEE (Mifflin-St Jeor),
+      calorie target with deficit/surplus, P/C/F split, healthy-weight-range
+      suggestion from height; prefilled when editing later. Units picker for
+      height (cm / m / ft+in) and weight (kg / lb / st+lb) with convert-on-
+      switch and saved preferences; a "Just monitor" goal option (no
+      deficit/surplus, target = estimated burn)
+- [x] Home dashboard (`/home`): calorie goal, macro bars, weight summary;
+      water widget with ml/cups input (1 cup ≈ 240 ml, goal = 35 ml/kg);
+      macros card opens the full nutrient screen; first-run users are routed
+      to `/setup`
+- [x] Macros screen (`/macros`): protein, carbs, fat, plus basic micronutrients
+      (fibre, sugars, saturated fat, sodium) from Open Food Facts when the pack lists them.
+- [ ] Food diary: add meal entries (quick-add calories + search later), day view with totals
+- [ ] Water tracker and weight log with simple summary screen
+- [ ] Export/import of data (JSON/CSV) for backups & device migration
 
-### M2 — Food database & barcode
-- Integrate **Open Food Facts** (free, open, barcode-first) with offline cache; fall back /
-  cross-check **USDA FoodData Central**
+### M2 — Food database & barcode (UK-first, all free)
+- **UK CoFID** (McCance & Widdowson, the official UK government composition dataset,
+  ~3,300 foods, free / Open Government Licence) — bundle as the offline nutrient reference
+  for everyday foods and for the extended macros screen
+- **Open Food Facts** (free, open API) — UK barcode scanning for packaged products, with
+  offline cache; nutrients wherever the product label lists them
+- **USDA FoodData Central** (free API) — fallback / cross-check for items neither covers
 - Barcode scan via the camera (`expo-camera`) → product lookup → log
 - Search UI with recent/favorites
 
 ### M3 — Licensing backend
 - Pick MoR (Lemon Squeezy or Dodo Payments); configure **lifetime product** with instant
   **email delivery of the activation code**
-- [x] License API implemented in `apps/api` (zero-dependency Node + TS): email→OTP
-      verification, activation binding code+email+installId, 1-device rule,
-      `/v1/validate`, and the MoR webhook for purchases/refunds. Deploy it, then
-      set `EXPO_PUBLIC_LICENSE_API_URL` in the release APK build.
+- [x] License API implemented in `apps/api` (Cloudflare Worker + SQLite-backed
+      Durable Object, free plan): email→OTP verification, activation binding
+      code+email+installId, 1-device rule, `/v1/validate`, and the MoR webhook
+      for purchases/refunds. Deploy with `npm run deploy` (see `apps/api/README.md`),
+      then set `EXPO_PUBLIC_LICENSE_API_URL` in the release APK build.
 - Wire `EXPO_PUBLIC_LICENSE_API_URL` into release APK builds; test purchase → email → activate
   end-to-end on a real device
 - Replace the `Math.random()` install-id with a cryptographically random device id and send
@@ -231,10 +253,25 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
 1. **Price** of the lifetime license.
 2. **Free tier before purchase?** e.g., 7-day full trial, or read-only demo, or hard lock.
    (The current gate is a hard lock with no trial.)
-3. **Website domain** (placeholder `calibreat.app` is used in `src/constants/app.ts`).
+3. ~~Website domain~~ **Resolved:** everything consolidated on **`calibreat.co.uk`** —
+   site (GitHub Pages, CNAME), app link constants, support address and OTP sender.
+   (`calibreat.app` remains unused; grab it as a redirect later if desired.)
 4. **Activation code format** (current UI implies blocks like `AB12-CD34-EF56`).
 5. **MoR choice** in M3.
 6. **Google Play path later:** sideload-only forever, or Play billing for a store edition?
+7. **License self-service portal.** The in-app "Manage my license" menu item currently
+   deep-links to the website's license page (`/license.html#faq`: lost-code FAQ + support
+   email, overridable with `EXPO_PUBLIC_LICENSE_HELP_URL`). There is no customer portal yet.
+   Options, cheapest first: (a) keep support-email handling; (b) M4's optional
+   order-status/license-lookup helper page that calls the license API with email + code;
+   (c) the MoR's built-in customer portal (e.g. Lemon Squeezy "My orders"), linked from the
+   receipt and the in-app menu.
+8. **Support inbox.** `support@calibreat.co.uk` (referenced by Terms/Refunds/Privacy and
+   the in-app help link) is received via **Resend Inbound** and wired into the license
+   Worker (`POST /v1/webhook/inbound` — Svix-verified, deduped, 90-day metadata store,
+   optional auto-ack). Read mail in the Resend dashboard; no Cloudflare zone required —
+   the only DNS change is one MX record at Fasthosts. Full setup, DNS records and GDPR
+   retention notes: `docs/support-email.md`.
 
 ---
 

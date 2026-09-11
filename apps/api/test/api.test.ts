@@ -148,19 +148,107 @@ test('activation binds the code to the purchase email only', async () => {
   assert.equal(first.body.plan, 'lifetime');
   assert.equal(first.body.customerEmail, email);
 
-  // Same email + new device → the slot moves (transferable via email).
-  const moved = await api('POST', '/v1/activate', { code, email, installId: 'dev-2' });
+  // Same email + new device → rejected while the first device still holds the slot.
+  const second = await api('POST', '/v1/activate', { code, email, installId: 'dev-2' });
+  assert.equal(second.status, 409);
+  assert.equal(second.body.ok, false);
+  assert.equal(second.body.conflict, 'active_elsewhere');
+  assert.match(String(second.body.message), /already active on another device/i);
+
+  const stillFirst = await api('POST', '/v1/validate', { code, email, installId: 'dev-1' });
+  assert.equal(stillFirst.status, 200);
+  assert.equal(stillFirst.body.valid, true);
+
+  const blockedSecond = await api('POST', '/v1/validate', { code, email, installId: 'dev-2' });
+  assert.equal(blockedSecond.status, 200);
+  assert.equal(blockedSecond.body.valid, false);
+});
+
+test('second-device 409 names the phone that holds the slot', async () => {
+  const email = 'named-device@example.com';
+  const code = await seedLicense(email);
+  await proveEmail(email);
+
+  const first = await api('POST', '/v1/activate', {
+    code,
+    email,
+    installId: 'phone-a',
+    deviceLabel: 'Pixel 8',
+  });
+  assert.equal(first.status, 200);
+
+  const second = await api('POST', '/v1/activate', {
+    code,
+    email,
+    installId: 'phone-b',
+    deviceLabel: 'iPhone 14',
+  });
+  assert.equal(second.status, 409);
+  assert.equal(second.body.conflict, 'active_elsewhere');
+  assert.deepEqual(second.body.activeDevice, {
+    label: 'Pixel 8',
+    activatedAt: first.body.activatedAt,
+  });
+  assert.match(String(second.body.message), /Pixel 8/);
+  assert.match(String(second.body.message), /I don.t have that device/i);
+});
+
+test('verified owner can release the slot from a new phone', async () => {
+  const email = 'release-slot@example.com';
+  const code = await seedLicense(email);
+  await proveEmail(email);
+  await api('POST', '/v1/activate', {
+    code,
+    email,
+    installId: 'old-phone',
+    deviceLabel: 'Pixel 8',
+  });
+
+  const skipped = await api('POST', '/v1/release', { code, email: 'other@example.com' });
+  assert.equal(skipped.status, 403);
+
+  const released = await api('POST', '/v1/release', { code, email });
+  assert.equal(released.status, 200);
+
+  const oldPhone = await api('POST', '/v1/validate', { code, email, installId: 'old-phone' });
+  assert.equal(oldPhone.body.valid, false);
+
+  const next = await api('POST', '/v1/activate', {
+    code,
+    email,
+    installId: 'new-phone',
+    deviceLabel: 'iPhone 14',
+  });
+  assert.equal(next.status, 200);
+  assert.equal(next.body.valid, true);
+});
+
+test('release requires a recently verified email', async () => {
+  const email = 'release-otp@example.com';
+  const code = await seedLicense(email);
+  // License exists but this email never completed OTP on this run.
+  const refused = await api('POST', '/v1/release', { code, email });
+  assert.equal(refused.status, 403);
+});
+
+test('second device can activate only after the first deactivates', async () => {
+  const email = 'transfer@example.com';
+  const code = await seedLicense(email);
+  await proveEmail(email);
+
+  await api('POST', '/v1/activate', { code, email, installId: 'phone-a' });
+  const blocked = await api('POST', '/v1/activate', { code, email, installId: 'phone-b' });
+  assert.equal(blocked.status, 409);
+
+  await api('POST', '/v1/deactivate', { code, email, installId: 'phone-a' });
+  const moved = await api('POST', '/v1/activate', { code, email, installId: 'phone-b' });
   assert.equal(moved.status, 200);
   assert.equal(moved.body.valid, true);
 
-  // The slot now belongs to dev-2; the old device must no longer validate.
-  const oldDevice = await api('POST', '/v1/validate', { code, email, installId: 'dev-1' });
-  assert.equal(oldDevice.status, 200);
-  assert.equal(oldDevice.body.valid, false);
-
-  const validate = await api('POST', '/v1/validate', { code, email, installId: 'dev-2' });
-  assert.equal(validate.status, 200);
-  assert.equal(validate.body.valid, true);
+  const oldPhone = await api('POST', '/v1/validate', { code, email, installId: 'phone-a' });
+  assert.equal(oldPhone.body.valid, false);
+  const newPhone = await api('POST', '/v1/validate', { code, email, installId: 'phone-b' });
+  assert.equal(newPhone.body.valid, true);
 });
 
 test('deactivate frees the slot; validate then reports inactive', async () => {
@@ -263,6 +351,37 @@ test('admin endpoint registers a license (token required)', async () => {
   });
   assert.equal(activate.status, 200);
   assert.equal(activate.body.valid, true);
+});
+
+test('admin can clear an activation slot for a lost device', async () => {
+  const adminConfig = configFromEnv({ ADMIN_TOKEN: 'sekret' });
+  const adminCtx = { store, config: adminConfig };
+  const email = 'lost-phone@example.com';
+  const code = await seedLicense(email);
+  await proveEmail(email);
+  await api('POST', '/v1/activate', { code, email, installId: 'lost-device' });
+
+  const noToken = await handleHttp(adminCtx, {
+    method: 'POST',
+    path: '/v1/admin/clear-activation',
+    body: { code },
+  });
+  assert.equal(noToken.status, 401);
+
+  const cleared = await handleHttp(adminCtx, {
+    method: 'POST',
+    path: '/v1/admin/clear-activation',
+    body: { code },
+    headers: { authorization: 'Bearer sekret' },
+  });
+  assert.equal(cleared.status, 200);
+
+  const oldDevice = await api('POST', '/v1/validate', { code, email, installId: 'lost-device' });
+  assert.equal(oldDevice.body.valid, false);
+
+  const replacement = await api('POST', '/v1/activate', { code, email, installId: 'new-device' });
+  assert.equal(replacement.status, 200);
+  assert.equal(replacement.body.valid, true);
 });
 
 test('inbound support webhook verifies, dedupes and stores mail', async () => {
