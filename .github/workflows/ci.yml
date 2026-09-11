@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   site:
-    name: Website
+    name: Website & release config
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,6 +28,11 @@ jobs:
           node-version: '22'
       - name: Static site checks
         run: node scripts/check-site.mjs
+      # Guards the APK build config and the download page's link to it. No
+      # network: the live /health probe is opt-in via --online, since a
+      # Cloudflare blip should not fail a pull request.
+      - name: Release config checks
+        run: node scripts/check-release.mjs
 
   api:
     name: License API

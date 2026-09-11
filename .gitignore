@@ -18,6 +18,13 @@ ios/
 *.apk
 *.aab
 
+# Android signing material — never commit a keystore. EAS holds (and can export)
+# the one that signs the released APK; losing it means users must uninstall.
+*.jks
+*.keystore
+credentials.json
+release.keystore
+
 # Env & secrets
 .env
 .env.*

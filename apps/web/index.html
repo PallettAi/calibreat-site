@@ -39,13 +39,12 @@
   CONFIG — one place to make the store live
   ───────────────────────────────────────────────────────────────────────
   CHECKOUT_URL : Dodo Payments live checkout for the lifetime license.
-  APK_URL      : direct download link for the Android APK. Placeholder —
-                 the release APK has not been built yet.
+                 (The Android APK's download link lives on download.html — one
+                 source, one button; see scripts/check-release.mjs.)
   ═══════════════════════════════════════════════════════════════════════
 -->
 <script>
   const CHECKOUT_URL = "https://checkout.dodopayments.com/buy/pdt_0NnJYkayhhVbOB0gyOyyE?quantity=1";
-  const APK_URL = "#apk-coming-soon"; // TODO: paste hosted APK link
 
   // Inline night mark (data URI) — keeps the page self-contained. Master copy:
   // brand/calibreat-mark-line-dark.svg.
@@ -1187,8 +1186,6 @@
     btn.href = "license.html";
     btn.setAttribute("aria-label", "Buy a lifetime activation code");
   });
-  const apkBtn = document.getElementById("apk-btn");
-  if (apkBtn) { apkBtn.href = APK_URL; if (APK_URL.startsWith("#")) apkBtn.addEventListener("click", (e) => { e.preventDefault(); const el=document.getElementById("guide-android"); if(el) el.scrollIntoView({behavior:"smooth"}); }); }
   const _y=document.getElementById("year"); if(_y) _y.textContent=new Date().getFullYear();
 
   // Inject the self-contained night mark into images + favicon.

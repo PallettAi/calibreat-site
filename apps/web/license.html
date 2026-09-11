@@ -40,13 +40,12 @@
   ───────────────────────────────────────────────────────────────────────
   CHECKOUT_URL : Dodo Payments live checkout for the lifetime license.
                  Dodo emails the activation key; the Worker records it via webhook.
-  APK_URL      : direct download link for the Android APK. Placeholder —
-                 the release APK has not been built yet.
+                 (The Android APK's download link lives on download.html — one
+                 source, one button; see scripts/check-release.mjs.)
   ═══════════════════════════════════════════════════════════════════════
 -->
 <script>
   const CHECKOUT_URL = "https://checkout.dodopayments.com/buy/pdt_0NnJYkayhhVbOB0gyOyyE?quantity=1";
-  const APK_URL = "#apk-coming-soon"; // TODO: paste hosted APK link
 
   // Inline night mark (data URI) — keeps the page self-contained. Master copy:
   // brand/calibreat-mark-line-dark.svg.

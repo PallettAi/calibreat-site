@@ -1,7 +1,7 @@
 {
   "name": "mobile",
   "main": "expo-router/entry",
-  "version": "0.0.3-beta",
+  "version": "0.0.3",
   "dependencies": {
     "@expo/ui": "~57.0.16",
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -46,6 +46,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "build:apk": "npx eas-cli@latest build --platform android --profile preview",
+    "release:apk": "npx eas-cli@latest build --platform android --profile production",
+    "credentials": "npx eas-cli@latest credentials --platform android",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && node scripts/run-checks.mjs",
     "verify": "npm run lint && npm run check",
