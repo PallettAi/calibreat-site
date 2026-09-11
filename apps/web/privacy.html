@@ -184,7 +184,7 @@
         <li><b>App</b> — calibrEAT for Android (APK sideload; build in progress) and iOS (App Store later) — currently in pre-launch. App features: food diary, barcode scan, water &amp; weight tracking, True Burn Learning, goals &amp; insights.</li>
         <li><b>License service</b> — the activation API (Cloudflare Worker + Durable Object) that verifies your email and binds your lifetime code to a device; and the <b>Merchant of Record</b> checkout that sells the code and emails it.</li>
       </ul>
-      <p>It does not cover Open Food Facts, USDA FoodData Central, Apple, Google or your email provider — they have their own policies.</p>
+      <p>It does not cover Open Food Facts, Apple, Google or your email provider — they have their own policies.</p>
 
       <h2 id="website">3. Website data — the minimum</h2>
       <p><b>We set no cookies and run no analytics.</b> The site is plain HTML/CSS/JS with one Google Fonts stylesheet (Inter + Sora). If Google Fonts fails, the site falls back to system fonts.</p>
@@ -213,7 +213,7 @@
       <ol>
         <li><b><code>POST /v1/request-verification { email }</code></b> — we generate a 6-digit OTP, store only <code>hash(email|otp)</code>, and send the code via <b>Resend</b> (<code>no-reply@calibreat.co.uk</code>). OTP: 10-minute expiry, single-use, 5-attempt lockout, 30 s resend cooldown.</li>
         <li><b><code>POST /v1/verify-email { email, otp }</code></b> — if valid we store the lower-cased verified email against the install. No password is ever set.</li>
-        <li><b><code>POST /v1/activate { code, email, installId }</code></b> (and later <code>/v1/validate</code>, <code>/v1/deactivate</code>) — we store <b>hashed</b> license codes (SHA-256) bound to the buyer email and the <code>installId</code>. A different email with the same code is rejected; the same pair from a new device moves the slot (so you can switch phones). Refunds/chargebacks → the code is <b>revoked</b> and the app re-locks on next validation.</li>
+        <li><b><code>POST /v1/activate { code, email, installId }</code></b> (and later <code>/v1/validate</code>, <code>/v1/deactivate</code>) — we store <b>hashed</b> license codes (SHA-256) bound to the buyer email and the <code>installId</code>. A different email with the same code is rejected; a second device is rejected until the first deactivates or support clears the slot. Refunds/chargebacks → the code is <b>revoked</b> and the app re-locks on next validation.</li>
       </ol>
       <p><b>What we store server-side:</b> lower-cased email, hashed code, installId, <code>activatedAt</code>, plan, and whether revoked. <b>We never store your food, water or weight logs.</b> License codes are hashed — a database leak leaks nothing activatable.</p>
       <p><b>Processors:</b> <b>Cloudflare Workers + Durable Objects</b> (hosting the API + SQLite DO store) and <b>Resend</b> (email delivery). See §9.</p>
@@ -222,7 +222,7 @@
       <p>The lifetime code is sold on a <b>hosted checkout</b> operated by a <b>Merchant of Record</b> named on the payment page. The MoR is the <b>seller of record</b>: it takes payment, handles VAT/sales tax, sends the receipt and emails your permanent activation code instantly, and handles chargebacks. The MoR’s privacy policy and terms apply to the checkout and payment. We receive only what the MoR webhooks to our license API — typically <code>event, customer_email, license_key</code> — to register or revoke the code. We never see full card numbers.</p>
 
       <h2 id="food-db">7. Food database lookups</h2>
-      <p>Barcode scan and food search query <b>Open Food Facts</b> (and optionally USDA FoodData Central) directly from the app over HTTPS. Those queries (barcode numbers, search terms) plus your IP go to those providers per their policies — not to us. Results are cached locally on your device. Using these features requires an internet connection; your private logs are still local.</p>
+      <p>Barcode scan and food search query <b>Open Food Facts</b> directly from the app over HTTPS. Those queries (barcode numbers, search terms) plus your IP go to that provider per their policies — not to us. Results are cached locally on your device. Using these features requires an internet connection; your private logs are still local.</p>
 
       <h2 id="legal-basis">8. Legal bases (UK GDPR Art. 6 &amp; 9)</h2>
       <table>
@@ -241,7 +241,7 @@
         <li><b>Resend</b> (email) — sends OTPs and (if you email us) may transit support replies. DPA in place via their terms.</li>
         <li><b>Cloudflare, Inc.</b> — Workers &amp; Durable Objects host the license API; may process requests in the US/EEA per <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare Privacy Policy</a>.</li>
         <li><b>GitHub, Inc.</b> — hosts the static website (Pages).</li>
-        <li><b>Open Food Facts / USDA</b> — only the queries you choose to make from the app.</li>
+        <li><b>Open Food Facts</b> — only the queries you choose to make from the app.</li>
       </ul>
       <p>We will also share if the law requires it, or to protect our rights.</p>
 
