@@ -124,8 +124,11 @@ export function mergeFoodSearch(
 ): FoodSearchResult {
   const packsFailed = remote == null;
   const remoteHits = (remote ?? []).map((food) => ({ ...food, source: food.source ?? 'off' }));
+  // Reserve room for packs so a crowded CoFID hit list cannot hide them.
+  const remoteTake = packsFailed ? 0 : Math.min(remoteHits.length, Math.floor(limit / 2));
+  const localTake = limit - remoteTake;
   return {
-    hits: [...local, ...remoteHits].slice(0, limit),
+    hits: [...local.slice(0, localTake), ...remoteHits.slice(0, remoteTake)],
     packsFailed,
   };
 }

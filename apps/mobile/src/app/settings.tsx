@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
 
@@ -12,6 +12,8 @@ import { useTheme } from '@/hooks/use-theme';
 import { useLicense } from '@/lib/license-context';
 import { getVerifiedEmail } from '@/lib/license';
 import { COFID_CREDIT } from '@/lib/food-search';
+import { getSettings, saveSettings, type AppSettings } from '@/lib/settings';
+import { syncDailyReminder } from '@/lib/daily-reminder-notifications';
 import { syncWeighInReminder } from '@/lib/weigh-in-notifications';
 import {
   formatReminderTime,
@@ -46,6 +48,7 @@ export default function SettingsScreen() {
     setSettings(next);
     await saveSettings(next);
     void syncWeighInReminder();
+    void syncDailyReminder();
   }
 
   async function toggle<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
@@ -70,6 +73,8 @@ export default function SettingsScreen() {
   }
 
   const email = license?.customerEmail ?? verifiedEmail ?? '—';
+  // Shown to the user so the switch says exactly when the nudge will arrive.
+  const dailyNudgeAt = formatDailyReminderTime(dailyReminderFromSettings({ remindersEnabled: true }));
   // Derive a display name from the email when no explicit name is stored
   const displayName = (() => {
     if (!email || email === '—') return '—';
@@ -83,9 +88,15 @@ export default function SettingsScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
-        <View style={styles.content}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Pressable onPress={() => router.back()} hitSlop={8} style={({ pressed }) => [styles.backBtn, { borderColor: hairline }, pressed && styles.pressed]}>
+            <Pressable
+              onPress={() => router.back()}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              style={({ pressed }) => [styles.backBtn, { borderColor: hairline }, pressed && styles.pressed]}
+            >
               <Text style={[styles.backChevron, { color: accent }]}>‹</Text>
               <ThemedText type="smallBold">Back</ThemedText>
             </Pressable>
@@ -106,7 +117,7 @@ export default function SettingsScreen() {
               <>
                 <Row
                   label="Daily reminders"
-                  detail="Gentle nudge to log meals"
+                  detail={`One nudge a day at ${dailyNudgeAt}`}
                   value={settings.remindersEnabled}
                   onValueChange={(v) => toggle('remindersEnabled', v)}
                   accent={accent}
@@ -221,7 +232,7 @@ export default function SettingsScreen() {
               </View>
             </View>
             <ThemedText type="small" themeColor="textSecondary" style={styles.accountHint}>
-              Lifetime access — 1 active device. Deactivate here to move, or email support if that device is gone.
+              Lifetime access — 1 active device. Open Account from Home (menu) to deactivate and move, or email support if that device is gone.
             </ThemedText>
           </View>
 
@@ -229,9 +240,9 @@ export default function SettingsScreen() {
             {COFID_CREDIT}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary" style={styles.footerNote}>
-            CalibrEAT will never store or sell your data. We believe in privacy for our users.
+            calibrEAT will never store or sell your data. We believe in privacy for our users.
           </ThemedText>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );

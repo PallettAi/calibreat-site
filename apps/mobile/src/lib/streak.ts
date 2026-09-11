@@ -66,7 +66,11 @@ export function claimStreak(state: StreakState | null | undefined, now: number):
 export function expireStreak(state: StreakState | null | undefined, now: number): StreakState {
   const prev = state ?? emptyStreak();
   const last = claimedAtMs(prev);
-  if (last == null) return { ...emptyStreak(), best: prev.best };
+  // Legacy rows (run > 0, no clock yet) wait for the first button claim.
+  if (last == null) {
+    if (prev.current > 0) return prev;
+    return { ...emptyStreak(), best: prev.best };
+  }
   if (now < last + STREAK_CLAIM_MS * 2) return prev;
   return { ...prev, current: 0 };
 }

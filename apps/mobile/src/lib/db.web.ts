@@ -482,8 +482,3 @@ export async function deleteWorkoutSession(id: number): Promise<void> {
 export async function getWorkoutKcalForDay(dayKeyValue: string): Promise<number> {
   return (await getWorkoutSessionsForDay(dayKeyValue)).reduce((sum, e) => sum + e.kcal, 0);
 }
-
-/** Suggested daily water goal: fixed 4,000 ml — keep in sync with db.ts. */
-export function suggestedWaterGoal(_weightKg?: number): number {
-  return 4000;
-}

@@ -52,7 +52,7 @@ import {
   type Profile,
   type RecentMeal,
 } from '@/lib/db';
-import { sumDayMacros } from '@/lib/diary';
+import { groupLogsByMeal, logDisplayName, MEAL_SLOTS, sumDayMacros } from '@/lib/diary';
 import { adaptiveHistory, adaptiveTdee, calorieBudget, caloriesRemaining, detectPlateau } from '@/lib/nutrition';
 import { getCalorieOverride, getTrueBurnState, saveTrueBurnState, setCalorieOverride, shouldShowAdoptPrompt, type TrueBurnState } from '@/lib/trueburn';
 import { useLicense } from '@/lib/license-context';
@@ -275,12 +275,9 @@ export default function HomeScreen() {
 
   const dayMacros = sumDayMacros(logs);
   const intakeKcal = dayMacros.kcal;
-  // Adopted measured target overrides dial until profile is re-saved in setup
-  const dialTarget = (() => {
-    if (overrideKcal != null) return overrideKcal;
-    if (adaptive?.ready && adaptive.suggestedTarget) return adaptive.suggestedTarget;
-    return goals?.calorieTarget ?? 2000;
-  })();
+  // Adopted measured target overrides dial until profile is re-saved in setup.
+  // Keep leaves the formula target on the dial — never auto-drive from True Burn.
+  const dialTarget = overrideKcal ?? goals?.calorieTarget ?? 2000;
   const budget = calorieBudget(dialTarget, workoutKcal);
   const dialMeasuredLabel = adaptive?.ready ? `Measured burn ${adaptive.measuredTdee?.toLocaleString()} kcal` : null;
   const showAdoptPrompt = !!adaptive?.ready && adaptive.suggestedTarget != null && overrideKcal == null && shouldShowAdoptPrompt(trueBurnPersist, adaptive.suggestedTarget);
@@ -333,6 +330,11 @@ export default function HomeScreen() {
 
   function openNewLog() {
     setEditingLog(null);
+    setShowLogSheet(true);
+  }
+
+  function openEditLog(entry: LogEntry) {
+    setEditingLog(entry);
     setShowLogSheet(true);
   }
 
@@ -750,6 +752,44 @@ export default function HomeScreen() {
               </ThemedText>
             )}
           </View>
+
+          {logs.length > 0 ? (
+            <View style={[styles.stripCard, { backgroundColor: cardBg, borderColor: hairline }]}>
+              <View style={styles.stripHead}>
+                <ThemedText type="smallBold" style={styles.stripTitle}>
+                  TODAY’S LOG
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Tap to edit
+                </ThemedText>
+              </View>
+              {MEAL_SLOTS.map((slot) => {
+                const entries = groupLogsByMeal(logs)[slot.value];
+                if (!entries.length) return null;
+                return (
+                  <View key={slot.value} style={styles.logMealBlock}>
+                    <ThemedText type="small" themeColor="textSecondary" style={styles.logMealLabel}>
+                      {slot.label}
+                    </ThemedText>
+                    {entries.map((entry) => (
+                      <Pressable
+                        key={entry.id}
+                        onPress={() => openEditLog(entry)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Edit ${logDisplayName(entry)}`}
+                        style={({ pressed }) => [styles.logRow, { borderColor: hairline }, pressed && styles.pressed]}
+                      >
+                        <ThemedText type="smallBold" style={styles.logName} numberOfLines={1}>
+                          {logDisplayName(entry)}
+                        </ThemedText>
+                        <Text style={[styles.logKcal, { color: accentText }]}>{entry.kcal}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
 
           {/* ── True Burn Calibration card (Phase A) ────────────── */}
           <View style={[styles.stripCard, { backgroundColor: cardBg, borderColor: hairline }]}>
@@ -1330,6 +1370,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: Spacing.four,
   },
+  logMealBlock: { gap: 6 },
+  logMealLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase' },
+  logRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  logName: { flex: 1 },
+  logKcal: { fontSize: 15, fontWeight: '800', fontFamily: Fonts.rounded },
   stripHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.two },
   stripTitle: { letterSpacing: 1.2, opacity: 0.75, fontSize: 11 },
   stripLink: { fontSize: 12 },
@@ -1447,14 +1501,6 @@ const styles = StyleSheet.create({
   waterAddText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   buttonDimmed: { opacity: 0.45 },
   cardHint: { lineHeight: 17, fontSize: 12 },
-  logWell: { borderWidth: 1, borderRadius: 16, overflow: 'hidden' },
-  logRowWrap: { width: '100%' },
-  logMealLabel: { fontSize: 10, letterSpacing: 1.3, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 4 },
-  logRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.two, paddingVertical: 12, paddingHorizontal: 14, width: '100%' },
-  logRowText: { flex: 1, minWidth: 0, gap: 2 },
-  logKcal: { fontSize: 16, fontWeight: '800', fontFamily: Fonts.rounded },
-  addMealBtn: { minHeight: 32, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  addMealBtnText: { fontSize: 12, fontWeight: '800', letterSpacing: 0.3 },
   weightCard: { justifyContent: 'flex-start' },
   weightReadout: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 4 },
   weightBig: { fontSize: 36, fontWeight: '800', letterSpacing: -0.02, fontFamily: Fonts.rounded },

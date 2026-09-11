@@ -74,7 +74,13 @@ export default function BmiScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <Pressable onPress={() => router.back()} hitSlop={8} style={({ pressed }) => [styles.backBtn, { borderColor: hairline }, pressed && styles.pressed]}>
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            style={({ pressed }) => [styles.backBtn, { borderColor: hairline }, pressed && styles.pressed]}
+          >
             <Text style={[styles.backChevron, { color: accent }]}>‹</Text>
             <ThemedText type="smallBold">Back</ThemedText>
           </Pressable>

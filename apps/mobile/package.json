@@ -46,6 +46,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck && node scripts/run-checks.mjs",
     "check:math": "node --experimental-strip-types scripts/check-math.mjs",
     "check:diary": "node --experimental-strip-types scripts/check-diary.mjs",
     "check:barcode": "node --experimental-strip-types scripts/check-barcode.mjs",

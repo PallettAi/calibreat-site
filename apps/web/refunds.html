@@ -70,7 +70,7 @@
   .theme-toggle{display:inline-flex;align-items:center;justify-content:center;background:none;border:1px solid var(--line);border-radius:9px;padding:6px 7px;cursor:pointer;color:var(--text);line-height:0;}
   .theme-toggle svg{width:17px;height:17px;}.theme-toggle .moon{display:none;}[data-theme="light"] .theme-toggle .sun{display:none;}[data-theme="light"] .theme-toggle .moon{display:inline;}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border-radius:12px;font-weight:600;font-size:15px;line-height:1;text-decoration:none;cursor:pointer;border:0;font-family:inherit;padding:15px 24px;white-space:nowrap;}
-  .btn-primary{background:linear-gradient(180deg,var(--green-bright),var(--green));color:#fff;box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 8px 20px -8px rgba(31,157,85,.6);}
+  .btn-primary{background:linear-gradient(180deg,#15803d,var(--green-deep));color:#fff;box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 8px 20px -8px rgba(31,157,85,.6);}
   .btn-lime{background:var(--lime);color:#0a1019;}
   .nav-cta{padding:9px 15px;font-size:13.5px;margin-left:2px;}.nav-links .nav-cta::after{display:none;}
   section{padding:clamp(56px,7vw,88px) 0;}
@@ -132,6 +132,12 @@
   .footer-bottom{border-top:1px solid var(--line);padding:18px 0 22px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);}
   @media(max-width:880px){.footer-grid{grid-template-columns:1fr 1fr;}.nav-inner{flex-wrap:wrap;}.site-nav.open{background:var(--nav-drawer-bg);backdrop-filter:none;-webkit-backdrop-filter:none;border-bottom-color:transparent;}.nav-links{display:none;position:fixed;inset:0;top:var(--nav-h,46px);flex-direction:column;align-items:stretch;gap:2px;padding:18px 0 24px;margin:0;border-top:1px solid var(--line);background:var(--nav-drawer-bg);overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 24px 48px -16px rgba(0,0,0,.45);z-index:60;}.site-nav.open .nav-links{display:flex;}.nav-links .link{padding:14px 24px;font-size:16px;color:var(--text);border-radius:0;}.nav-links .link:active{background:var(--line);}.nav-links .link::after{display:none;}.nav-links .theme-toggle{margin:10px 24px 0;align-self:flex-start;}.nav-links .nav-cta{margin:14px 24px 0;align-self:flex-start;}.nav-burger{display:block;}body.nav-menu-open{overflow:hidden;}body.nav-menu-open::before{content:"";position:fixed;inset:0;top:var(--nav-h,46px);background:rgba(0,0,0,.32);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:59;pointer-events:none;}[data-theme="light"] body.nav-menu-open::before{background:rgba(10,16,25,.08);}.help-grid,.split{grid-template-columns:1fr;}}
   @media(max-width:520px){.wrap{padding:0 18px;}}
+  /* Focus ring for keyboard users. */
+  :where(a, button, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
 </style>
 </head>
 <body>

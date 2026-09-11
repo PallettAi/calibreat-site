@@ -209,7 +209,8 @@
   .btn .arr { transition: transform 0.18s ease; }
   .btn:hover .arr { transform: translateX(3px); }
   .btn-primary {
-    background: linear-gradient(180deg, var(--green-bright), var(--green));
+    /* White on #1F9D55 is only 3.49:1 — under WCAG AA. These stops clear it. */
+    background: linear-gradient(180deg, #15803d, var(--green-deep));
     color: #fff;
     box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 8px 20px -8px rgba(31,157,85,.6);
   }
@@ -363,7 +364,8 @@
   }
   .lock-btn {
     width: 100%; margin-top: 10px; border: 0; cursor: default; font-family: var(--font-body);
-    background: linear-gradient(180deg, var(--green-bright), var(--green)); color: #fff;
+    /* Matches the app's unlock button, which uses the AA-safe deep green. */
+    background: linear-gradient(180deg, #15803d, var(--green-deep)); color: #fff;
     border-radius: 12px; padding: 13px; font-weight: 600; font-size: 14px;
     box-shadow: 0 12px 24px -10px rgba(31,157,85,.7);
   }
@@ -593,6 +595,12 @@
     html { scroll-behavior: auto; }
     .reveal { opacity: 1; transform: none; transition: none; }
     .float-card, .hero-art img { animation: none !important; }
+  }
+  /* Focus ring for keyboard users. */
+  :where(a, button, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 8px;
   }
 </style>
 </head>

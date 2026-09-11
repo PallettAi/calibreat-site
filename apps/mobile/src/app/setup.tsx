@@ -632,7 +632,7 @@ export default function SetupScreen() {
                     styles.navButton,
                     styles.primaryButton,
                     step === TOTAL_STEPS - 1 && styles.primaryButtonFinal,
-                    { backgroundColor: Brand.primary },
+                    { backgroundColor: Brand.primaryDeep },
                     pressed && styles.pressed,
                   ]}>
                   {saving ? (

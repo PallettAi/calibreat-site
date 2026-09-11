@@ -12,6 +12,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { getGoals, getMacrosForDay, getProfile, dayKey, type Goals, type Profile } from '@/lib/db';
 import { type DayMacros } from '@/lib/diary';
 import { useLicense } from '@/lib/license-context';
+import { getCalorieOverride } from '@/lib/trueburn';
 
 type MacroRow = {
   name: string;
@@ -34,6 +35,7 @@ export default function MacrosScreen() {
   const [loaded, setLoaded] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [goals, setGoals] = useState<Goals | null>(null);
+  const [overrideKcal, setOverrideKcal] = useState<number | null>(null);
   const [logged, setLogged] = useState<DayMacros>({
     kcal: 0,
     proteinG: 0,
@@ -49,11 +51,17 @@ export default function MacrosScreen() {
     useCallback(() => {
       let cancelled = false;
       (async () => {
-        const [p, g, macros] = await Promise.all([getProfile(), getGoals(), getMacrosForDay(macrosDay)]);
+        const [p, g, macros, override] = await Promise.all([
+          getProfile(),
+          getGoals(),
+          getMacrosForDay(macrosDay),
+          getCalorieOverride(),
+        ]);
         if (cancelled) return;
         setProfile(p);
         setGoals(g);
         setLogged(macros);
+        setOverrideKcal(override);
         setLoaded(true);
       })();
       return () => {
@@ -63,7 +71,7 @@ export default function MacrosScreen() {
   );
 
   const accentText = isDark ? Brand.lime : Brand.primaryDeep;
-  const target = goals?.calorieTarget ?? 2000;
+  const target = overrideKcal ?? goals?.calorieTarget ?? 2000;
   const isFemale = profile?.sex === 'female';
 
   const mainMacros: MacroRow[] = [
@@ -93,7 +101,12 @@ export default function MacrosScreen() {
           showsVerticalScrollIndicator={false}>
           {/* ── Header ────────────────────────────────────────────── */}
           <View style={styles.header}>
-            <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+            <Pressable
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            >
               <ThemedText type="smallBold" style={{ color: accentText }}>
                 ‹ Back
               </ThemedText>

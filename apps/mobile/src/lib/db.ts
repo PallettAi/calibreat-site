@@ -494,18 +494,22 @@ export async function setWaterForDay(key: string, totalMl: number): Promise<void
 /** Total ml for each of the last `days` days, oldest first. */
 export async function getWaterHistory(days: number): Promise<{ dayKey: string; ml: number }[]> {
   const db = await getDb();
+  const now = new Date();
+  const buckets = new Map<string, number>();
+  for (let i = days - 1; i >= 0; i -= 1) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    buckets.set(localDayKey(d), 0);
+  }
   const cutoff = localCutoffDayKey(days);
   const rows = await db.getAllAsync<{ day_key: string; total: number }>(
     `SELECT day_key, SUM(ml) AS total FROM water
-     WHERE day_key >= ? GROUP BY day_key`,
+     WHERE day_key >= ? GROUP BY day_key ORDER BY day_key ASC`,
     [cutoff],
   );
-  return rows.map((r) => ({ dayKey: r.day_key, ml: r.total }));
-}
-
-/** Suggested daily water goal: fixed 4,000 ml (muscle gain / creatine hydration) — same for every profile. */
-export function suggestedWaterGoal(_weightKg?: number): number {
-  return 4000;
+  for (const row of rows) {
+    if (buckets.has(row.day_key)) buckets.set(row.day_key, row.total);
+  }
+  return Array.from(buckets, ([dayKey, ml]) => ({ dayKey, ml }));
 }
 
 /* ── Weigh-ins ───────────────────────────────────────────────── */
@@ -640,12 +644,21 @@ export async function getIntakeForDay(dayKeyValue: string): Promise<number> {
 
 export async function getIntakeHistory(days: number): Promise<{ dayKey: string; kcal: number }[]> {
   const db = await getDb();
+  const now = new Date();
+  const buckets = new Map<string, number>();
+  for (let i = days - 1; i >= 0; i -= 1) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    buckets.set(localDayKey(d), 0);
+  }
   const cutoff = localCutoffDayKey(days);
   const rows = await db.getAllAsync<{ day_key: string; total: number }>(
-    `SELECT day_key, SUM(kcal) AS total FROM log_entries WHERE day_key >= ? GROUP BY day_key`,
+    `SELECT day_key, SUM(kcal) AS total FROM log_entries WHERE day_key >= ? GROUP BY day_key ORDER BY day_key ASC`,
     [cutoff],
   );
-  return rows.map((r) => ({ dayKey: r.day_key, kcal: r.total }));
+  for (const row of rows) {
+    if (buckets.has(row.day_key)) buckets.set(row.day_key, row.total);
+  }
+  return Array.from(buckets, ([dayKey, kcal]) => ({ dayKey, kcal }));
 }
 
 /* ── Workout sessions (Train only; never sent off-device) ───── */

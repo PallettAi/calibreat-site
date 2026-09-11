@@ -75,6 +75,55 @@
   })();
 </script>
 
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "name": "calibrEAT",
+      "url": "https://calibreat.co.uk/",
+      "logo": "https://calibreat.co.uk/assets/og-image.png",
+      "email": "support@calibreat.co.uk"
+    },
+    {
+      "@type": "WebSite",
+      "name": "calibrEAT",
+      "url": "https://calibreat.co.uk/"
+    },
+    {
+      "@type": "Product",
+      "name": "calibrEAT lifetime license",
+      "description": "One-time lifetime unlock for the calibrEAT calorie, water and weight tracker. No subscription, no ads, data stays on the device.",
+      "brand": { "@type": "Brand", "name": "calibrEAT" },
+      "image": "https://calibreat.co.uk/assets/og-image.png",
+      "offers": {
+        "@type": "Offer",
+        "price": "4.99",
+        "priceCurrency": "GBP",
+        "availability": "https://schema.org/InStock",
+        "url": "https://calibreat.co.uk/license.html"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "How much does calibrEAT cost?", "acceptedAnswer": { "@type": "Answer", "text": "£4.99 including VAT. One payment unlocks the app for life — no subscription, no in-app purchases, no ads. Every future update is included." } },
+        { "@type": "Question", "name": "Do I need an account?", "acceptedAnswer": { "@type": "Answer", "text": "No. There is no account to create in the app. You verify the email you used to buy, enter your activation code, and your logs stay on the device." } },
+        { "@type": "Question", "name": "Does it work offline?", "acceptedAnswer": { "@type": "Answer", "text": "Your food, water and weight logs live on the device and work without a connection. Looking up foods and scanning barcodes needs internet so we can fetch nutrition from Open Food Facts." } },
+        { "@type": "Question", "name": "Is my food data private?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Logs are stored on your device. calibrEAT has no servers holding your meals, no ads, and no analytics tracking your eating." } },
+        { "@type": "Question", "name": "Where do barcode calories come from?", "acceptedAnswer": { "@type": "Answer", "text": "Packaged foods are looked up in Open Food Facts, a public food database. You can still log meals by hand if a barcode is missing." } },
+        { "@type": "Question", "name": "What is True Burn Learning?", "acceptedAnswer": { "@type": "Answer", "text": "After you log food and weigh in, True Burn compares predicted vs actual weight change and nudges your estimated daily burn. It needs a stretch of honest logging — it isn't a lab measurement." } },
+        { "@type": "Question", "name": "Can I use it on a phone / tablet?", "acceptedAnswer": { "@type": "Answer", "text": "Your code is active on one device at a time — phone / tablet. Use Deactivate on this device in the app to move it, or email support if the old device is gone." } },
+        { "@type": "Question", "name": "Is there an iPhone version?", "acceptedAnswer": { "@type": "Answer", "text": "Not yet. Android is first (the APK is a build in progress). iOS will follow. The same lifetime code you buy here will unlock it when it ships — no extra purchase on Apple." } },
+        { "@type": "Question", "name": "Is calibrEAT medical advice?", "acceptedAnswer": { "@type": "Answer", "text": "No. It is a personal food, water and weight diary. It does not diagnose, treat or replace a clinician." } },
+        { "@type": "Question", "name": "How do I get support?", "acceptedAnswer": { "@type": "Answer", "text": "Email support@calibreat.co.uk. That is the only support channel — we reply by email." } }
+      ]
+    }
+  ]
+}
+</script>
+
 <style>
   /* ── Design tokens ─────────────────────────────────────── */
   :root {
@@ -208,7 +257,9 @@
   .btn .arr { transition: transform 0.18s ease; }
   .btn:hover .arr { transform: translateX(3px); }
   .btn-primary {
-    background: linear-gradient(180deg, var(--green-bright), var(--green));
+    /* White on #1F9D55 measures 3.49:1 — under WCAG AA. These stops clear it
+       (5.02:1 at the top, 6.61:1 at the bottom). */
+    background: linear-gradient(180deg, #15803d, var(--green-deep));
     color: #fff;
     box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 8px 20px -8px rgba(31,157,85,.6);
   }
@@ -359,7 +410,8 @@
   }
   .lock-btn {
     width: 100%; margin-top: 10px; border: 0; cursor: default; font-family: var(--font-body);
-    background: linear-gradient(180deg, var(--green-bright), var(--green)); color: #fff;
+    /* Matches the app's unlock button, which uses the AA-safe deep green. */
+    background: linear-gradient(180deg, #15803d, var(--green-deep)); color: #fff;
     border-radius: 12px; padding: 13px; font-weight: 600; font-size: 14px;
     box-shadow: 0 12px 24px -10px rgba(31,157,85,.7);
   }
@@ -520,10 +572,9 @@
     border-collapse: collapse;
     font-size: 13.5px;
   }
-  .compare caption {
-    caption-side: bottom;
+  .compare-caption {
+    margin: 14px 2px 0;
     text-align: left;
-    padding: 14px 18px 16px;
     color: var(--muted);
     font-size: 12.5px;
     line-height: 1.5;
@@ -658,8 +709,9 @@
 
   /* ── Responsive ────────────────────────────────────────── */
   @media (max-width: 960px) {
-    .hero .wrap { grid-template-columns: 1fr; gap: 64px; }
-    .hero-visual { order: -1; }
+    /* Copy leads on phones: the headline and CTA have to be readable without
+       scrolling past the mockup, which used to push the h1 ~850px down. */
+    .hero .wrap { grid-template-columns: 1fr; gap: 36px; }
     .pricing { grid-template-columns: 1fr; }
     .buy-card { max-width: 460px; }
     .steps { grid-template-columns: 1fr; }
@@ -703,6 +755,16 @@
     html { scroll-behavior: auto; }
     .reveal { opacity: 1; transform: none; transition: none; }
     .float-card, .hero-art img { animation: none !important; }
+  }
+  /* ── Focus ring + screen-reader utility ────────────────── */
+  :where(a, button, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
   }
 </style>
 </head>
@@ -886,7 +948,6 @@
       </div>
       <div class="compare-scroll reveal">
         <table class="compare">
-          <caption>Competitor prices are typical UK premium rates and can change. Subscriptions are billed monthly.</caption>
           <thead>
             <tr>
               <th scope="col">Feature</th>
@@ -908,27 +969,27 @@
             </tr>
             <tr>
               <th scope="row">Calorie &amp; macro tracking</th>
-              <td class="is-us"><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td class="is-us"><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
             </tr>
             <tr>
               <th scope="row">AI photo food recognition</th>
-              <td class="is-us"><span class="mark-no" title="No">–</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-no" title="No">–</span></td>
-              <td><span class="mark-no" title="No">–</span></td>
-              <td><span class="mark-no" title="No">–</span></td>
+              <td class="is-us"><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
+              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
+              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
             </tr>
             <tr>
               <th scope="row">Barcode scanner</th>
-              <td class="is-us"><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td class="is-us"><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
             </tr>
             <tr>
               <th scope="row">Expenditure / TDEE algorithm</th>
@@ -956,47 +1017,50 @@
             </tr>
             <tr>
               <th scope="row">Custom recipe builder</th>
-              <td class="is-us"><span class="mark-no" title="No">–</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td class="is-us"><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
             </tr>
             <tr>
               <th scope="row">Meal &amp; recipe AI generator</th>
-              <td class="is-us"><span class="mark-no" title="No">–</span></td>
-              <td><span class="mark-no" title="No">–</span></td>
-              <td><span class="mark-no" title="No">–</span></td>
-              <td><span class="mark-no" title="No">–</span></td>
-              <td><span class="mark-no" title="No">–</span></td>
+              <td class="is-us"><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
+              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
+              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
+              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
+              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
             </tr>
             <tr>
               <th scope="row">Wearable &amp; health syncing</th>
-              <td class="is-us"><span class="mark-no" title="No">–</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td class="is-us"><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
             </tr>
             <tr>
               <th scope="row">Offline food logging</th>
-              <td class="is-us"><span class="mark-yes" title="Yes">✓</span></td>
+              <td class="is-us"><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
               <td><span class="qual">Limited</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-no" title="No">–</span></td>
-              <td><span class="mark-no" title="No">–</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
+              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
             </tr>
             <tr>
               <th scope="row">Zero ads / premium experience</th>
-              <td class="is-us"><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes">✓</span></td>
+              <td class="is-us"><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
+              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
             </tr>
           </tbody>
         </table>
       </div>
+      <p class="compare-caption">
+        Competitor prices are typical UK premium rates and can change. Subscriptions are billed monthly.
+      </p>
     </div>
   </section>
 

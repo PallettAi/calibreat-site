@@ -86,6 +86,8 @@ eq('online miss is not a connection failure', reachedEmpty.packsFailed, false);
 
 const many = Array.from({ length: 30 }, (_, i) => cofidToFood({ ...catalog[0], code: `x-${i}`, name: `Chicken cut ${i}` }));
 eq('merged list caps at 20', mergeFoodSearch(many, remote).hits.length, 20);
+eq('packs still appear when CoFID is crowded', mergeFoodSearch(many, remote).hits.some((h) => h.source === 'off'), true);
+eq('crowded merge still leads with CoFID', mergeFoodSearch(many, remote).hits[0].source, 'cofid');
 
 const down = await searchFoods('chicken', {
   catalog,

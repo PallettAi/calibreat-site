@@ -183,9 +183,6 @@ export function MealLogSheet({
   function switchMode(next: Mode) {
     setMode(next);
     setError(null);
-    if (next === 'search') {
-      setSpecimen(null);
-    }
   }
 
   async function runSearch() {
@@ -621,6 +618,8 @@ function SpecimenDock({
     { k: 'C', v: scaled?.carbsG },
     { k: 'F', v: scaled?.fatG },
   ];
+  // Recents / edit rows dock already-scaled totals as one serving — don't re-multiply.
+  const amountLocked = food.portionLabel === 'logged' || food.portionLabel === 'recent';
   return (
     <View style={styles.dock}>
       <Text style={styles.dockPortion}>{scaled?.amountLabel ?? food.portionLabel}</Text>
@@ -629,22 +628,28 @@ function SpecimenDock({
       </Text>
       <Text style={[styles.dockKcal, { color: accentText }]}>{scaled ? scaled.kcal.toLocaleString() : '—'}</Text>
       <Text style={styles.dockUnit}>kcal</Text>
-      <View style={styles.amountRow}>
-        <CrispPress haptic="select" onPress={() => onAmount(nudgeAmount(amount, food, -1))} innerStyle={styles.amountStep}>
-          <Text style={[styles.amountStepText, { color: accentText }]}>−</Text>
-        </CrispPress>
-        <TextInput
-          value={amount}
-          onChangeText={(text) => onAmount(text.replace(/[^0-9.,]/g, ''))}
-          keyboardType="decimal-pad"
-          selectTextOnFocus
-          style={[styles.amountInput, { color: '#EEF2F5', borderColor: 'rgba(255,255,255,0.14)' }]}
-        />
-        <CrispPress haptic="select" onPress={() => onAmount(nudgeAmount(amount, food, 1))} innerStyle={styles.amountStep}>
-          <Text style={[styles.amountStepText, { color: accentText }]}>+</Text>
-        </CrispPress>
-      </View>
-      <Text style={[styles.amountHint, { color: mutedColor }]}>{food.portion === 'serving' ? 'servings' : 'grams'}</Text>
+      {amountLocked ? (
+        <Text style={[styles.amountHint, { color: mutedColor }]}>Logged amount</Text>
+      ) : (
+        <>
+          <View style={styles.amountRow}>
+            <CrispPress haptic="select" onPress={() => onAmount(nudgeAmount(amount, food, -1))} innerStyle={styles.amountStep}>
+              <Text style={[styles.amountStepText, { color: accentText }]}>−</Text>
+            </CrispPress>
+            <TextInput
+              value={amount}
+              onChangeText={(text) => onAmount(text.replace(/[^0-9.,]/g, ''))}
+              keyboardType="decimal-pad"
+              selectTextOnFocus
+              style={[styles.amountInput, { color: '#EEF2F5', borderColor: 'rgba(255,255,255,0.14)' }]}
+            />
+            <CrispPress haptic="select" onPress={() => onAmount(nudgeAmount(amount, food, 1))} innerStyle={styles.amountStep}>
+              <Text style={[styles.amountStepText, { color: accentText }]}>+</Text>
+            </CrispPress>
+          </View>
+          <Text style={[styles.amountHint, { color: mutedColor }]}>{food.portion === 'serving' ? 'servings' : 'grams'}</Text>
+        </>
+      )}
       <View style={styles.dockMetrics}>
         {macros.map((m, i) => (
           <View key={m.k} style={[styles.dockMetric, i === macros.length - 1 && styles.dockMetricLast]}>

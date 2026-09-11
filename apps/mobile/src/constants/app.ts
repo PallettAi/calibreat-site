@@ -35,11 +35,18 @@ export const LicenseConfig = {
 } as const;
 
 export const Brand = {
-  /** Primary brand green — the accent on light and dark surfaces. */
+  /**
+   * Primary brand green — accents, borders and fills. Deliberately NOT a
+   * background for white text: #1F9D55 under white measures 3.49:1, below
+   * WCAG AA (4.5:1) for normal-size text.
+   */
   primary: '#1F9D55',
-  /** Brighter green — the top stop of the site's primary-button gradient. */
+  /** Brighter green — for gradients and highlights on dark surfaces. */
   primaryBright: '#23B25F',
-  /** Deeper green, used where the accent sits on a light background. */
+  /**
+   * Deeper green. The accent on light surfaces, and the AA-safe fill for solid
+   * buttons with white labels — white on #0E6B38 measures 6.61:1.
+   */
   primaryDeep: '#0E6B38',
   /** Fresh highlight used on dark surfaces (wordmark, badges). */
   lime: '#B7E93C',

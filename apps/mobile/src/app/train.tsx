@@ -144,7 +144,14 @@ export default function TrainScreen() {
             </ThemedText>
           ) : null}
 
-          <EquipmentSwitch value={equipment} onChange={setEquipment} isDark={isDark} />
+          <EquipmentSwitch
+            value={equipment}
+            onChange={(next) => {
+              setEquipment(next);
+              setExerciseId((id) => (id && getExercise(id)?.equipment === next ? id : null));
+            }}
+            isDark={isDark}
+          />
 
           {exercisesGrouped(equipment).map((group) => (
             <View key={group.id} style={styles.group}>

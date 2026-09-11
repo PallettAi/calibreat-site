@@ -345,7 +345,7 @@ export default function LockScreen() {
                   disabled={busy || email.trim().length === 0}
                   style={({ pressed }) => [
                     styles.activateButton,
-                    { backgroundColor: Brand.primary },
+                    { backgroundColor: Brand.primaryDeep },
                     (busy || email.trim().length === 0) && styles.buttonDimmed,
                     pressed && styles.buttonPressed,
                   ]}>
@@ -364,7 +364,7 @@ export default function LockScreen() {
                     disabled={busy || otp.length !== 6}
                     style={({ pressed }) => [
                       styles.activateButton,
-                      { backgroundColor: Brand.primary },
+                      { backgroundColor: Brand.primaryDeep },
                       (busy || otp.length !== 6) && styles.buttonDimmed,
                       pressed && styles.buttonPressed,
                     ]}>
@@ -402,7 +402,7 @@ export default function LockScreen() {
                     disabled={busy || code.trim().length === 0}
                     style={({ pressed }) => [
                       styles.activateButton,
-                      { backgroundColor: Brand.primary },
+                      { backgroundColor: Brand.primaryDeep },
                       (busy || code.trim().length === 0) && styles.buttonDimmed,
                       pressed && styles.buttonPressed,
                     ]}>

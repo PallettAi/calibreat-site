@@ -45,6 +45,7 @@ eq('claim after a miss starts at 1', restart.current, 1);
 
 const legacy = { current: 3, lastClaimedAt: null, lastClaimedDayKey: '2026-09-08', best: 3 };
 eq('legacy run still needs a first button claim', streakNeedsClaim(legacy, t0), true);
+eq('expire does not wipe a legacy run waiting for its first stamp', expireStreak(legacy, t0).current, 3);
 const stamped = claimStreak(legacy, t0);
 eq('first button claim keeps the existing run', stamped.current, 3);
 eq('first button claim starts the 24h clock', stamped.lastClaimedAt, new Date(t0).toISOString());
