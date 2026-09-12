@@ -21,6 +21,23 @@ import {
   parseReminderTime,
   type WeighInFrequency,
 } from '@/lib/weigh-in-reminders';
+import {
+  buildExportBundle,
+  describeBundle,
+  diaryCsv,
+  exportFileName,
+  type ExportInput,
+} from '@/lib/export';
+import { shareExport } from '@/lib/export-share';
+import {
+  getAllLogs,
+  getAllWater,
+  getAllWeighIns,
+  getAllWorkouts,
+  getGoals,
+  getProfile,
+  getSavedMeals,
+} from '@/lib/db';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -32,6 +49,9 @@ export default function SettingsScreen() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
   const [timeDraft, setTimeDraft] = useState('08:00');
+  const [exportInput, setExportInput] = useState<ExportInput | null>(null);
+  const [exportBusy, setExportBusy] = useState<'backup' | 'diary' | null>(null);
+  const [exportNote, setExportNote] = useState<string | null>(null);
 
   const accent = isDark ? Brand.lime : Brand.primaryDeep;
   const cardBg = isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF';
@@ -44,6 +64,58 @@ export default function SettingsScreen() {
     });
     getVerifiedEmail().then(setVerifiedEmail);
   }, []);
+
+  async function loadExportInput(): Promise<ExportInput> {
+    const [profile, goals, logEntries, weighIns, water, workouts, savedMeals] = await Promise.all([
+      getProfile(),
+      getGoals(),
+      getAllLogs(),
+      getAllWeighIns(),
+      getAllWater(),
+      getAllWorkouts(),
+      getSavedMeals(),
+    ]);
+    const input: ExportInput = {
+      profile,
+      goals,
+      logEntries,
+      weighIns,
+      water,
+      workouts,
+      savedMeals,
+    };
+    setExportInput(input);
+    return input;
+  }
+
+  async function runExport(kind: 'backup' | 'diary') {
+    if (exportBusy) return;
+    setExportBusy(kind);
+    setExportNote(null);
+    try {
+      const input = exportInput ?? (await loadExportInput());
+      const now = new Date();
+      const fileName = exportFileName(kind, now);
+      const payload =
+        kind === 'backup'
+          // Compact on purpose: the file is for machines and 6-figure-char backups
+          // ship noticeably faster through the share sheet than pretty-printed ones.
+          ? JSON.stringify(buildExportBundle(input))
+          : diaryCsv(input.logEntries);
+      const result = await shareExport(kind, fileName, payload);
+      if (result.ok) {
+        setExportNote(kind === 'backup' ? 'Backup shared.' : 'Diary shared.');
+      } else if (result.method === 'clipboard') {
+        setExportNote(result.message ?? 'Copied to your clipboard instead.');
+      } else {
+        setExportNote(result.message ?? 'Export failed. Try again.');
+      }
+    } catch {
+      setExportNote('Could not read your data to export it. Try again.');
+    } finally {
+      setExportBusy(null);
+    }
+  }
 
   async function persist(next: AppSettings) {
     setSettings(next);
@@ -83,6 +155,8 @@ export default function SettingsScreen() {
     if (!prefix) return email;
     return prefix.replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   })();
+
+  const exportSummary = exportInput ? describeBundle(buildExportBundle(exportInput)) : null;
 
   if (!license) return <Redirect href="/" />;
 
@@ -191,6 +265,64 @@ export default function SettingsScreen() {
             ) : (
               <ThemedText type="small" themeColor="textSecondary">
                 Loading…
+              </ThemedText>
+            )}
+          </View>
+
+          <View style={[styles.card, { backgroundColor: cardBg, borderColor: hairline }]}>
+            <ThemedText type="smallBold" style={styles.cardLabel}>
+              YOUR DATA
+            </ThemedText>
+            {exportSummary ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                {exportSummary}
+              </ThemedText>
+            ) : (
+              <ThemedText type="small" themeColor="textSecondary">
+                Everything is stored on this device only.
+              </ThemedText>
+            )}
+            <View style={styles.exportRow}>
+              <Pressable
+                onPress={() => void runExport('backup')}
+                disabled={exportBusy !== null}
+                accessibilityRole="button"
+                accessibilityLabel="Export a JSON backup"
+                style={({ pressed }) => [
+                  styles.exportButton,
+                  { borderColor: hairline },
+                  pressed && styles.pressed,
+                  exportBusy && exportBusy !== 'backup' && styles.exportDisabled,
+                ]}
+              >
+                <Text style={[styles.exportButtonText, { color: accent }]}>
+                  {exportBusy === 'backup' ? 'Preparing…' : 'Backup (JSON)'}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => void runExport('diary')}
+                disabled={exportBusy !== null}
+                accessibilityRole="button"
+                accessibilityLabel="Export the food diary as CSV"
+                style={({ pressed }) => [
+                  styles.exportButton,
+                  { borderColor: hairline },
+                  pressed && styles.pressed,
+                  exportBusy && exportBusy !== 'diary' && styles.exportDisabled,
+                ]}
+              >
+                <Text style={[styles.exportButtonText, { color: accent }]}>
+                  {exportBusy === 'diary' ? 'Preparing…' : 'Diary (CSV)'}
+                </Text>
+              </Pressable>
+            </View>
+            {exportNote ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                {exportNote}
+              </ThemedText>
+            ) : (
+              <ThemedText type="small" themeColor="textSecondary">
+                Backup = everything (profile, diary, water, weigh-ins, workouts, saved meals). Diary = spreadsheet-friendly meal log.
               </ThemedText>
             )}
           </View>
@@ -314,6 +446,10 @@ const styles = StyleSheet.create({
   freqRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   freqChip: { borderWidth: 1.5, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 12 },
   freqChipText: { fontSize: 12, fontWeight: '800' },
+  exportRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+  exportButton: { borderWidth: 1.5, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 16, flexGrow: 1 },
+  exportButtonText: { fontSize: 13, fontWeight: '800' },
+  exportDisabled: { opacity: 0.5 },
   accountRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   accountValue: { flexShrink: 1 },
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10 },

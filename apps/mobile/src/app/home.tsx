@@ -57,8 +57,10 @@ import { adaptiveHistory, adaptiveTdee, calorieBudget, caloriesRemaining, detect
 import { getCalorieOverride, getTrueBurnState, saveTrueBurnState, setCalorieOverride, shouldShowAdoptPrompt, type TrueBurnState } from '@/lib/trueburn';
 import { useLicense } from '@/lib/license-context';
 import { getVerifiedEmail } from '@/lib/license';
-import { claimStreak, emptyStreak, expireStreak, streakNeedsClaim, weekPips, type StreakState } from '@/lib/streak';
+import { claimStreak, emptyStreak, expireStreak, STREAK_CLAIM_MS, streakNeedsClaim, weekPips, type StreakState } from '@/lib/streak';
 import { loadStreak, saveStreak } from '@/lib/streak-store';
+import { emptyFastState, fastElapsedMs, formatElapsed, isFasting, nextFastMilestone, startFast, stopFast, type FastState } from '@/lib/fasting';
+import { loadFastState, saveFastState } from '@/lib/fasting-store';
 import { CUP_ML, waterToMl, type WaterUnit } from '@/lib/units';
 
 function formatISO(date: Date): string {
@@ -122,6 +124,7 @@ export default function HomeScreen() {
   const [trueBurnPersist, setTrueBurnPersist] = useState<TrueBurnState>({});
   const [overrideKcal, setOverrideKcal] = useState<number | null>(null);
   const [trueBurnActionBusy, setTrueBurnActionBusy] = useState(false);
+  const [fast, setFast] = useState<FastState>(emptyFastState);
   const [now, setNow] = useState(() => Date.now());
 
   const waterPulse = useRef(new Animated.Value(0)).current;
@@ -132,7 +135,7 @@ export default function HomeScreen() {
     let cancelled = false;
     (async () => {
       try {
-        const [p, g, prefs, tb, ov, st, email] = await Promise.all([
+        const [p, g, prefs, tb, ov, st, email, fs] = await Promise.all([
           getProfile(),
           getGoals(),
           getUnitPrefs(),
@@ -140,6 +143,7 @@ export default function HomeScreen() {
           getCalorieOverride(),
           loadStreak(),
           getVerifiedEmail(),
+          loadFastState(),
         ]);
         if (cancelled) return;
         const nextStreak = expireStreak(st, Date.now());
@@ -158,6 +162,7 @@ export default function HomeScreen() {
         setOverrideKcal(ov);
         setStreak(nextStreak);
         setVerifiedEmail(email);
+        setFast(fs);
         setLoadError(null);
       } catch {
         if (!cancelled) setLoadError('Could not open your log. Try again.');
@@ -200,8 +205,12 @@ export default function HomeScreen() {
     if (showPicker) setPickerMonth(startOfMonth(selectedDate));
   }, [showPicker, selectedDate]);
 
+  // Keep the streak flame honest. A 1-second ticker would re-render the whole
+  // SVG dashboard 86,400 times a day for a state that changes twice daily, so
+  // the tick is rare — and the exact moment the flame flips (claim unlocks or
+  // the run expires) wakes the screen once, on time, via a timeout.
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 15000);
+    const id = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(id);
   }, []);
 
@@ -210,6 +219,19 @@ export default function HomeScreen() {
     if (next.current === streak.current) return;
     setStreak(next);
     void saveStreak(next);
+  }, [now, streak]);
+
+  // Wake exactly when the flame state flips: the claim window opening, or a
+  // missed window zeroing the run. Re-armed every time the streak or the tick
+  // changes; cleared on unmount and after a claim.
+  useEffect(() => {
+    const last = streak.lastClaimedAt ? Date.parse(streak.lastClaimedAt) : null;
+    if (last == null || !Number.isFinite(last)) return;
+    const flipAt = streakNeedsClaim(streak, now) ? last + STREAK_CLAIM_MS : last + STREAK_CLAIM_MS * 2;
+    const wait = flipAt - now;
+    if (wait <= 0) return;
+    const id = setTimeout(() => setNow(Date.now()), wait);
+    return () => clearTimeout(id);
   }, [now, streak]);
 
   // ── All hooks are above; only conditional rendering below. ──
@@ -402,6 +424,20 @@ export default function HomeScreen() {
     void saveStreak(next);
   }
 
+  async function handleStartFast() {
+    const next = startFast(fast, Date.now());
+    if (next === fast) return;
+    setFast(next);
+    await saveFastState(next);
+  }
+
+  async function handleStopFast() {
+    const next = stopFast(fast, Date.now());
+    if (next === fast) return;
+    setFast(next);
+    await saveFastState(next);
+  }
+
   async function handleSaveWaterEdit() {
     const raw = editWaterValue.trim();
     if (raw === '') {
@@ -464,9 +500,30 @@ export default function HomeScreen() {
   const caloriesPct = budget ? Math.min(1, intakeKcal / budget) : 0;
   const waterPct = Math.min(1, waterMl / waterGoal);
 
+  // Weight card: the trend is the only honest number we can show — there is no
+  // goal weight in the data model, so anything resembling a progress bar would
+  // be decoration pretending to be information.
+  const firstWeighIn: { kg: number; measuredAt: string } | null = weighIns.length ? weighIns[0]! : null;
+  const latestWeighIn: { kg: number; measuredAt: string } | null = weighIns.length ? weighIns[weighIns.length - 1]! : null;
+  const weightDeltaKg =
+    weighIns.length > 1 && firstWeighIn && latestWeighIn ? latestWeighIn.kg - firstWeighIn.kg : null;
+  const weightMeta = !weighIns.length
+    ? 'Start weight from your setup.'
+    : weightDeltaKg === null
+      ? `${weighIns.length} weigh-in — log again to see a trend.`
+      : Math.abs(weightDeltaKg) < 0.1
+        ? `${weighIns.length} weigh-ins · steady since the first.`
+        : `${weighIns.length} weigh-ins · ${weightDeltaKg > 0 ? '+' : '−'}${Math.abs(weightDeltaKg).toFixed(1)} kg since the first.`;
+  const latestWeighInLabel = latestWeighIn
+    ? isToday(new Date(latestWeighIn.measuredAt))
+      ? 'today'
+      : `on ${formatShortDate(new Date(latestWeighIn.measuredAt))}`
+    : '';
+
   // calendar math — build explicit week rows so columns stay aligned
   const todayKey = formatISO(new Date());
   const fireLive = streakNeedsClaim(streak, now);
+  const fastActive = isFasting(fast, now);
   const licenseEmail = license.customerEmail ?? verifiedEmail ?? '—';
   const year = pickerMonth.getFullYear();
   const month = pickerMonth.getMonth();
@@ -502,12 +559,6 @@ export default function HomeScreen() {
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <BrandMark size={28} />
-              <View style={styles.livePill}>
-                <View style={styles.liveDot} />
-                <ThemedText type="smallBold" style={styles.liveText}>
-                  INSTRUMENT ACTIVE
-                </ThemedText>
-              </View>
             </View>
             <View style={styles.headerRight}>
               <HeaderGlyphButton label="Daily streak" onPress={handleFirePress} borderColor={hairline} backgroundColor={cardBg}>
@@ -519,11 +570,13 @@ export default function HomeScreen() {
               <Pressable
               onPress={() => setShowMenu(true)}
               hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Open menu"
               style={({ pressed }) => [styles.menuBtn, { borderColor: hairline, backgroundColor: cardBg }, pressed && styles.pressed]}
             >
-              <View style={styles.menuLine} />
-              <View style={styles.menuLine} />
-              <View style={styles.menuLine} />
+              <View style={[styles.menuLine, { backgroundColor: theme.text }]} />
+              <View style={[styles.menuLine, { backgroundColor: theme.text }]} />
+              <View style={[styles.menuLine, { backgroundColor: theme.text }]} />
             </Pressable>
             </View>
           </View>
@@ -753,6 +806,54 @@ export default function HomeScreen() {
             )}
           </View>
 
+          {/* ── FASTING TIMER ─────────────────────────────────── */}
+          <View style={[styles.stripCard, { backgroundColor: cardBg, borderColor: hairline }]}>
+            <View style={styles.stripHead}>
+              <ThemedText type="smallBold" style={styles.stripTitle}>FASTING</ThemedText>
+              {!fastActive && fast.lastDurationMs != null ? (
+                <ThemedText type="small" themeColor="textSecondary">
+                  Last fast {formatElapsed(fast.lastDurationMs)}
+                </ThemedText>
+              ) : null}
+            </View>
+            {fastActive ? (
+              <>
+                <View style={styles.fastReadout}>
+                  <Text style={[styles.fastClock, { color: accentText }]}>{formatElapsed(fastElapsedMs(fast, now))}</Text>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    elapsed
+                  </ThemedText>
+                </View>
+                {(() => {
+                  const milestone = nextFastMilestone(fastElapsedMs(fast, now));
+                  if (!milestone) return null;
+                  return (
+                    <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
+                      {milestone.hours}h milestone in {milestone.inLabel}
+                    </ThemedText>
+                  );
+                })()}
+                <CrispPress onPress={() => void handleStopFast()} innerStyle={[styles.fastStop, { borderColor: hairline }]}>
+                  <Text style={[styles.fastStopText, { color: Brand.danger }]}>End fast</Text>
+                </CrispPress>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.cardHint}>
+                  The clock runs from when you started — closing the app doesn&apos;t pause it.
+                </ThemedText>
+              </>
+            ) : (
+              <>
+                <CrispPress onPress={() => void handleStartFast()} innerStyle={[styles.fastStart, { backgroundColor: accentText }]}>
+                  <Text style={[styles.fastStartText, { color: isDark ? '#0A1019' : '#fff' }]}>Start fast</Text>
+                </CrispPress>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.cardHint}>
+                  {fast.lastDurationMs != null
+                    ? `Last run ${formatElapsed(fast.lastDurationMs)}. Tap start when you finish eating.`
+                    : 'Tap start when you finish eating — the clock keeps running with the app closed.'}
+                </ThemedText>
+              </>
+            )}
+          </View>
+
           {logs.length > 0 ? (
             <View style={[styles.stripCard, { backgroundColor: cardBg, borderColor: hairline }]}>
               <View style={styles.stripHead}>
@@ -838,10 +939,10 @@ export default function HomeScreen() {
                 </View>
                 <ThemedText type="small" themeColor="textSecondary" style={styles.cardHint}>
                   {adaptive.confidence === 'high'
-                    ? `Strong signal over ${adaptive.windowDays}d (${adaptive.loggedDays ?? adaptive.windowDays} logged) — measured burn is trusted.`
+                    ? `Strong signal over ${adaptive.windowDays} days — your measured burn is trusted.`
                     : adaptive.confidence === 'medium'
-                      ? `Moderate signal · ${adaptive.loggedDays ?? '—'} logged of ${adaptive.windowDays}d — trends stabilizing.`
-                      : `Early signal — keep logging and weighing in to tighten the estimate (blended ${(Math.round((adaptive.blend ?? 0) * 100))}% toward formula).`}
+                      ? `Moderate signal — ${adaptive.loggedDays ?? adaptive.windowDays} of ${adaptive.windowDays} days logged, trend still settling.`
+                      : `Early signal — keep logging and weighing in to tighten the estimate (${Math.round((adaptive.blend ?? 0) * 100)}% blended toward your formula).`}
                 </ThemedText>
                 {burnHistory.length >= 2 ? (
                   <BurnSparkline points={burnHistory.map((p) => p.measuredTdee)} est={adaptive.estimatedTdee} accentText={accentText} muted={theme.muted} track={mutedTrack} />
@@ -870,7 +971,11 @@ export default function HomeScreen() {
                   </View>
                 ) : null}
                 <ThemedText type="small" themeColor="textSecondary" style={styles.cardHint}>
-                  Inferred from weight vs intake. {overrideKcal != null ? 'Adopted target drives the dial.' : showAdoptPrompt ? 'Tap Adopt to drive the dial with measured burn.' : 'Keep or Adopt — never auto-changes.'}
+                  {overrideKcal != null
+                    ? `Inferred from your weight and intake. Adopted ${overrideKcal.toLocaleString()} kcal drives the dial.`
+                    : showAdoptPrompt
+                      ? 'Inferred from your weight and intake. Adopting retargets the dial to your measured burn with your weekly goal applied — nothing changes until you tap.'
+                      : 'Inferred from your weight and intake. Keep or Adopt — the dial never changes on its own.'}
                 </ThemedText>
               </>
             ) : (
@@ -889,13 +994,13 @@ export default function HomeScreen() {
                     MACRO CALIBRATION
                   </ThemedText>
                   <ThemedText type="smallBold" style={[styles.stripLink, { color: accentText }]}>
-                    Macros & fibre ›
+                    Full breakdown ›
                   </ThemedText>
                 </View>
                 <View style={styles.arcRow}>
-                  <ArcGauge label="Protein" grams={dayMacros.proteinG} target={goals.proteinG} pct={goals.proteinG ? Math.min(1, dayMacros.proteinG / goals.proteinG) : 0} color="#1F9D55" isDark={isDark} track={mutedTrack} />
-                  <ArcGauge label="Carbs" grams={dayMacros.carbsG} target={goals.carbsG} pct={goals.carbsG ? Math.min(1, dayMacros.carbsG / goals.carbsG) : 0} color={isDark ? '#B7E93C' : '#0E6B38'} isDark={isDark} track={mutedTrack} />
-                  <ArcGauge label="Fat" grams={dayMacros.fatG} target={goals.fatG} pct={goals.fatG ? Math.min(1, dayMacros.fatG / goals.fatG) : 0} color={isDark ? '#4ADE80' : '#16A34A'} isDark={isDark} track={mutedTrack} />
+                  <ArcGauge label="Protein" grams={dayMacros.proteinG} target={goals.proteinG} pct={goals.proteinG ? Math.min(1, dayMacros.proteinG / goals.proteinG) : 0} color={accentText} isDark={isDark} track={mutedTrack} />
+                  <ArcGauge label="Carbs" grams={dayMacros.carbsG} target={goals.carbsG} pct={goals.carbsG ? Math.min(1, dayMacros.carbsG / goals.carbsG) : 0} color={accentText} isDark={isDark} track={mutedTrack} />
+                  <ArcGauge label="Fat" grams={dayMacros.fatG} target={goals.fatG} pct={goals.fatG ? Math.min(1, dayMacros.fatG / goals.fatG) : 0} color={accentText} isDark={isDark} track={mutedTrack} />
                 </View>
               </View>
             </Pressable>
@@ -911,11 +1016,8 @@ export default function HomeScreen() {
               <Text style={[styles.weightUnit, { color: theme.textSecondary }]}>kg</Text>
             </View>
             <ThemedText type="small" themeColor="textSecondary">
-              {weighIns.length ? `latest · ${weighIns.length} weigh-ins` : 'start weight'}
+              {weightMeta}
             </ThemedText>
-            <View style={[styles.horizonTrack, { backgroundColor: mutedTrack }]}>
-              <View style={[styles.horizonFill, { backgroundColor: accentText, width: '44%' }]} />
-            </View>
             <View style={[styles.waterInputRowFull, { marginTop: 8 }]}>
               <TextInput
                 value={weighInInput}
@@ -932,7 +1034,11 @@ export default function HomeScreen() {
               </Pressable>
             </View>
             <ThemedText type="small" themeColor="textSecondary" style={styles.cardHint}>
-              Logged to {isToday(selectedDate) ? 'today' : formatISO(selectedDate)}. After 7 days + 2 weigh-ins, True Burn activates.
+              {adaptive?.ready && latestWeighIn
+                ? `Latest weigh-in ${latestWeighInLabel} — this is what feeds True Burn above.`
+                : weighIns.length
+                  ? 'True Burn switches on after 7 days of logging plus 2 weigh-ins.'
+                  : 'Log a weight to start the trend. True Burn switches on after 7 days plus 2 weigh-ins.'}
             </ThemedText>
           </View>
         </ScrollView>
@@ -1066,6 +1172,16 @@ export default function HomeScreen() {
                     style={({ pressed }) => [styles.menuItem, { borderColor: hairline }, pressed && styles.pressed]}
                   >
                     <ThemedText type="smallBold">Nutrients</ThemedText>
+                    <Text style={[styles.menuChevron, { color: accentText }]}>›</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      setShowMenu(false);
+                      router.push('/trends');
+                    }}
+                    style={({ pressed }) => [styles.menuItem, { borderColor: hairline }, pressed && styles.pressed]}
+                  >
+                    <ThemedText type="smallBold">True Burn trends</ThemedText>
                     <Text style={[styles.menuChevron, { color: accentText }]}>›</Text>
                   </Pressable>
                   <ThemedText type="smallBold" style={[styles.menuTitle, { color: theme.muted }]}>
@@ -1254,8 +1370,8 @@ function ArcGauge({
 }
 
 function BurnSparkline({ points, est, accentText, muted, track }: { points: number[]; est: number; accentText: string; muted: string; track: string }) {
-  const w = 160;
-  const h = 44;
+  const w = 240;
+  const h = 56;
   const pad = 6;
   const all = [...points, est];
   const lo = Math.min(...all) - 40;
@@ -1281,9 +1397,19 @@ function BurnSparkline({ points, est, accentText, muted, track }: { points: numb
           <Circle key={i} cx={x} cy={ys[i]} r={2.5} fill={accentText} />
         ))}
       </Svg>
-      <View style={styles.sparkLabels}>
-        <ThemedText type="small" style={{ color: muted, fontSize: 10 }}>{lo.toLocaleString()}</ThemedText>
-        <ThemedText type="small" style={{ color: muted, fontSize: 10 }}>True Burn drift · formula {est.toLocaleString()} dashed</ThemedText>
+      <View style={styles.sparkLegend}>
+        <View style={styles.sparkLegendItem}>
+          <View style={[styles.sparkSwatchSolid, { backgroundColor: accentText }]} />
+          <ThemedText type="small" style={[styles.sparkLegendText, { color: muted }]}>
+            Measured
+          </ThemedText>
+        </View>
+        <View style={styles.sparkLegendItem}>
+          <View style={[styles.sparkSwatchDashed, { borderColor: muted }]} />
+          <ThemedText type="small" style={[styles.sparkLegendText, { color: muted }]}>
+            Formula {est.toLocaleString()}
+          </ThemedText>
+        </View>
       </View>
     </View>
   );
@@ -1291,6 +1417,15 @@ function BurnSparkline({ points, est, accentText, muted, track }: { points: numb
 
 function formatToday(): string {
   return new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+/** "11 September" (plus the year only when it isn't this year) — reads better than an ISO date. */
+function formatShortDate(date: Date): string {
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+  return date.toLocaleDateString(
+    undefined,
+    sameYear ? { day: 'numeric', month: 'long' } : { day: 'numeric', month: 'long', year: 'numeric' },
+  );
 }
 
 const styles = StyleSheet.create({
@@ -1309,9 +1444,6 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.two, overflow: 'visible', zIndex: 2 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, flexShrink: 1 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8, overflow: 'visible' },
-  livePill: { flexDirection: 'row', alignItems: 'center', gap: 6, opacity: 0.85 },
-  liveDot: { width: 7, height: 7, borderRadius: 7, backgroundColor: '#22c55e' },
-  liveText: { fontSize: 10, letterSpacing: 1.1, opacity: 0.75 },
   dateLine: { marginTop: -Spacing.one, opacity: 0.8 },
   dialCard: {
     alignItems: 'center',
@@ -1462,7 +1594,7 @@ const styles = StyleSheet.create({
   calIconTextSolid: { marginTop: 8, fontSize: 12, fontWeight: '800', lineHeight: 12, fontFamily: Fonts.rounded, includeFontPadding: false as unknown as boolean },
   dateText: { fontSize: 14 },
   menuBtn: { width: 38, height: 38, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  menuLine: { width: 16, height: 2, borderRadius: 99, backgroundColor: '#EEF2F5', opacity: 0.9 },
+  menuLine: { width: 16, height: 2, borderRadius: 99, opacity: 0.85 },
   menuSheetWrap: { width: '100%', maxWidth: 380, alignSelf: 'center' },
   menuSheet: { borderRadius: 22, borderWidth: 1, padding: Spacing.three, gap: Spacing.two, shadowOpacity: 0.35, shadowRadius: 36, shadowOffset: { width: 0, height: 18 }, elevation: 12, overflow: 'hidden' },
   menuTitle: { fontSize: 11, letterSpacing: 1.2, marginTop: Spacing.one },
@@ -1505,8 +1637,6 @@ const styles = StyleSheet.create({
   weightReadout: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 4 },
   weightBig: { fontSize: 36, fontWeight: '800', letterSpacing: -0.02, fontFamily: Fonts.rounded },
   weightUnit: { fontSize: 16, fontWeight: '600' },
-  horizonTrack: { height: 6, borderRadius: 99, overflow: 'hidden', marginTop: Spacing.two },
-  horizonFill: { height: '100%', borderRadius: 99 },
   nextHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: Spacing.one },
   chipRow: { flexDirection: 'row', gap: Spacing.two },
   chip: {
@@ -1527,10 +1657,20 @@ const styles = StyleSheet.create({
   burnBarTrack: { height: 6, borderRadius: 99, overflow: 'hidden', marginTop: 8, position: 'relative' },
   burnBarEst: { position: 'absolute', top: 0, bottom: 0, borderRadius: 99, opacity: 0.22 },
   burnBarDrift: { position: 'absolute', top: 0, bottom: 0, borderRadius: 99 },
-  sparkWrap: { alignItems: 'center', gap: 4, marginTop: 6 },
-  sparkLabels: { flexDirection: 'row', justifyContent: 'space-between', width: 160 },
+  sparkWrap: { alignItems: 'center', gap: 6, marginTop: Spacing.two },
+  sparkLegend: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.three },
+  sparkLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  sparkSwatchSolid: { width: 12, height: 3, borderRadius: 2 },
+  sparkSwatchDashed: { width: 12, borderTopWidth: 1.5, borderStyle: 'dashed' },
+  sparkLegendText: { fontSize: 10, letterSpacing: 0.2 },
   plateauWrap: { flexDirection: 'row', gap: 8, alignItems: 'flex-start', borderWidth: 1, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12, marginTop: 8 },
   plateauDot: { color: '#ef4444', fontSize: 9, lineHeight: 17, marginTop: 1 },
+  fastReadout: { alignItems: 'center', gap: 2 },
+  fastClock: { fontSize: 36, fontWeight: '800', letterSpacing: -1, fontFamily: Fonts.rounded },
+  fastStart: { flex: 1, borderRadius: 12, paddingVertical: 12, minHeight: 46, alignItems: 'center', justifyContent: 'center' },
+  fastStartText: { fontSize: 14, fontWeight: '800' },
+  fastStop: { borderWidth: 1, borderRadius: 12, paddingVertical: 10, minHeight: 42, alignItems: 'center', justifyContent: 'center' },
+  fastStopText: { fontSize: 13, fontWeight: '800' },
   adoptRow: { flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 8 },
   adoptGhost: { borderWidth: 1, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 12, minHeight: 36, alignItems: 'center', justifyContent: 'center' },
   adoptGhostText: { fontSize: 12, fontWeight: '800' },

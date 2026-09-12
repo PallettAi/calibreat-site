@@ -3,7 +3,9 @@
  *
  * Parse is pure (checked by scripts/check-barcode.mjs). Network lives in
  * lookupBarcode — UK endpoint first, world fallback. Successful hits are
- * cached for the session; misses are not, so a later retry can succeed.
+ * cached for the session; misses are negatively cached for five minutes so a
+ * quick re-scan of the same pack doesn't re-pay the full lookup wait, while a
+ * genuinely new product added to OFF in the meantime can still be found.
  */
 
 export type OffPortion = 'serving' | '100g';
@@ -221,7 +223,9 @@ export function shouldRememberLookup(food: OffFood | null): boolean {
 
 const OFF_UA = 'calibrEAT/0.0.3 (https://calibreat.app)';
 const LOOKUP_TIMEOUT_MS = 8000;
+const NEG_TTL_MS = 5 * 60 * 1000;
 const cache = new Map<string, OffFood>();
+const negCache = new Map<string, number>();
 
 function offHeaders(): Record<string, string> {
   const native =
@@ -254,18 +258,28 @@ async function fetchOff(url: string): Promise<unknown | null> {
   return fetchOpenFoodFacts(url);
 }
 
-/** Look up a barcode. Successful hits are cached for the session. */
+/** Look up a barcode. Hits are cached for the session; misses for 5 minutes. */
 export async function lookupBarcode(raw: string): Promise<OffFood | null> {
   const code = normaliseBarcode(raw);
   if (code.length < 8) return null;
   if (cache.has(code)) return cache.get(code) ?? null;
+  const negAt = negCache.get(code);
+  if (negAt != null) {
+    if (Date.now() - negAt < NEG_TTL_MS) return null;
+    negCache.delete(code);
+  }
   const uk = await fetchOff(`https://uk.openfoodfacts.org/api/v2/product/${code}.json`);
   let parsed = uk ? parseOffProduct(uk as OffResponse, code) : null;
   if (!parsed) {
     const world = await fetchOff(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
     parsed = world ? parseOffProduct(world as OffResponse, code) : null;
   }
-  if (shouldRememberLookup(parsed) && parsed) cache.set(code, parsed);
+  if (parsed) {
+    cache.set(code, parsed);
+    negCache.delete(code);
+  } else {
+    negCache.set(code, Date.now());
+  }
   return parsed;
 }
 

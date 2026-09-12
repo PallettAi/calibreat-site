@@ -264,8 +264,8 @@ export default function SetupScreen() {
                 Set up your profile
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary" style={styles.subtitle}>
-                Two minutes, and calibrEAT calculates your daily calories & macros. We do not
-                store or track ANY of this data.
+                Two minutes, and calibrEAT calculates your daily calories & macros — all of it
+                on this device, with no account.
               </ThemedText>
             </View>
 
@@ -297,7 +297,7 @@ export default function SetupScreen() {
                   <ChoiceRow>
                     <ChoiceCard
                       label="Female"
-                      detail="Only needed for the BMR formula."
+                      detail="Uses the female BMR formula."
                       selected={sex === 'female'}
                       onPress={() => setSex('female')}
                       accentText={accentText}
@@ -305,7 +305,7 @@ export default function SetupScreen() {
                     />
                     <ChoiceCard
                       label="Male"
-                      detail="Same — one tap either way."
+                      detail="Uses the male BMR formula."
                       selected={sex === 'male'}
                       onPress={() => setSex('male')}
                       accentText={accentText}

@@ -23,7 +23,12 @@ for the charts and the header marks, dark/light theming throughout.
 | `src/app/settings.tsx` | Daily log nudge and weigh-in reminders (time + frequency), haptics, account, deactivate. |
 
 Sheets (`src/components/`): `meal-log-sheet` (search / barcode / quick-add / recents, edit and
-delete), `water-sheet` (editable total), `streak-sheet`, `license-sheet`.
+delete, **saved meals** and **copy yesterday's slot**), `water-sheet` (editable total),
+`streak-sheet`, `license-sheet`.
+
+**Saved meals** (`src/lib/saved-meals.ts`) name a meal you eat often so it re-logs in one tap
+into any day and slot; a matching name updates in place rather than duplicating. They stay on
+the device like everything else — no account, no server, no new permissions.
 
 ## Data
 
@@ -59,9 +64,9 @@ verdict, so a refunded or displaced device re-locks itself.
 ## Verifying changes
 
 The repo has no device-free test runner for UI, so the pure logic — dates, nutrition maths,
-diary aggregation, barcode parsing, licence policy, reminder scheduling, streaks, muscles,
-workout estimation and glyph art — is covered by `scripts/check-*.mjs` suites that run in
-Node against the real modules:
+diary aggregation, saved meals, barcode parsing, licence policy, reminder scheduling,
+streaks, muscles, workout estimation and glyph art — is covered by `scripts/check-*.mjs`
+suites that run in Node against the real modules:
 
 ```bash
 npm run check      # typecheck + every scripts/check-*.mjs suite

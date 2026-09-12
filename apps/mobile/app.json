@@ -54,6 +54,14 @@
           "color": "#1F9D55",
           "defaultChannel": "weigh-in"
         }
+      ],
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "calibrEAT reads a photo of a nutrition label on this device to fill in the pack's values. Photos are never uploaded.",
+          "cameraPermission": "calibrEAT uses the camera to photograph nutrition labels and read food barcodes."
+        }
       ]
     ],
     "experiments": {

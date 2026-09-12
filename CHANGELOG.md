@@ -2,9 +2,80 @@
 
 A readable history of how calibrEAT was built — kept in markdown so it can be shared as-is.
 
-Current version: **beta v0.0.3** · `apps/mobile` `v0.0.3` · Last updated: 2026-03-31
+Current version: **beta v0.0.3** · `apps/mobile` `v0.0.3` · Last updated: 2026-09-12
 
 ---
+
+## Unreleased — Logging without the friction
+
+**Theme:** the app stops making you re-type the meals you eat every day.
+
+- **Fasting timer** — a FASTING card on Home: start when you finish eating and
+  a live elapsed clock counts up with the next common milestone (12/16/18/20/
+  24/36/48 h) and how far away it is; ending a fast records the duration for
+  the "last fast / last run" readout. The clock is derived from the stored
+  start timestamp, so it keeps running with the app closed, and it reuses
+  Home's existing 60-second tick — zero new timers. Logic in
+  `src/lib/fasting.ts` (pure, `check:fasting`), persistence in
+  `fasting-store.ts`.
+- **True Burn trends screen** — the dashboard card is the headline, this is
+  the evidence (Home menu → "True Burn trends"): the measured-burn history as
+  a proper chart with the formula line for reference and
+  latest/average/drift-per-week stats, the weight series with a least-squares
+  kg/week trend over a 3-point smoothed line (one odd scale reading can't
+  drag the trend), a logging-coverage bar ("24/60 days logged"), and the
+  plateau banner with room to breathe. Trend math lives in pure
+  `src/lib/trends.ts` (`check:trends`); the screen is read-only — adopting a
+  measured target stays a deliberate Home action.
+- **Recipe URL importer** — a **Web** tab in the meal log sheet: paste a
+  recipe link and the per-serving calories and macros dock into the confirm
+  card, ready to lock in like any other food. It reads the page's own
+  schema.org Recipe structured data (JSON-LD) — the machine-readable block
+  effectively every real recipe site publishes — and handles @graph
+  wrappers, kJ energy, numeric or prose servings ("Serves 4"), and unit
+  strings ("646 kcal", "1.4 g" sodium → 1,400 mg). Pages without
+  machine-readable data say so honestly rather than scraping prose and
+  guessing. Only the page is fetched (no trackers, nothing stored); the
+  parser is pure and covered by the new `check:recipe` suite (45 cases).
+- **Barcode miss caching** — a failed Open Food Facts lookup is remembered for
+  5 minutes, so re-scanning the same unknown pack doesn't re-pay the
+  double-endpoint wait; session-cached hits are unchanged and the negative
+  entry expires so products newly added to OFF can still be found.
+
+- **Data export** — Settings now has a "Your data" card: **Backup (JSON)** shares
+  a versioned `calibreat.export.v1` bundle (profile, goals, diary, water,
+  weigh-ins, workouts, saved meals) and **Diary (CSV)** shares a
+  spreadsheet-ready meal log (RFC 4180, opens cleanly in Excel/Numbers/Sheets).
+  Both go through the OS share sheet — no account, no upload, nothing leaves
+  the device until the user picks a destination; the web preview copies to the
+  clipboard and offers a download instead. Two new first-party Expo modules
+  (`expo-file-system`, `expo-sharing`), no new permissions.
+
+- **Photo label logging** — a new **Label** tab in the meal log sheet: photograph
+  the nutrition panel and its values dock into the confirm card, read entirely on
+  device. Handles UK (per-100g, kJ, salt) and US (serving, Calories, sodium mg)
+  layouts, "of which saturates/sugars" sub-nutrients, wrapped values, and
+  OCR-corrupted characters; results are graded so incomplete reads say so
+  instead of guessing. Photos are never uploaded; under Expo Go/web the tab
+  explains it needs the installed app.
+- **Performance pass** — the Home streak ticker now wakes once a minute (was
+  every 15 seconds, re-rendering the whole SVG dashboard each tick) and a
+  one-shot timer flips the flame at the exact claim-window moment; food search
+  no longer retries Open Food Facts before failing, halving the worst-case
+  wait on a dead connection from ~16s to ~8s (generic foods are already on
+  screen; re-tap Search to retry); the JSON backup ships compact instead of
+  pretty-printed so big diaries share faster.
+- **Saved meals** — name a meal once ("Usual breakfast") and the slot's entries are
+  stored under that name; one tap re-logs the whole group into any day and meal slot.
+  A single favourite food is a one-item saved meal, so there is one concept rather than
+  two. Saving a name that already exists **updates it in place** instead of silently
+  duplicating it, and a long-press removes a chip.
+- **Copy yesterday's <slot>** — offered in the log sheet when that slot had entries the
+  day before ("3 items · 535 kcal · from Salmon fillet + 2 more"), for the days you log
+  nothing at all.
+- Both are **local-only and need no new permissions** — the logic lives in
+  `src/lib/saved-meals.ts` (pure, no database or React) with identical storage in
+  `db.ts` / `db.web.ts`, covered by the `check-meals` suite.
 
 ## beta v0.0.3 — True Burn Learning
 

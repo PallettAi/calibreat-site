@@ -8,10 +8,19 @@ import {
   type RecentMeal,
 } from '@/lib/diary';
 import { localDayKey } from '@/lib/dates';
+import {
+  SAVED_MEAL_LIMIT,
+  SAVED_MEAL_MAX_ITEMS,
+  isValidMealName,
+  normalizeMealName,
+  type SavedMeal,
+  type SavedMealItem,
+} from '@/lib/saved-meals';
 import { computeGoals, type ActivityLevel, type GoalDirection, type Sex } from '@/lib/nutrition';
 import type { HeightUnit, WaterUnit, WeightUnit } from '@/lib/units';
 
 export type { DayMacros, LogEntry, MealSlot, RecentMeal };
+export type { SavedMeal, SavedMealItem };
 
 /**
  * Web (preview) implementation of the calibrEAT data layer.
@@ -481,4 +490,102 @@ export async function deleteWorkoutSession(id: number): Promise<void> {
 
 export async function getWorkoutKcalForDay(dayKeyValue: string): Promise<number> {
   return (await getWorkoutSessionsForDay(dayKeyValue)).reduce((sum, e) => sum + e.kcal, 0);
+}
+
+/* ── Saved meals (repeat-eater shortcut; never leaves the device) ── */
+
+const SAVED_MEALS_KEY = 'calibreat.saved-meals.v1';
+
+/** Same shape and same semantics as db.ts; unparseable rows are dropped, not thrown. */
+function readSavedMeals(): SavedMeal[] {
+  const raw = localStorage.getItem(SAVED_MEALS_KEY);
+  if (!raw) return [];
+  try {
+    const v = JSON.parse(raw);
+    if (!Array.isArray(v)) return [];
+    return v.map((row: Partial<SavedMeal>) => ({
+      id: Number(row.id) || 0,
+      name: String(row.name ?? ''),
+      meal: asMeal(row.meal),
+      items: Array.isArray(row.items)
+        ? (row.items as SavedMealItem[]).filter(
+            (item) => item && Number.isFinite(Number(item.kcal)),
+          )
+        : [],
+      createdAt: String(row.createdAt ?? ''),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function writeSavedMeals(list: SavedMeal[]): void {
+  localStorage.setItem(SAVED_MEALS_KEY, JSON.stringify(list));
+}
+
+/** Newest first, matching db.ts. */
+export async function getSavedMeals(): Promise<SavedMeal[]> {
+  return readSavedMeals().sort(
+    (a, b) => b.createdAt.localeCompare(a.createdAt) || b.id - a.id,
+  );
+}
+
+/** A matching name updates in place, exactly as the SQLite path does. */
+export async function saveSavedMeal(
+  name: string,
+  meal: MealSlot,
+  items: SavedMealItem[],
+): Promise<{ meal: SavedMeal; replaced: boolean }> {
+  const clean = normalizeMealName(name);
+  if (!isValidMealName(clean)) {
+    throw new Error('Give this meal a name of at least two characters.');
+  }
+  if (!items.length) {
+    throw new Error('There is nothing saved in this meal yet.');
+  }
+  if (items.length > SAVED_MEAL_MAX_ITEMS) {
+    throw new Error(`A saved meal holds up to ${SAVED_MEAL_MAX_ITEMS} items.`);
+  }
+
+  const list = readSavedMeals();
+  const existing = list.find((entry) => entry.name.toLowerCase() === clean.toLowerCase());
+  const createdAt = new Date().toISOString();
+
+  if (existing) {
+    const updated: SavedMeal = { ...existing, name: clean, meal, items, createdAt };
+    writeSavedMeals(list.map((entry) => (entry.id === existing.id ? updated : entry)));
+    return { meal: updated, replaced: true };
+  }
+
+  if (list.length >= SAVED_MEAL_LIMIT) {
+    throw new Error(`You can keep ${SAVED_MEAL_LIMIT} saved meals. Remove one first.`);
+  }
+
+  const nextId = list.length ? Math.max(...list.map((entry) => entry.id)) + 1 : 1;
+  const saved: SavedMeal = { id: nextId, name: clean, meal, items, createdAt };
+  list.push(saved);
+  writeSavedMeals(list);
+  return { meal: saved, replaced: false };
+}
+
+export async function deleteSavedMeal(id: number): Promise<void> {
+  writeSavedMeals(readSavedMeals().filter((entry) => entry.id !== id));
+}
+
+/* ── Full-history reads (data export; see src/lib/export.ts) ── */
+
+export async function getAllLogs(): Promise<LogEntry[]> {
+  return readLogs().sort((a, b) => a.loggedAt.localeCompare(b.loggedAt) || a.id - b.id);
+}
+
+export async function getAllWater(): Promise<WaterEntry[]> {
+  return readWater().sort((a, b) => a.loggedAt.localeCompare(b.loggedAt) || a.id - b.id);
+}
+
+export async function getAllWeighIns(): Promise<WeighIn[]> {
+  return readWeighIns().sort((a, b) => a.measuredAt.localeCompare(b.measuredAt) || a.id - b.id);
+}
+
+export async function getAllWorkouts(): Promise<WorkoutSession[]> {
+  return readWorkouts().sort((a, b) => a.loggedAt.localeCompare(b.loggedAt) || a.id - b.id);
 }

@@ -1,6 +1,7 @@
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   KeyboardAvoidingView,
   Modal,
@@ -18,12 +19,32 @@ import { ThemedText } from '@/components/themed-text';
 import { Brand } from '@/constants/app';
 import { Fonts, Spacing } from '@/constants/theme';
 import { lookupBarcode, scaleFood, defaultAmount, fetchOpenFoodFacts, parseSearchPayload, type OffFood, type ScaledFood } from '@/lib/barcode';
+import { labelQualityNote } from '@/lib/label-parse';
+import { scanLabel } from '@/lib/label-ocr';
+import { importRecipeUrl } from '@/lib/recipe-fetch';
 import { COFID_FOODS } from '@/lib/cofid-catalog';
 import { COFID_CREDIT, searchFoods } from '@/lib/food-search';
+import { previousDayKey } from '@/lib/dates';
 import { MEAL_SLOTS, logDisplayName, type LogEntry, type MealSlot, type RecentMeal } from '@/lib/diary';
-import type { LogInput } from '@/lib/db';
+import {
+  deleteSavedMeal,
+  getLogsForDay,
+  getSavedMeals,
+  saveSavedMeal,
+  type LogInput,
+  type SavedMeal,
+  type SavedMealItem,
+} from '@/lib/db';
+import {
+  SAVED_MEAL_NAME_MAX,
+  isValidMealName,
+  mealItemsFromLogs,
+  savedMealInputs,
+  savedMealItemSummary,
+  savedMealMeta,
+} from '@/lib/saved-meals';
 
-type Mode = 'scan' | 'search';
+type Mode = 'scan' | 'search' | 'label' | 'web';
 
 function defaultMealSlot(date = new Date()): MealSlot {
   const hour = date.getHours();
@@ -127,6 +148,103 @@ export function MealLogSheet({
   const [searching, setSearching] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [labelBusy, setLabelBusy] = useState(false);
+  const [recipeUrl, setRecipeUrl] = useState('');
+  const [recipeBusy, setRecipeBusy] = useState(false);
+
+  // Repeat-eater shortcut (see src/lib/saved-meals.ts). The chip list, the
+  // "save this meal" input and the copy-yesterday action all describe the slot
+  // currently selected above, so they reload whenever the day or slot changes.
+  const [savedMeals, setSavedMeals] = useState<SavedMeal[]>([]);
+  const [slotEntries, setSlotEntries] = useState<LogEntry[]>([]);
+  const [yesterdayEntries, setYesterdayEntries] = useState<LogEntry[]>([]);
+  const [mealName, setMealName] = useState('');
+  const [quickBusy, setQuickBusy] = useState(false);
+  const [quickNote, setQuickNote] = useState<string | null>(null);
+
+  const yesterdayKey = previousDayKey(dayKey);
+  const slotLabel = MEAL_SLOTS.find((s) => s.value === meal)?.label ?? 'Meal';
+
+  useEffect(() => {
+    if (!visible || editing) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [meals, today, yesterday] = await Promise.all([
+          getSavedMeals(),
+          getLogsForDay(dayKey),
+          getLogsForDay(yesterdayKey),
+        ]);
+        if (cancelled) return;
+        setSavedMeals(meals);
+        setSlotEntries(today.filter((entry) => entry.meal === meal));
+        setYesterdayEntries(yesterday.filter((entry) => entry.meal === meal));
+      } catch {
+        if (!cancelled) setQuickNote('Could not read your saved meals.');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, editing, dayKey, yesterdayKey, meal]);
+
+  /** Re-logs a group into the selected day and slot, one entry per item. */
+  async function logGroup(items: SavedMealItem[], what: string) {
+    if (quickBusy) return;
+    setQuickBusy(true);
+    setQuickNote(null);
+    try {
+      for (const input of savedMealInputs(items, dayKey, meal)) {
+        await onSave(input);
+      }
+      onClose();
+    } catch {
+      setQuickNote(`Could not log ${what}. Try again.`);
+    } finally {
+      setQuickBusy(false);
+    }
+  }
+
+  async function handleSaveMeal() {
+    if (quickBusy) return;
+    setQuickBusy(true);
+    setQuickNote(null);
+    try {
+      const result = await saveSavedMeal(mealName, meal, mealItemsFromLogs(slotEntries));
+      setSavedMeals((prev) => [result.meal, ...prev.filter((entry) => entry.id !== result.meal.id)]);
+      setMealName('');
+      setQuickNote(
+        `${result.replaced ? 'Updated' : 'Saved'} “${result.meal.name}” — ${savedMealMeta(result.meal.items)}.`,
+      );
+    } catch (err) {
+      setQuickNote(err instanceof Error ? err.message : 'Could not save this meal.');
+    } finally {
+      setQuickBusy(false);
+    }
+  }
+
+  async function handleRemoveMeal(saved: SavedMeal) {
+    try {
+      await deleteSavedMeal(saved.id);
+      setSavedMeals((prev) => prev.filter((entry) => entry.id !== saved.id));
+      setQuickNote(`Removed “${saved.name}”. Your log is untouched.`);
+    } catch {
+      setQuickNote('Could not remove that saved meal.');
+    }
+  }
+
+  function confirmRemoveMeal(saved: SavedMeal) {
+    const message = `Remove “${saved.name}” from your saved meals? Entries already in your log are not affected.`;
+    if (Platform.OS === 'web') {
+      const g = globalThis as typeof globalThis & { confirm?: (prompt: string) => boolean };
+      if (g.confirm?.(message) ?? true) void handleRemoveMeal(saved);
+      return;
+    }
+    Alert.alert('Remove saved meal?', message, [
+      { text: 'Keep', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => void handleRemoveMeal(saved) },
+    ]);
+  }
 
   function dockFood(food: OffFood) {
     setSpecimen(food);
@@ -183,6 +301,84 @@ export function MealLogSheet({
   function switchMode(next: Mode) {
     setMode(next);
     setError(null);
+  }
+
+  /** Recipe URL → page JSON-LD → per-serving nutrients, docked as a reading. */
+  async function runRecipeImport() {
+    if (recipeBusy) return;
+    setRecipeBusy(true);
+    setError(null);
+    try {
+      const result = await importRecipeUrl(recipeUrl);
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      const r = result.recipe;
+      dockFood({
+        barcode: '',
+        name: r.name,
+        kcal: r.kcal,
+        proteinG: r.proteinG,
+        carbsG: r.carbsG,
+        fatG: r.fatG,
+        fiberG: r.fiberG,
+        sugarG: r.sugarG,
+        satFatG: r.satFatG,
+        sodiumMg: r.sodiumMg,
+        portionLabel: r.portionLabel,
+        portion: 'serving',
+        servingGrams: null,
+        source: 'off',
+      });
+      setMode('scan');
+    } catch {
+      setError('Could not import that recipe. Try again.');
+    } finally {
+      setRecipeBusy(false);
+    }
+  }
+
+  /** Photo of the nutrition panel → on-device OCR → docked specimen. */
+  async function runLabelScan(source: 'camera' | 'library') {
+    if (labelBusy) return;
+    setLabelBusy(true);
+    setError(null);
+    try {
+      const result = await scanLabel(source);
+      if (!result.ok) {
+        // No message = the user backed out of the picker — not an error.
+        if ('message' in result) setError(result.message);
+        return;
+      }
+      const { parsed } = result;
+      if (parsed.quality === 'none') {
+        setError(labelQualityNote(parsed));
+        return;
+      }
+      const kcal = parsed.kcal ?? 0;
+      dockFood({
+        barcode: '',
+        name: parsed.quality === 'ok' ? 'Label reading' : 'Label reading (incomplete)',
+        kcal,
+        proteinG: parsed.proteinG,
+        carbsG: parsed.carbsG,
+        fatG: parsed.fatG,
+        fiberG: parsed.fiberG,
+        sugarG: parsed.sugarG,
+        satFatG: parsed.satFatG,
+        sodiumMg: parsed.sodiumMg,
+        portionLabel: parsed.basis === '100g' ? 'per 100 g' : 'per serving',
+        portion: parsed.basis === '100g' ? '100g' : 'serving',
+        servingGrams: null,
+        source: 'off',
+      });
+      if (parsed.quality === 'partial') setError(labelQualityNote(parsed));
+    } catch {
+      setError('Could not read the label. Try again.');
+    } finally {
+      setLabelBusy(false);
+    }
   }
 
   async function runSearch() {
@@ -263,7 +459,7 @@ export function MealLogSheet({
   const nativeScan = Platform.OS !== 'web';
   const canLock = scaled != null && scaled.kcal > 0;
   const showCamera = nativeScan && mode === 'scan' && !specimen && !looking && permission?.granted;
-  const wellLabel = looking || searching ? 'READING' : specimen ? 'LOCKED READING' : mode === 'search' ? 'SEARCH' : 'VIEWFINDER';
+  const wellLabel = looking || searching ? 'READING' : specimen ? 'LOCKED READING' : mode === 'search' ? 'SEARCH' : mode === 'label' ? 'LABEL SCAN' : mode === 'web' ? 'WEB RECIPE' : 'VIEWFINDER';
   const inkOnAccent = isDark ? '#0A1019' : '#FFFFFF';
   const trackBg = isDark ? '#0B121C' : '#EEF0EC';
 
@@ -301,6 +497,8 @@ export function MealLogSheet({
               values={[
                 { id: 'search', label: 'Search' },
                 { id: 'scan', label: 'Scan pack' },
+                { id: 'label', label: 'Label' },
+                { id: 'web', label: 'Web' },
               ]}
               selected={mode}
               onChange={switchMode}
@@ -313,6 +511,117 @@ export function MealLogSheet({
             />
 
             <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.sheetScrollInner} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            {!editing && !specimen ? (
+              <View
+                style={[
+                  styles.quickCard,
+                  {
+                    borderColor: hairline,
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(13,21,30,0.02)',
+                  },
+                ]}
+              >
+                <View style={styles.quickHead}>
+                  <Text style={[styles.quickLabel, { color: mutedColor }]}>REPEAT</Text>
+                  {savedMeals.length ? (
+                    <Text style={[styles.quickHint, { color: mutedColor }]}>tap to log · hold to remove</Text>
+                  ) : null}
+                </View>
+
+                {savedMeals.length ? (
+                  <View style={styles.chipWrap}>
+                    {savedMeals.map((saved) => (
+                      <CrispPress
+                        key={saved.id}
+                        haptic="select"
+                        disabled={quickBusy}
+                        onPress={() => void logGroup(saved.items, `“${saved.name}”`)}
+                        onLongPress={() => confirmRemoveMeal(saved)}
+                        innerStyle={[
+                          styles.chip,
+                          { borderColor: isDark ? 'rgba(183,233,60,0.26)' : 'rgba(14,107,56,0.20)' },
+                        ]}
+                      >
+                        <Text style={[styles.chipName, { color: textColor }]} numberOfLines={1}>
+                          {saved.name}
+                        </Text>
+                        <Text style={[styles.chipMeta, { color: mutedColor }]}>
+                          {savedMealMeta(saved.items)}
+                        </Text>
+                      </CrispPress>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={[styles.quickBody, { color: mutedColor }]}>
+                    Log a meal you eat often, then save it here — porridge, a protein shake, your
+                    usual lunch. From then on it re-logs in one tap, into any day.
+                  </Text>
+                )}
+
+                {slotEntries.length ? (
+                  <>
+                    <View style={styles.quickActionRow}>
+                      <TextInput
+                        value={mealName}
+                        onChangeText={setMealName}
+                        placeholder="Name it, e.g. Usual breakfast"
+                        placeholderTextColor={mutedColor}
+                        maxLength={SAVED_MEAL_NAME_MAX}
+                        autoCorrect={false}
+                        returnKeyType="done"
+                        onSubmitEditing={() => void handleSaveMeal()}
+                        style={[
+                          styles.quickInput,
+                          {
+                            color: textColor,
+                            borderColor: hairline,
+                            backgroundColor: isDark ? '#0C1420' : '#FFFFFF',
+                          },
+                        ]}
+                      />
+                      <CrispPress
+                        haptic="select"
+                        disabled={quickBusy || !isValidMealName(mealName)}
+                        onPress={() => void handleSaveMeal()}
+                        innerStyle={[styles.quickSaveBtn, { backgroundColor: accentText }]}
+                      >
+                        <Text style={[styles.quickSaveText, { color: inkOnAccent }]}>Save</Text>
+                      </CrispPress>
+                    </View>
+                    <Text style={[styles.quickFoot, { color: mutedColor }]}>
+                      Makes this {slotLabel.toLowerCase()} ({slotEntries.length}{' '}
+                      {slotEntries.length === 1 ? 'item' : 'items'}) a one-tap meal.
+                    </Text>
+                  </>
+                ) : null}
+
+                {yesterdayEntries.length ? (
+                  <CrispPress
+                    haptic="light"
+                    disabled={quickBusy}
+                    onPress={() =>
+                      void logGroup(
+                        mealItemsFromLogs(yesterdayEntries),
+                        `yesterday’s ${slotLabel.toLowerCase()}`,
+                      )
+                    }
+                    innerStyle={[styles.copyBtn, { borderColor: hairline }]}
+                  >
+                    <Text style={[styles.copyTitle, { color: accentText }]}>
+                      Copy yesterday’s {slotLabel.toLowerCase()}
+                    </Text>
+                    <Text style={[styles.copyMeta, { color: mutedColor }]}>
+                      {savedMealMeta(mealItemsFromLogs(yesterdayEntries))} · from{' '}
+                      {savedMealItemSummary(mealItemsFromLogs(yesterdayEntries))}
+                    </Text>
+                  </CrispPress>
+                ) : null}
+
+                {quickNote ? (
+                  <Text style={[styles.quickNote, { color: accentText }]}>{quickNote}</Text>
+                ) : null}
+              </View>
+            ) : null}
             <View style={[styles.well, { borderColor: isDark ? 'rgba(183,233,60,0.22)' : 'rgba(14,107,56,0.18)' }]}>
               <View style={styles.wellHead}>
                 <View style={styles.wellDot} />
@@ -348,6 +657,55 @@ export function MealLogSheet({
                 <View style={styles.searchWell}>
                   <Text style={styles.finderHint}>
                     {searching ? 'Searching the food database…' : 'Search by name when the camera can’t read a pack, or the barcode isn’t listed.'}
+                  </Text>
+                </View>
+              ) : mode === 'label' ? (
+                <View style={styles.labelWell}>
+                  <Text style={styles.finderHint}>
+                    {labelBusy
+                      ? 'Reading the label on this device…'
+                      : 'Photograph the nutrition panel — the values fill in from the photo, on device. Nothing is uploaded.'}
+                  </Text>
+                  {!labelBusy ? (
+                    <View style={styles.labelActions}>
+                      <CrispPress haptic="light" onPress={() => void runLabelScan('camera')} innerStyle={[styles.labelBtn, { backgroundColor: accentText }]}>
+                        <Text style={[styles.labelBtnText, { color: inkOnAccent }]}>Take photo</Text>
+                      </CrispPress>
+                      <CrispPress haptic="light" onPress={() => void runLabelScan('library')} innerStyle={[styles.labelBtn, { borderColor: accentText }]}>
+                        <Text style={[styles.labelBtnText, { color: accentText }]}>Choose photo</Text>
+                      </CrispPress>
+                    </View>
+                  ) : null}
+                </View>
+              ) : mode === 'web' ? (
+                <View style={styles.labelWell}>
+                  <Text style={styles.finderHint}>
+                    Paste a recipe link — the per-serving calories and macros fill in from the page’s own nutrition panel.
+                  </Text>
+                  <View style={styles.labelActions}>
+                    <TextInput
+                      value={recipeUrl}
+                      onChangeText={setRecipeUrl}
+                      placeholder="recipe site link"
+                      placeholderTextColor={mutedColor}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="url"
+                      returnKeyType="go"
+                      onSubmitEditing={() => void runRecipeImport()}
+                      style={[styles.manualInput, { color: textColor, borderColor: hairline, backgroundColor: isDark ? '#0C1420' : '#F6F7F4' }]}
+                    />
+                    <CrispPress
+                      haptic="light"
+                      onPress={() => void runRecipeImport()}
+                      disabled={recipeBusy || recipeUrl.trim().length < 4}
+                      innerStyle={[styles.manualGo, { borderColor: accentText }]}
+                    >
+                      <Text style={[styles.manualGoText, { color: accentText }]}>{recipeBusy ? '…' : 'Fetch'}</Text>
+                    </CrispPress>
+                  </View>
+                  <Text style={[styles.webNote, { color: mutedColor }]}>
+                    Works with sites that publish standard recipe data — most do. No tracker pages are loaded.
                   </Text>
                 </View>
               ) : (
@@ -670,6 +1028,24 @@ export { logDisplayName };
 const WELL = '#070B12';
 
 const styles = StyleSheet.create({
+  quickCard: { borderWidth: 1, borderRadius: 16, padding: 12, gap: 10 },
+  quickHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  quickLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.6 },
+  quickHint: { fontSize: 11 },
+  quickBody: { fontSize: 12, lineHeight: 17 },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { borderWidth: 1, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 10, gap: 2, maxWidth: 250 },
+  chipName: { fontSize: 13, fontWeight: '700' },
+  chipMeta: { fontSize: 11 },
+  quickActionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  quickInput: { flex: 1, minHeight: 42, borderWidth: 1, borderRadius: 11, paddingHorizontal: 10, fontSize: 13 },
+  quickSaveBtn: { minHeight: 42, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
+  quickSaveText: { fontSize: 13, fontWeight: '800' },
+  quickFoot: { fontSize: 11, lineHeight: 15 },
+  copyBtn: { borderWidth: 1, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12, gap: 2 },
+  copyTitle: { fontSize: 13, fontWeight: '800' },
+  copyMeta: { fontSize: 11, lineHeight: 15 },
+  quickNote: { fontSize: 12, fontWeight: '600', lineHeight: 16 },
   overlay: { flex: 1, backgroundColor: 'rgba(2,8,16,0.84)', justifyContent: 'flex-end', paddingHorizontal: 14, paddingTop: Spacing.four },
   keyboard: { width: '100%', maxWidth: 420, alignSelf: 'center' },
   panel: { borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, padding: 14, paddingBottom: 18, gap: 12, maxHeight: '94%' },
@@ -710,6 +1086,11 @@ const styles = StyleSheet.create({
   reticleBox: { width: 148, height: 148 },
   finderHint: { textAlign: 'center', color: 'rgba(167,178,188,0.88)', fontSize: 13, lineHeight: 18 },
   searchWell: { minHeight: 120, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18, paddingVertical: 16 },
+  labelWell: { minHeight: 120, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 18, paddingVertical: 16 },
+  labelActions: { flexDirection: 'row', gap: 10, alignSelf: 'stretch' as const },
+  webNote: { fontSize: 11, lineHeight: 15, textAlign: 'center' as const },
+  labelBtn: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 16, borderWidth: 1.5 },
+  labelBtnText: { fontSize: 13, fontWeight: '800' },
   allowBtn: { minHeight: 44, paddingHorizontal: 18, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   allowText: { fontWeight: '800', fontSize: 14 },
   dock: { minHeight: 236, alignItems: 'center', justifyContent: 'center', gap: 2, paddingHorizontal: 16, paddingBottom: 4 },

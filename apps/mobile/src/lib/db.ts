@@ -10,11 +10,20 @@ import {
   type MealSlot,
   type RecentMeal,
 } from '@/lib/diary';
+import {
+  SAVED_MEAL_LIMIT,
+  SAVED_MEAL_MAX_ITEMS,
+  isValidMealName,
+  normalizeMealName,
+  type SavedMeal,
+  type SavedMealItem,
+} from '@/lib/saved-meals';
 import { localCutoffDayKey, localDayKey } from '@/lib/dates';
 import { computeGoals, type ActivityLevel, type GoalDirection, type Sex } from '@/lib/nutrition';
 import type { HeightUnit, WaterUnit, WeightUnit } from '@/lib/units';
 
 export type { DayMacros, LogEntry, MealSlot, RecentMeal };
+export type { SavedMeal, SavedMealItem };
 
 /**
  * calibrEAT local-first data layer (M1).
@@ -157,6 +166,13 @@ export function getDb(): Promise<SQLiteDatabase> {
           logged_at   TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_workout_day ON workout_sessions (day_key);
+        CREATE TABLE IF NOT EXISTS saved_meals (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          name       TEXT NOT NULL,
+          meal       TEXT NOT NULL,
+          items      TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS schema_meta (
           key   TEXT PRIMARY KEY,
           value TEXT NOT NULL
@@ -180,7 +196,8 @@ export function getDb(): Promise<SQLiteDatabase> {
           // column already exists
         }
       }
-      // Ensure new tables exist for DBs created before v0.0.3
+      // Ensure tables added after the original schema exist in older databases
+      // (weigh_ins / intake_entries in v0.0.3, saved_meals afterwards)
       await db.execAsync(`
         CREATE TABLE IF NOT EXISTS weigh_ins (
           id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -222,6 +239,13 @@ export function getDb(): Promise<SQLiteDatabase> {
           logged_at   TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_workout_day ON workout_sessions (day_key);
+        CREATE TABLE IF NOT EXISTS saved_meals (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          name       TEXT NOT NULL,
+          meal       TEXT NOT NULL,
+          items      TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS schema_meta (
           key   TEXT PRIMARY KEY,
           value TEXT NOT NULL
@@ -725,4 +749,182 @@ export async function getWorkoutKcalForDay(dayKeyValue: string): Promise<number>
     [dayKeyValue],
   );
   return row?.total ?? 0;
+}
+
+/* ── Saved meals (repeat-eater shortcut; never sent off-device) ── */
+
+/**
+ * Saved meals are stored as a JSON array of items rather than a child table:
+ * they are read as a whole, written as a whole, and never queried by item, so a
+ * join would buy nothing. Rows that fail to parse are dropped rather than
+ * crashing the picker — a corrupt row must not cost the user their log.
+ */
+function parseSavedItems(raw: string): SavedMealItem[] {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap((row) => {
+      if (!row || typeof row !== 'object') return [];
+      const item = row as Partial<SavedMealItem>;
+      const kcal = Number(item.kcal);
+      if (!Number.isFinite(kcal)) return [];
+      const num = (value: unknown): number | null => {
+        const parsedValue = Number(value);
+        return value == null || !Number.isFinite(parsedValue) ? null : Math.round(parsedValue);
+      };
+      return [
+        {
+          name: typeof item.name === 'string' && item.name.trim() ? item.name.trim() : null,
+          kcal: Math.round(kcal),
+          proteinG: num(item.proteinG),
+          carbsG: num(item.carbsG),
+          fatG: num(item.fatG),
+          fiberG: num(item.fiberG),
+          sugarG: num(item.sugarG),
+          satFatG: num(item.satFatG),
+          sodiumMg: num(item.sodiumMg),
+        },
+      ];
+    });
+  } catch {
+    return [];
+  }
+}
+
+/** Newest first, so the thing just saved is the first chip you see. */
+export async function getSavedMeals(): Promise<SavedMeal[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<{
+    id: number;
+    name: string;
+    meal: string;
+    items: string;
+    created_at: string;
+  }>('SELECT id, name, meal, items, created_at FROM saved_meals ORDER BY created_at DESC, id DESC');
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    meal: asMeal(r.meal),
+    items: parseSavedItems(r.items),
+    createdAt: r.created_at,
+  }));
+}
+
+/**
+ * Saves a group of entries. A name that already exists is *updated in place*
+ * rather than duplicated — otherwise "Usual breakfast" quietly becomes five
+ * identical chips and the shortcut stops being a shortcut. Callers get `replaced`
+ * so the UI can say which happened instead of guessing.
+ */
+export async function saveSavedMeal(
+  name: string,
+  meal: MealSlot,
+  items: SavedMealItem[],
+): Promise<{ meal: SavedMeal; replaced: boolean }> {
+  const clean = normalizeMealName(name);
+  if (!isValidMealName(clean)) {
+    throw new Error('Give this meal a name of at least two characters.');
+  }
+  if (!items.length) {
+    throw new Error('There is nothing saved in this meal yet.');
+  }
+  if (items.length > SAVED_MEAL_MAX_ITEMS) {
+    throw new Error(`A saved meal holds up to ${SAVED_MEAL_MAX_ITEMS} items.`);
+  }
+
+  const db = await getDb();
+  const existing = await db.getFirstAsync<{ id: number }>(
+    'SELECT id FROM saved_meals WHERE LOWER(name) = LOWER(?) LIMIT 1',
+    [clean],
+  );
+
+  if (existing) {
+    await db.runAsync('UPDATE saved_meals SET name = ?, meal = ?, items = ?, created_at = ? WHERE id = ?', [
+      clean,
+      meal,
+      JSON.stringify(items),
+      new Date().toISOString(),
+      existing.id,
+    ]);
+    return {
+      meal: {
+        id: existing.id,
+        name: clean,
+        meal,
+        items,
+        createdAt: new Date().toISOString(),
+      },
+      replaced: true,
+    };
+  }
+
+  const count = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) AS count FROM saved_meals');
+  if ((count?.count ?? 0) >= SAVED_MEAL_LIMIT) {
+    throw new Error(`You can keep ${SAVED_MEAL_LIMIT} saved meals. Remove one first.`);
+  }
+
+  const createdAt = new Date().toISOString();
+  const result = await db.runAsync(
+    'INSERT INTO saved_meals (name, meal, items, created_at) VALUES (?, ?, ?, ?)',
+    [clean, meal, JSON.stringify(items), createdAt],
+  );
+  return {
+    meal: { id: Number(result.lastInsertRowId), name: clean, meal, items, createdAt },
+    replaced: false,
+  };
+}
+
+export async function deleteSavedMeal(id: number): Promise<void> {
+  const db = await getDb();
+  await db.runAsync('DELETE FROM saved_meals WHERE id = ?', [id]);
+}
+
+/* ── Full-history reads (data export; see src/lib/export.ts) ── */
+
+export async function getAllLogs(): Promise<LogEntry[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<LogRow>(
+    'SELECT id, day_key, meal, name, kcal, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sat_fat_g, sodium_mg, logged_at FROM log_entries ORDER BY logged_at ASC, id ASC',
+  );
+  return rows.map(mapLogRow);
+}
+
+export async function getAllWater(): Promise<WaterEntry[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<{ id: number; day_key: string; ml: number; logged_at: string }>(
+    'SELECT id, day_key, ml, logged_at FROM water ORDER BY logged_at ASC, id ASC',
+  );
+  return rows.map((r) => ({ id: r.id, dayKey: r.day_key, ml: r.ml, loggedAt: r.logged_at }));
+}
+
+export async function getAllWeighIns(): Promise<WeighIn[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<{ id: number; kg: number; measured_at: string; day_key: string }>(
+    'SELECT id, kg, measured_at, day_key FROM weigh_ins ORDER BY measured_at ASC, id ASC',
+  );
+  return rows.map((r) => ({ id: r.id, kg: r.kg, measuredAt: r.measured_at, dayKey: r.day_key }));
+}
+
+export async function getAllWorkouts(): Promise<WorkoutSession[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<{
+    id: number;
+    day_key: string;
+    exercise_id: string;
+    sets: number;
+    reps: number;
+    kcal: number;
+    logged_at: string;
+  }>(
+    'SELECT id, day_key, exercise_id, sets, reps, kcal, logged_at FROM workout_sessions ORDER BY logged_at ASC, id ASC',
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    dayKey: r.day_key,
+    exerciseId: r.exercise_id,
+    sets: r.sets,
+    reps: r.reps,
+    kcal: r.kcal,
+    loggedAt: r.logged_at,
+  }));
 }

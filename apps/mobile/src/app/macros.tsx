@@ -103,22 +103,20 @@ export default function MacrosScreen() {
           <View style={styles.header}>
             <Pressable
               onPress={() => router.back()}
+              hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel="Go back"
-              style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.backBtn, { borderColor: theme.line }, pressed && styles.pressed]}
             >
-              <ThemedText type="smallBold" style={{ color: accentText }}>
-                ‹ Back
-              </ThemedText>
+              <Text style={[styles.backChevron, { color: accentText }]}>‹</Text>
+              <ThemedText type="smallBold">Back</ThemedText>
             </Pressable>
-            <View style={styles.headerTitle}>
-              <ThemedText type="subtitle" style={styles.title}>
-                Macros & nutrients
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                Daily targets, based on your profile.
-              </ThemedText>
-            </View>
+            <ThemedText type="subtitle" style={styles.title}>
+              Macros & nutrients
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              What you logged, against your daily targets.
+            </ThemedText>
           </View>
 
           {/* ── Main macros ───────────────────────────────────────── */}
@@ -126,6 +124,14 @@ export default function MacrosScreen() {
             <ThemedText type="smallBold" style={styles.sectionLabel}>
               MACROS
             </ThemedText>
+            <View style={styles.columnHead}>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.columnHeadText}>
+                Logged
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.columnHeadText}>
+                Target
+              </ThemedText>
+            </View>
             {mainMacros.map((row) => (
               <NutrientRow key={row.name} row={row} accentText={accentText} theme={theme} />
             ))}
@@ -135,6 +141,14 @@ export default function MacrosScreen() {
             <ThemedText type="smallBold" style={styles.sectionLabel}>
               BASIC MICRONUTRIENTS
             </ThemedText>
+            <View style={styles.columnHead}>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.columnHeadText}>
+                Logged
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.columnHeadText}>
+                Target
+              </ThemedText>
+            </View>
             {basicMicros.map((row) => (
               <NutrientRow key={row.name} row={row} accentText={accentText} theme={theme} />
             ))}
@@ -193,10 +207,22 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.five,
     gap: Spacing.three,
   },
-  header: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.three },
-  backButton: { paddingVertical: Spacing.one + 2, paddingRight: Spacing.two },
-  headerTitle: { flex: 1, gap: 2 },
-  title: { fontSize: 26, lineHeight: 34 },
+  header: { gap: Spacing.two },
+  backBtn: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  backChevron: { fontSize: 18, fontWeight: '700', lineHeight: 18 },
+  title: { fontSize: 26, lineHeight: 32 },
+  columnHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.three },
+  columnHeadText: { fontSize: 10, letterSpacing: 0.8, opacity: 0.75 },
+  pressed: { opacity: 0.7 },
   card: {
     gap: Spacing.two,
     borderRadius: Spacing.four,
@@ -216,5 +242,4 @@ const styles = StyleSheet.create({
   nutrientValues: { alignItems: 'flex-end', gap: 2 },
   nutrientCurrent: { fontSize: 15, fontWeight: '700', fontFamily: Fonts.mono },
   footerNote: { textAlign: 'center', lineHeight: 19, opacity: 0.85, marginTop: Spacing.two },
-  pressed: { opacity: 0.7 },
 });

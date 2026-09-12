@@ -138,15 +138,6 @@ function ukSearchUrl(query: string): string {
   return `https://uk.openfoodfacts.org/cgi/search.pl?${params}`;
 }
 
-async function lookupWithRetry(
-  url: string,
-  lookup: (url: string) => Promise<unknown | null>,
-): Promise<unknown | null> {
-  const first = await lookup(url);
-  if (first != null) return first;
-  return lookup(url);
-}
-
 export async function searchFoods(raw: string, deps: SearchDeps = {}): Promise<FoodSearchResult> {
   const query = raw.trim();
   const catalog = deps.catalog ?? [];
@@ -158,7 +149,11 @@ export async function searchFoods(raw: string, deps: SearchDeps = {}): Promise<F
     return mergeFoodSearch(local, null);
   }
 
-  const payload = await lookupWithRetry(ukSearchUrl(query), lookup);
+  // Single attempt on purpose: OFF failures are network-down, CORS or
+  // rate-limiting — an immediate second try loses every time, and the retry
+  // used to double the worst-case wait to ~16s. The user can re-tap Search;
+  // generic foods are already on screen either way.
+  const payload = await lookup(ukSearchUrl(query));
   if (payload == null) return mergeFoodSearch(local, null);
   const parseRemote = deps.parseRemote ?? (() => []);
   return mergeFoodSearch(local, parseRemote(payload));

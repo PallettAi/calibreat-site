@@ -51,6 +51,7 @@ function RootNavigator() {
             <Stack.Screen name="setup" />
             <Stack.Screen name="macros" />
             <Stack.Screen name="bmi" />
+            <Stack.Screen name="trends" />
             <Stack.Screen name="settings" />
             <Stack.Screen name="train" />
           </Stack.Protected>

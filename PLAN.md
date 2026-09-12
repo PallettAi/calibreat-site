@@ -217,9 +217,20 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
       (fibre, sugars, saturated fat, sodium) from Open Food Facts when the pack lists them.
 - [x] Food diary: meal/snack entries by slot, quick-add calories, recents, edit and
       delete (`meal-log-sheet.tsx`), day totals driving the home dial
+- [x] Saved meals & one-tap re-log: name a meal you eat often ("Usual breakfast"),
+      save the slot's entries under that name, then re-log the whole group into any
+      day and slot with one tap; a "copy yesterday's <slot>" shortcut covers the
+      day you forgot. Same name updates in place; long-press a chip to remove it.
+      Local-only, no new permissions (`src/lib/saved-meals.ts`)
 - [x] Water tracker (ml/cups, editable total, `water-sheet.tsx`) and weight log
       (weigh-ins + trend on the home weight card)
-- [ ] Export/import of data (JSON/CSV) for backups & device migration
+- [x] Export of data (JSON/CSV) for backups & device migration: Settings →
+      "Your data" shares a versioned JSON backup (profile, diary, water,
+      weigh-ins, workouts, saved meals) or a spreadsheet-friendly diary CSV
+      through the OS share sheet (web preview: clipboard + download).
+      Pure logic in `src/lib/export.ts`, checked by `npm run check:export`.
+      (Import/migration back in is not built — the JSON is readable by
+      hand and by future tooling.)
 
 ### M2 — Food database & barcode (UK-first, all free)
 - [x] **UK CoFID** (McCance & Widdowson, the official UK government composition dataset,
@@ -230,6 +241,48 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
 - [ ] **USDA FoodData Central** (free API) — fallback / cross-check for items neither covers
 - [x] Barcode scan via the camera (`expo-camera`) → product lookup → log
 - [x] Search UI with recents
+- [x] **Photo label OCR** — "Label" tab in the log sheet: photograph the
+      nutrition panel and the values dock into the confirm card, read entirely
+      on device (Google ML Kit via `@react-native-ml-kit/text-recognition`,
+      photo via `expo-image-picker`; nothing uploaded). The parser
+      (`src/lib/label-parse.ts`, pure + CI-checked by `check-ocr`) handles UK
+      per-100g and US serving panels, kJ→kcal, salt→sodium, "of which"
+      sub-nutrients, wrapped values and corrupted OCR characters, and grades
+      results ok/partial/none so the UI can ask for a re-scan honestly.
+      Unavailable under Expo Go/web — those show Search guidance instead.
+
+### M2.5 — Engagement & insights (2026-09)
+- [x] **Fasting timer** — a FASTING card on Home: start when you finish
+      eating, elapsed clock + next milestone (12/16/18/20/24/36/48 h) while
+      running, end fast records the duration for the "last fast" readout.
+      The clock is derived from the stored start timestamp, so it keeps
+      running with the app closed, and it reuses Home's existing 60-second
+      tick — zero new timers. Pure logic in `src/lib/fasting.ts`
+      (`npm run check:fasting`), persistence in `fasting-store.ts`.
+- [x] **True Burn trends screen** (`/trends`, Home menu) — the dashboard card
+      is the headline; this is the evidence. Measured-burn chart with the
+      formula line for reference plus latest/average/drift-per-week stats,
+      weight chart with a least-squares kg/week trend over a 3-point
+      smoothed line, logging-coverage bar, and the plateau banner surfaced
+      with room to breathe. Trend math lives in pure `src/lib/trends.ts`
+      (`npm run check:trends`); the screen reads the same 60-day window the
+      dashboard already loads. Adoption of measured targets stays on Home —
+      nothing here changes the dial.
+- [x] Barcode miss caching — failed OFF lookups are negatively cached for
+      5 minutes so re-scanning the same unknown pack doesn't re-pay the
+      double-endpoint wait; real hits are still cached for the session and a
+      miss expires so products newly added to OFF can be found.
+- [x] **Recipe URL importer** — "Web" tab in the log sheet: paste a recipe
+      link and the per-serving calories/macros dock into the confirm card.
+      Reads only the page's schema.org Recipe JSON-LD (the structured data
+      effectively every real recipe site publishes for Google rich results),
+      so the parse is dependable: @graph wrappers, kJ energy, numeric or
+      prose yields, unit strings ("646 kcal", "1.4 g" sodium → mg). Pages
+      without machine-readable data get an honest "no machine-readable
+      recipe found" instead of scraped guesses. Pure parser
+      `src/lib/recipe-parse.ts` (`npm run check:recipe`); fetch layer is
+      platform-neutral because `Accept` is CORS-safelisted (no preflight),
+      with a 10-second abort.
 
 ### M3 — Licensing backend
 - Pick MoR (Lemon Squeezy or Dodo Payments); configure **lifetime product** with instant
