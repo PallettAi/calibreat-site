@@ -10,6 +10,11 @@ Current version: **beta v0.0.4** · `apps/mobile` `v0.0.4` · Last updated: 2026
 
 **Theme:** the app stops making you re-type the meals you eat every day.
 
+- **Half the download** — the APK was shipping all four CPU architectures
+  (including two x86 variants only emulators use) at 179 MB. It now builds for
+  the two ABIs real phones run (arm64 + 32-bit arm): **95 MB** installed, 47%
+  smaller.
+
 - **Fasting timer** — a FASTING card on Home: start when you finish eating and
   a live elapsed clock counts up with the next common milestone (12/16/18/20/
   24/36/48 h) and how far away it is; ending a fast records the duration for
