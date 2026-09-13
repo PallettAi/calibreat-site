@@ -446,7 +446,7 @@ export default function LockScreen() {
                     pressed && styles.buttonPressed,
                   ]}>
                   <ThemedText type="smallBold" style={styles.storeButtonText}>
-                    Click here to get a license key.
+                    Don't have a license? Click here to buy yours.
                   </ThemedText>
                 </Pressable>
               </ExternalLink>
