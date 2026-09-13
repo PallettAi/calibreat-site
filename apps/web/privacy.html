@@ -186,7 +186,7 @@
       <p>This policy covers:</p>
       <ul>
         <li><b>Website</b> — <code>calibreat.co.uk</code> and subpages (<code>index.html</code>, <code>license.html</code>, <code>download.html</code>, and these legal pages), hosted as a static site on <b>GitHub Pages</b>.</li>
-        <li><b>App</b> — calibrEAT for Android (APK sideload; build in progress) and iOS (App Store later) — currently in pre-launch. App features: food diary, barcode scan, water &amp; weight tracking, True Burn Learning, goals &amp; insights.</li>
+        <li><b>App</b> — calibrEAT for Android (APK sideload; build in progress) and iOS (App Store later) — currently in pre-launch. App features: food diary with saved meals, barcode scan, nutrition-label photo scanning (on-device), recipe import by URL, water &amp; weight tracking, workout logging, fasting timer, streaks &amp; reminders, True Burn Learning, goals &amp; insights, and CSV/JSON export.</li>
         <li><b>License service</b> — the activation API (Cloudflare Worker + Durable Object) that verifies your email and binds your lifetime code to a device; and the <b>Merchant of Record</b> checkout that sells the code and emails it.</li>
       </ul>
       <p>It does not cover Open Food Facts, Apple, Google or your email provider — they have their own policies.</p>
@@ -203,11 +203,11 @@
       <p>We do not use fingerprinting, advertising pixels or cross-site tracking.</p>
 
       <h2 id="app-data">4. App data — what stays on your device</h2>
-      <p>The app is <b>offline-first and local-only</b>. Everything you log is written to a local SQLite database (via <code>expo-sqlite</code> on device) and to <code>AsyncStorage</code> for the license. There is no calibrEAT account and no sync. <b>In-app tools</b> (BMI today; more later) read that on-device profile and weigh-in history to calculate useful numbers. Those calculations stay on the phone — calibrEAT never collects or stores them.</p>
+      <p>The app is <b>offline-first and local-only</b>. Everything you log is written to a local SQLite database (via <code>expo-sqlite</code> on device) and to <code>AsyncStorage</code> for the license. There is no calibrEAT account and no sync. <b>In-app tools</b> (BMI, workout burn estimates and the fasting timer) read that on-device profile and history to calculate useful numbers. Those calculations stay on the phone — calibrEAT never collects or stores them.</p>
       <p><b>Data that stays on the device and is never sent to us unless you email us:</b></p>
       <ul>
         <li><b>Profile &amp; goals:</b> sex, birth date, height, weight, activity level, calorie/macro targets, start weight — used on the device to compute BMR/TDEE (Mifflin-St Jeor), daily needs, and in-app tools such as the BMI calculator. This is <em>health-related special-category data</em> under UK GDPR Art. 9 — we choose not to collect it at all; it remains on your device and is included only if you export CSV/JSON yourself.</li>
-        <li><b>Logs:</b> food entries (meal, name snapshot, quantity, kcal/macros), water (<code>ml</code> per day), weigh-ins (<code>kg</code>), derived daily totals. Stored locally per <code>day_key YYYY-MM-DD</code>.</li>
+        <li><b>Logs:</b> food entries (meal, name snapshot, quantity, kcal/macros), water (<code>ml</code> per day), weigh-ins (<code>kg</code>), workout sessions (exercise, sets, reps, estimated kcal), fasting sessions and derived daily totals. Stored locally per <code>day_key YYYY-MM-DD</code>.</li>
         <li><b>License cache:</b> normalized code, <code>activatedAt</code>, plan label, customer email (as returned by the license API) — stored locally so the app works offline after activation.</li>
         <li><b>Install ID:</b> a random UUID generated once per install and stored locally — sent only to the activation API (see §5) so one code = one active device per email.</li>
       </ul>
@@ -228,6 +228,7 @@
 
       <h2 id="food-db">7. Food database lookups</h2>
       <p>Barcode scan and food search query <b>Open Food Facts</b> directly from the app over HTTPS. Those queries (barcode numbers, search terms) plus your IP go to that provider per their policies — not to us. Results are cached locally on your device. Using these features requires an internet connection; your private logs are still local.</p>
+      <p><b>Recipe import</b> fetches only the public recipe page URL you paste in, directly from that recipe site — the same request your browser would make. The parsed recipe is stored on your device; we never see the URL or the recipe. <b>Nutrition-label photo scanning</b> runs entirely on your phone: the photo is processed by an on-device text reader and is never uploaded to us or anyone else.</p>
 
       <h2 id="legal-basis">8. Legal bases (UK GDPR Art. 6 &amp; 9)</h2>
       <table>
