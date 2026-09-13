@@ -221,7 +221,7 @@ export function shouldRememberLookup(food: OffFood | null): boolean {
   return food != null;
 }
 
-const OFF_UA = 'calibrEAT/0.0.3 (https://calibreat.app)';
+const OFF_UA = 'calibrEAT/0.0.4 (https://calibreat.app)';
 const LOOKUP_TIMEOUT_MS = 8000;
 const NEG_TTL_MS = 5 * 60 * 1000;
 const cache = new Map<string, OffFood>();

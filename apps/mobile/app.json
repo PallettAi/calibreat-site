@@ -2,7 +2,7 @@
   "expo": {
     "name": "calibrEAT",
     "slug": "calibreat",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "calibreat",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.calibreat.app",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#0A1019",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

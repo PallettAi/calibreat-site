@@ -2,11 +2,11 @@
 
 A readable history of how calibrEAT was built — kept in markdown so it can be shared as-is.
 
-Current version: **beta v0.0.3** · `apps/mobile` `v0.0.3` · Last updated: 2026-09-12
+Current version: **beta v0.0.4** · `apps/mobile` `v0.0.4` · Last updated: 2026-09-13
 
 ---
 
-## Unreleased — Logging without the friction
+## beta v0.0.4 — Logging without the friction
 
 **Theme:** the app stops making you re-type the meals you eat every day.
 
