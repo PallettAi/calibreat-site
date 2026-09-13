@@ -359,7 +359,9 @@ async function recordPurchase(
   const isNew = !existing;
   await store.upsertLicense({
     codeHash,
-    email: existing?.email ?? email,
+    // `||` (not ??) so a revoke tombstone's empty email is replaced by the
+    // buyer's — the code stays revoked either way.
+    email: existing?.email || email,
     createdAt: existing?.createdAt ?? new Date().toISOString(),
     revoked: existing?.revoked ?? false,
   });
@@ -371,8 +373,22 @@ async function recordPurchase(
 
 async function recordRevoke(ctx: Context, rawCode: string): Promise<HttpResponse> {
   const codeHash = await hashCode(rawCode);
-  await ctx.store.setLicenseRevoked(codeHash, true);
-  await ctx.store.clearActivation(codeHash);
+  const existing = await ctx.store.getLicense(codeHash);
+  if (existing) {
+    await ctx.store.setLicenseRevoked(codeHash, true);
+    await ctx.store.clearActivation(codeHash);
+    return ok({ message: 'License revoked.' });
+  }
+  // Revoke-before-purchase: webhook delivery is at-least-once, so a refund can
+  // land before the purchase event it belongs to. Tombstone the code revoked
+  // (buyer unknown, email filled in if the late purchase event arrives) so the
+  // late purchase retry cannot mint a live license for a refunded customer.
+  await ctx.store.upsertLicense({
+    codeHash,
+    email: '',
+    createdAt: new Date().toISOString(),
+    revoked: true,
+  });
   return ok({ message: 'License revoked.' });
 }
 

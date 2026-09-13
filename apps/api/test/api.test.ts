@@ -536,6 +536,76 @@ test('Dodo webhook registers a license_key.created event and revokes on entitlem
   assert.equal(after.status, 403);
 });
 
+test('a refund arriving before its purchase event tombstones the code', async () => {
+  // Webhook delivery is at-least-once, so a fast refund + delayed purchase
+  // retry is a legal ordering. The code must stay revoked — and the late
+  // purchase must not email a license to a refunded customer.
+  const { Webhook: SvixWebhook } = await import('svix');
+  const secret = 'whsec_' + Buffer.from('dodo-reorder-secret-bytes').toString('base64');
+  const dodoConfig = configFromEnv({
+    DODO_WEBHOOK_SECRET: secret,
+    RESEND_API_KEY: 'test-key',
+    EMAIL_FROM: 'calibrEAT <no-reply@calibreat.co.uk>',
+  });
+  const dodoCtx = { store, config: dodoConfig };
+  const email = 'reorder-buyer@example.com';
+  const key = '5f2c9e1a-3b7d-4c86-9a0e-1d2f3a4b5c6d';
+
+  const sign = (raw: string, id: string) => {
+    const wh = new SvixWebhook(secret);
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    return {
+      'webhook-id': id,
+      'webhook-timestamp': timestamp,
+      'webhook-signature': wh.sign(id, new Date(Number(timestamp) * 1000), raw),
+    };
+  };
+  const post = (raw: string, id: string) =>
+    handleHttp(dodoCtx, {
+      method: 'POST',
+      path: '/v1/webhook/dodo',
+      body: { __rawBody: raw },
+      headers: sign(raw, id),
+    });
+
+  // Refund lands first.
+  const revokedRaw = JSON.stringify({
+    type: 'refund.succeeded',
+    data: { payload_type: 'Refund', license_key: { key }, customer: { email } },
+  });
+  const revokedFirst = await post(revokedRaw, 'whmsg_reorder_1');
+  assert.equal(revokedFirst.status, 200);
+
+  // Observe any outbound email while the late purchase retry is processed.
+  const sentEmails: string[] = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: unknown, init?: { body?: unknown }) => {
+    if (String(input).includes('api.resend.com') && typeof init?.body === 'string') {
+      sentEmails.push(init.body);
+    }
+    return new Response(JSON.stringify({ id: 'stub' }), { status: 200 });
+  }) as unknown as typeof fetch;
+
+  try {
+    const createdRaw = JSON.stringify({
+      type: 'license_key.created',
+      data: { payload_type: 'LicenseKey', key, customer: { email } },
+    });
+    const late = await post(createdRaw, 'whmsg_reorder_2');
+    assert.equal(late.status, 200);
+
+    const license = await store.getLicense(await hashCode(key));
+    assert.ok(license, 'late purchase dropped the record entirely');
+    assert.equal(license.revoked, true, 'refunded code resurrected by late purchase event');
+    assert.equal(license.email, email, 'tombstone should adopt the buyer email from the late event');
+
+    // The refunded customer must never be re-emailed a license.
+    assert.equal(sentEmails.length, 0);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
 test('Dodo license_key.created with customer_id looks up the buyer email', async () => {
   const { Webhook: SvixWebhook } = await import('svix');
   const secret = 'whsec_' + Buffer.from('dodo-example-secret-bytes').toString('base64');
