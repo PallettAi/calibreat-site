@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.calibreat.app",
-      "versionCode": 4,
+      "versionCode": 5,
       "adaptiveIcon": {
         "backgroundColor": "#0A1019",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -61,6 +61,14 @@
         {
           "photosPermission": "calibrEAT reads a photo of a nutrition label on this device to fill in the pack's values. Photos are never uploaded.",
           "cameraPermission": "calibrEAT uses the camera to photograph nutrition labels and read food barcodes."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "buildArchs": ["arm64-v8a", "armeabi-v7a"]
+          }
         }
       ]
     ],
