@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import { configFromEnv } from '../src/config.ts';
 import { generateCode, hashCode } from '../src/license.ts';
-import { handleHttp, type HttpRequest } from '../src/router.ts';
+import { handleHttp, isKnownRoute, routeTable, type HttpRequest } from '../src/router.ts';
 import { InMemoryStore } from '../src/store.ts';
 
 // Same code path the Worker runs (handleHttp inside the Durable Object),
@@ -679,4 +679,23 @@ test('admin export reflects a live activation', async () => {
   const activation = snapshot.activations.find((a) => a.installId === 'export-device');
   assert.ok(activation, 'activation missing from export');
   assert.equal(activation.email, email);
+});
+
+test('every route in the table is reachable (no dead dispatch lists)', async () => {
+  // handleHttp dispatches off routeTable and the Worker's fetch allowlist is
+  // derived from the same table via isKnownRoute. Walking every row here
+  // means a route that is registered but unreachable can never ship again
+  // (the /v1/admin/export 404 incident). Each row must answer non-404 —
+  // 401/400/4xx validation is fine, "endpoint does not exist" is not.
+  for (const key of Object.keys(routeTable)) {
+    const [method = '', path = ''] = key.split(' ');
+    const response = await handleHttp({ store, config }, { method, path, body: {} });
+    assert.notEqual(response.status, 404, `${key} is registered but not routed`);
+    assert.equal(isKnownRoute(method, path), true, `${key} missing from isKnownRoute`);
+  }
+
+  // Unknown paths are unknown under both checks.
+  assert.equal(isKnownRoute('GET', '/v1/nonexistent'), false);
+  assert.equal(isKnownRoute('DELETE', '/v1/activate'), false);
+  assert.equal((await handleHttp({ store, config }, { method: 'GET', path: '/v1/nonexistent', body: {} })).status, 404);
 });

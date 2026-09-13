@@ -1,5 +1,5 @@
 import { LicenseStoreDO } from './do.ts';
-import { type HttpRequest, type HttpResponse } from './router.ts';
+import { isKnownRoute, type HttpRequest, type HttpResponse } from './router.ts';
 import { type StoreSnapshot } from './store.ts';
 
 /**
@@ -66,22 +66,10 @@ export default {
       return respond(200, { ok: true, service: 'calibreat-license' });
     }
 
-    // Only the documented endpoints exist; everything else is a 404.
-    const allowed = new Set([
-      '/v1/request-verification',
-      '/v1/verify-email',
-      '/v1/activate',
-      '/v1/deactivate',
-      '/v1/release',
-      '/v1/validate',
-      '/v1/webhook/mor',
-      '/v1/webhook/dodo',
-      '/v1/webhook/inbound',
-      '/v1/admin/licenses',
-      '/v1/admin/clear-activation',
-      '/v1/admin/inbound',
-    ]);
-    if (!allowed.has(url.pathname)) {
+    // Only documented endpoints exist; everything else is a 404. Derived from
+    // the router's route table, so a new endpoint is reachable the moment it
+    // is added there — no second list to forget.
+    if (!isKnownRoute(request.method, url.pathname)) {
       return respond(404, { ok: false, message: 'Not found.' });
     }
 

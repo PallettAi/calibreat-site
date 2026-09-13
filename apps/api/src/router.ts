@@ -42,6 +42,35 @@ import { Webhook } from 'svix';
 
 const PLAN = 'lifetime';
 
+/**
+ * Route table — the single source of truth for which endpoints exist.
+ * handleHttp dispatches on it, isKnownRoute() answers "does this endpoint
+ * exist" (the Worker entry derives its fetch allowlist from it), and the
+ * test suite walks every row. Adding an endpoint is one line here.
+ */
+export const routeTable: Record<
+  string,
+  (ctx: Context, req: HttpRequest) => HttpResponse | Promise<HttpResponse>
+> = {
+  'POST /v1/request-verification': (ctx, req) => requestVerification(ctx, req.body),
+  'POST /v1/verify-email': (ctx, req) => verifyEmail(ctx, req.body),
+  'POST /v1/activate': (ctx, req) => activate(ctx, req.body),
+  'POST /v1/deactivate': (ctx, req) => deactivate(ctx, req.body),
+  'POST /v1/release': (ctx, req) => release(ctx, req.body),
+  'POST /v1/validate': (ctx, req) => validate(ctx, req.body),
+  'POST /v1/webhook/mor': morWebhook,
+  'POST /v1/webhook/dodo': dodoWebhook,
+  'POST /v1/webhook/inbound': inboundWebhook,
+  'POST /v1/admin/licenses': adminAddLicense,
+  'POST /v1/admin/clear-activation': adminClearActivation,
+  'GET /v1/admin/inbound': adminListInbound,
+  'GET /v1/admin/export': adminExport,
+};
+
+export function isKnownRoute(method: string, path: string): boolean {
+  return `${method} ${path}` in routeTable;
+}
+
 export type HttpRequest = {
   method: string;
   path: string;
@@ -673,49 +702,10 @@ export async function handleHttp(
   ctx: Context,
   req: HttpRequest,
 ): Promise<HttpResponse> {
-  const { method, path } = req;
-
-  if (method === 'GET' && path === '/health') {
+  if (req.method === 'GET' && req.path === '/health') {
     return ok({ service: 'calibreat-license' });
   }
-  if (method === 'POST' && path === '/v1/request-verification') {
-    return requestVerification(ctx, req.body);
-  }
-  if (method === 'POST' && path === '/v1/verify-email') {
-    return verifyEmail(ctx, req.body);
-  }
-  if (method === 'POST' && path === '/v1/activate') {
-    return activate(ctx, req.body);
-  }
-  if (method === 'POST' && path === '/v1/deactivate') {
-    return deactivate(ctx, req.body);
-  }
-  if (method === 'POST' && path === '/v1/release') {
-    return release(ctx, req.body);
-  }
-  if (method === 'POST' && path === '/v1/validate') {
-    return validate(ctx, req.body);
-  }
-  if (method === 'POST' && path === '/v1/webhook/mor') {
-    return morWebhook(ctx, req);
-  }
-  if (method === 'POST' && path === '/v1/webhook/dodo') {
-    return dodoWebhook(ctx, req);
-  }
-  if (method === 'POST' && path === '/v1/webhook/inbound') {
-    return inboundWebhook(ctx, req);
-  }
-  if (method === 'GET' && path === '/v1/admin/inbound') {
-    return adminListInbound(ctx, req);
-  }
-  if (method === 'POST' && path === '/v1/admin/licenses') {
-    return adminAddLicense(ctx, req);
-  }
-  if (method === 'POST' && path === '/v1/admin/clear-activation') {
-    return adminClearActivation(ctx, req);
-  }
-  if (method === 'GET' && path === '/v1/admin/export') {
-    return adminExport(ctx, req);
-  }
-  return fail(404, 'Not found.');
+  const handler = routeTable[`${req.method} ${req.path}`];
+  if (!handler) return fail(404, 'Not found.');
+  return handler(ctx, req);
 }
