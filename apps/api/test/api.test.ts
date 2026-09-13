@@ -619,3 +619,64 @@ test('unknown routes and malformed codes fail cleanly', async () => {
   });
   assert.equal(badCode.status, 400);
 });
+
+test('admin export returns the full store (token required)', async () => {
+  const adminConfig = configFromEnv({ ADMIN_TOKEN: 'sekret' });
+  const adminCtx = { store, config: adminConfig };
+  const email = 'export-visual@example.com';
+  const code = await seedLicense(email);
+
+  const noToken = await handleHttp(adminCtx, {
+    method: 'GET',
+    path: '/v1/admin/export',
+    body: {},
+  });
+  assert.equal(noToken.status, 401);
+
+  const exported = await handleHttp(adminCtx, {
+    method: 'GET',
+    path: '/v1/admin/export',
+    body: {},
+    headers: { authorization: 'Bearer sekret' },
+  });
+  assert.equal(exported.status, 200);
+
+  const snapshot = exported.body.snapshot as {
+    takenAt: string;
+    licenses: { codeHash: string; email: string; revoked: boolean }[];
+    activations: { email: string; installId: string }[];
+  };
+  assert.equal(typeof snapshot.takenAt, 'string');
+
+  // Everything seeded in this file is in the snapshot, including this test's
+  // license, with its buyer email — the record a restore would need.
+  const codeHash = await hashCode(code);
+  const license = snapshot.licenses.find((l) => l.codeHash === codeHash);
+  assert.ok(license, 'seeded license missing from export');
+  assert.equal(license.email, email);
+
+  // Codes are exported hashed — the export alone can never activate anything.
+  assert.equal(snapshot.licenses.some((l) => l.email === email && 'code' in l), false);
+});
+
+test('admin export reflects a live activation', async () => {
+  const adminConfig = configFromEnv({ ADMIN_TOKEN: 'sekret' });
+  const adminCtx = { store, config: adminConfig };
+  const email = 'export-activation@example.com';
+  const code = await seedLicense(email);
+  await proveEmail(email);
+  await api('POST', '/v1/activate', { code, email, installId: 'export-device' });
+
+  const exported = await handleHttp(adminCtx, {
+    method: 'GET',
+    path: '/v1/admin/export',
+    body: {},
+    headers: { authorization: 'Bearer sekret' },
+  });
+  assert.equal(exported.status, 200);
+
+  const snapshot = exported.body.snapshot as { activations: { installId: string; email: string }[] };
+  const activation = snapshot.activations.find((a) => a.installId === 'export-device');
+  assert.ok(activation, 'activation missing from export');
+  assert.equal(activation.email, email);
+});

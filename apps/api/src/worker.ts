@@ -1,5 +1,6 @@
 import { LicenseStoreDO } from './do.ts';
 import { type HttpRequest, type HttpResponse } from './router.ts';
+import { type StoreSnapshot } from './store.ts';
 
 /**
  * calibrEAT license service — Cloudflare Worker entry.
@@ -11,6 +12,8 @@ import { type HttpRequest, type HttpResponse } from './router.ts';
 
 export interface Env {
   LICENSE_STORE: DurableObjectNamespace<LicenseStoreDO>;
+  /** R2 bucket receiving the daily license-store backup (see `scheduled`). */
+  BACKUP_BUCKET?: R2Bucket;
   RESEND_API_KEY?: string;
   EMAIL_FROM?: string;
   OTP_TTL_MS?: string;
@@ -116,6 +119,32 @@ export default {
     };
     const result = await stub.handleRequest(rpc);
     return respond(result.status, result.body);
+  },
+
+  /**
+   * Cron entry (wrangler.toml [triggers]): daily at 03:00 UTC, export every
+   * license + activation to R2. The export is the same snapshot
+   * GET /v1/admin/export serves by hand — see adminExport in src/router.ts.
+   * Codes are stored hashed, so the backup reveals nothing activatable; one
+   * small JSON object per day (the store is a few KB) gives deep history, so
+   * even a slow store corruption has an older good copy to restore from.
+   */
+  async scheduled(event: ScheduledController, env: Env): Promise<void> {
+    if (!env.BACKUP_BUCKET) {
+      throw new Error(
+        'BACKUP_BUCKET binding is missing — add the r2_buckets binding to wrangler.toml and create the bucket.',
+      );
+    }
+    const id = env.LICENSE_STORE.idFromName('singleton');
+    const stub = env.LICENSE_STORE.get(id) as unknown as {
+      exportSnapshot(): Promise<StoreSnapshot>;
+    };
+    const snapshot = await stub.exportSnapshot();
+    const key = `licenses/${snapshot.takenAt.slice(0, 10)}.json`;
+    await env.BACKUP_BUCKET.put(key, JSON.stringify(snapshot));
+    console.log(
+      `[backup] wrote ${key} (${snapshot.licenses.length} licenses, ${snapshot.activations.length} activations)`,
+    );
   },
 } satisfies ExportedHandler<Env>;
 

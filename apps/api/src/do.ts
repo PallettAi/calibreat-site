@@ -11,6 +11,7 @@ import {
   type LicenseRecord,
   type LicenseStore,
   type OtpRecord,
+  type StoreSnapshot,
 } from './store.ts';
 import { type Env } from './worker.ts';
 
@@ -123,6 +124,16 @@ export class LicenseStoreDO extends DurableObject<Env> implements LicenseStore {
     if (record) {
       await this.ctx.storage.put(keys.inbound(id), { ...record, acked: true });
     }
+  }
+
+  async exportSnapshot(): Promise<StoreSnapshot> {
+    const licenses = await this.ctx.storage.list<LicenseRecord>({ prefix: 'lic:' });
+    const activations = await this.ctx.storage.list<ActivationRecord>({ prefix: 'act:' });
+    return {
+      takenAt: new Date().toISOString(),
+      licenses: [...licenses.values()],
+      activations: [...activations.values()],
+    };
   }
 
   /** RPC entry: runs the router against this object's durable storage. */

@@ -13,7 +13,7 @@ import {
   sanitizeDeviceLabel,
   alreadyActiveMessage,
 } from './license.ts';
-import { type LicenseStore } from './store.ts';
+import { type LicenseStore, type StoreSnapshot } from './store.ts';
 // svix ships as CommonJS; Webhook.verify() is the signature-checking entry point.
 import { Webhook } from 'svix';
 
@@ -36,6 +36,7 @@ import { Webhook } from 'svix';
  *   POST /v1/admin/licenses        { email, code? } — needs adminToken
  *   POST /v1/admin/clear-activation { code } — needs adminToken (lost-device slot reset)
  *   GET  /v1/admin/inbound?limit=  recent inbound support emails — needs adminToken
+ *   GET  /v1/admin/export          full license/activation snapshot — needs adminToken
  *   GET  /health
  */
 
@@ -544,6 +545,21 @@ async function adminClearActivation(ctx: Context, req: HttpRequest): Promise<Htt
   return ok({ message: 'Activation slot cleared.' });
 }
 
+/**
+ * The whole customer-facing store as JSON: every license and activation.
+ * The scheduled backup (src/worker.ts) uploads this to R2 on a cron; the
+ * endpoint exists so the same bytes can be pulled by hand to verify a backup
+ * or migrate the store. Codes are SHA-256 hashes, so a leaked export is not
+ * activatable — but it does reveal buyer emails, hence the admin gate.
+ */
+async function adminExport(ctx: Context, req: HttpRequest): Promise<HttpResponse> {
+  const unauthorized = requireAdmin(ctx, req.headers);
+  if (unauthorized) return unauthorized;
+
+  const snapshot: StoreSnapshot = await ctx.store.exportSnapshot();
+  return ok({ snapshot });
+}
+
 /* ── Inbound support mail (Resend Inbound) ───────────────────────────── */
 
 /**
@@ -697,6 +713,9 @@ export async function handleHttp(
   }
   if (method === 'POST' && path === '/v1/admin/clear-activation') {
     return adminClearActivation(ctx, req);
+  }
+  if (method === 'GET' && path === '/v1/admin/export') {
+    return adminExport(ctx, req);
   }
   return fail(404, 'Not found.');
 }

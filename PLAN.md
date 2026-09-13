@@ -297,6 +297,10 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
       Worker). The purchase → email → activate test on a real device is M0's build task.
 - [x] Cryptographically random install-id (`createInstallId` → `crypto.randomUUID`, covered
       by `npm run check:license`) and device model/OS sent as `deviceLabel` on activation
+- [x] **License DB backups** — daily cron (03:00 UTC) in `apps/api/src/worker.ts` exports
+      every license + activation to R2 (`calibreat-license-backups/licenses/YYYY-MM-DD.json`);
+      `GET /v1/admin/export` returns the same snapshot by hand. Codes are hashed, so a
+      backup leak is not activatable (plaintext keys live in the Dodo order records).
 
 ### M4 — Website
 - [x] Site in `apps/web` on `calibreat.co.uk`: landing page, license/checkout, download +

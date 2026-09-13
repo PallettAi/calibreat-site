@@ -10,6 +10,10 @@ Current version: **beta v0.0.4** · `apps/mobile` `v0.0.4` · Last updated: 2026
 
 **Theme:** the app stops making you re-type the meals you eat every day.
 
+- **License database backups** — the license service now exports every license
+  and activation to R2 daily (03:00 UTC cron), so a lost Durable Object can
+  never take the customer record with it; `GET /v1/admin/export` returns the
+  same snapshot by hand. Codes are stored hashed, so backups are inert.
 - **Half the download** — the APK was shipping all four CPU architectures
   (including two x86 variants only emulators use) at 179 MB. It now builds for
   the two ABIs real phones run (arm64 + 32-bit arm): **95 MB** installed, 47%

@@ -11,6 +11,15 @@ bindings = [{ name = "LICENSE_STORE", class_name = "LicenseStoreDO" }]
 tag = "v1"
 new_sqlite_classes = ["LicenseStoreDO"]
 
+# Daily license-store backup: the cron fires `scheduled` (src/worker.ts), which
+# exports every license + activation to the R2 bucket below.
+[triggers]
+crons = ["0 3 * * *"]
+
+[[r2_buckets]]
+binding = "BACKUP_BUCKET"
+bucket_name = "calibreat-license-backups"
+
 # Non-secret tuning (defaults shown). Secrets — RESEND_API_KEY, EMAIL_FROM,
 # MOR_WEBHOOK_SECRET, DODO_WEBHOOK_SECRET, DODO_API_KEY, ADMIN_TOKEN — go in
 # `wrangler secret put <NAME>`.

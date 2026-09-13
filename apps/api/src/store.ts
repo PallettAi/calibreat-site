@@ -44,6 +44,19 @@ export type InboundRecord = {
 /** Prune horizon for stored inbound mail (Resend retains the full content). */
 export const INBOUND_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 
+/**
+ * A portable copy of every customer-facing record in the store, for backups.
+ * Transient rate-limiting state (OTP/attempt/send counters) and pruned inbound
+ * mail are deliberately excluded — what must survive a lost store is who owns
+ * which license and which device holds each slot.
+ */
+export type StoreSnapshot = {
+  /** When the snapshot was taken (ISO 8601). */
+  takenAt: string;
+  licenses: LicenseRecord[];
+  activations: ActivationRecord[];
+};
+
 export interface LicenseStore {
   getLicense(codeHash: string): Promise<LicenseRecord | null>;
   upsertLicense(record: LicenseRecord): Promise<void>;
@@ -70,6 +83,8 @@ export interface LicenseStore {
   /** Deletes inbound records older than `before` — returns how many were removed. */
   pruneInbound(before: number): Promise<number>;
   markInboundAcked(id: string): Promise<void>;
+  /** Every license + activation, for backups (see StoreSnapshot). */
+  exportSnapshot(): Promise<StoreSnapshot>;
 }
 
 /** Key prefixes keep the Durable Object storage namespaced. */
@@ -190,5 +205,13 @@ export class InMemoryStore implements LicenseStore {
   async markInboundAcked(id: string): Promise<void> {
     const record = this.inbound.get(id);
     if (record) record.acked = true;
+  }
+
+  async exportSnapshot(): Promise<StoreSnapshot> {
+    return {
+      takenAt: new Date().toISOString(),
+      licenses: [...this.licenses.values()],
+      activations: [...this.activations.values()],
+    };
   }
 }

@@ -40,6 +40,7 @@ App lock screen                 Worker (this repo)
 | GET | `/v1/admin/inbound` | `Authorization: Bearer <ADMIN_TOKEN>` | recent support emails (newest first, ≤100) |
 | POST | `/v1/admin/licenses` | `Authorization: Bearer <ADMIN_TOKEN>` + `{ email, code? }` | registers a code (generates one if omitted) |
 | POST | `/v1/admin/clear-activation` | `Authorization: Bearer <ADMIN_TOKEN>` + `{ code }` | frees the device slot (lost/broken phone) without revoking the license |
+| GET | `/v1/admin/export` | `Authorization: Bearer <ADMIN_TOKEN>` | full license + activation snapshot as JSON (see **Backups**) |
 | GET | `/health` | — | 200 `{ ok }` |
 
 **Device policy:** one code + one email = **1 active device**. A second `installId`
@@ -94,6 +95,30 @@ worker → Settings → Domains & Routes, add a custom route like
 **Local dev / test without an account:** `npm run dev` (wrangler dev on port 8787) —
 codes are logged to the console, `npm test` runs the 8-scenario node:test suite
 against the exact router code path with an in-memory store.
+
+## Backups
+
+The whole license database is one Durable Object — if it were ever lost or
+corrupted, there would be no record of who owns which code. Two layers guard
+against that:
+
+- **Automatic (cron → R2):** a scheduled trigger fires `scheduled` in
+  `src/worker.ts` at **03:00 UTC daily** and uploads every license + activation
+  as JSON to the `calibreat-license-backups` R2 bucket (`licenses/YYYY-MM-DD.json`).
+  One small file per day gives deep history, so even slow corruption has an
+  older good copy. Setup: create the bucket once (`npx wrangler r2 bucket create
+  calibreat-license-backups`), then `npm run deploy` — the binding and cron are
+  already in `wrangler.toml`. Verify after deploying:
+  `npx wrangler r2 object get calibreat-license-backups/licenses/$(date -u +%F).json`.
+- **Manual (admin endpoint):** `GET /v1/admin/export` with the admin token
+  returns the identical snapshot — pull it by hand anytime to check the backup
+  story or to migrate stores. Codes are stored **hashed**, so a backup leak is
+  not activatable, but it does contain buyer emails: treat exports as private.
+
+**Restoring** means re-registering licenses (`POST /v1/admin/licenses` with each
+`email` + code from the backup) — the plaintext codes are not in any backup by
+design, so also keep the Dodo Payments order records (they hold the plaintext
+keys) as the second half of the recovery story.
 
 ## Registering licenses
 
@@ -179,7 +204,7 @@ well-formed license code verifies locally) — release builds **fail closed**.
 
 ```
 wrangler.toml    Worker + DO binding + vars     src/router.ts  policy + endpoints
-src/worker.ts    Worker entry (thin adapter)    src/do.ts      Durable Object store
+src/worker.ts    Worker entry + daily backup cron   src/do.ts      Durable Object store
 src/license.ts   hashing, OTP, code format      src/store.ts   store interface + in-memory (tests)
 src/config.ts    env → config                   src/email.ts   Resend sender (dev: log + capture) + support auto-ack
 test/api.test.ts 8-scenario suite (node:test)
