@@ -148,13 +148,13 @@
     <span class="kicker">Legal — calibrEAT</span>
     <h1>Privacy Policy</h1>
     <p class="lede">Your food logs never leave your phone. This policy explains what little we do collect, why, and how we keep it to the absolute minimum required by UK GDPR.</p>
-    <p class="meta" style="color:var(--muted);font-size:13px;margin-top:10px;">Last updated: 8 September 2026 · Effective: 8 September 2026 · <a href="#contact" style="color:var(--accent);">Contact: support@calibreat.co.uk</a></p>
+    <p class="meta" style="color:var(--muted);font-size:13px;margin-top:10px;">Last updated: 14 September 2026 · Effective: 8 September 2026 · <a href="#contact" style="color:var(--accent);">Contact: support@calibreat.co.uk</a></p>
   </div></section>
 
   <section style="padding-top:32px;">
     <div class="wrap"><div class="legal">
 
-      <div class="callout"><strong>At a glance:</strong> calibrEAT is offline-first. Your meals, water, weight and profile live in a local database on your device (SQLite / AsyncStorage). We do not host your health data, we do not sell it, we show no ads and we run no analytics. The website at <b>calibreat.co.uk</b> is static HTML on GitHub Pages — it sets no cookies and the only thing it stores in your browser is your light/dark theme choice.</div>
+      <div class="callout"><strong>At a glance:</strong> calibrEAT is offline-first. Your meals, water, weight and profile live in a local database on your device (SQLite / AsyncStorage). We do not host your health data, we do not sell it, we show no ads, and the app itself runs no analytics. The website at <b>calibreat.co.uk</b> is static HTML on GitHub Pages — it sets no cookies, counts anonymous page views with cookieless Cloudflare Web Analytics, and the only thing it stores in your browser is your light/dark theme choice.</div>
 
       <div class="toc"><strong>Contents</strong>
         <ol>
@@ -192,13 +192,14 @@
       <p>It does not cover Open Food Facts, Apple, Google or your email provider — they have their own policies.</p>
 
       <h2 id="website">3. Website data — the minimum</h2>
-      <p><b>We set no cookies and run no analytics.</b> The site is plain HTML/CSS/JS with one Google Fonts stylesheet (Inter + Sora). If Google Fonts fails, the site falls back to system fonts.</p>
+      <p><b>We set no cookies.</b> The site is plain HTML/CSS/JS with one Google Fonts stylesheet (Inter + Sora). If Google Fonts fails, the site falls back to system fonts. Page views are counted with <b>Cloudflare Web Analytics</b>, which is cookieless by design: it stores nothing in your browser, truncates IP addresses, builds no profile of you and cannot be linked across sites or devices.</p>
       <table>
         <tr><th>What</th><th>Why / basis</th><th>Where it lives</th></tr>
         <tr><td><code>calibreat-theme</code> in <b>localStorage</b> — value <code>light</code> or absent (dark default)</td><td>Remembers your light/dark choice so the page does not flash. Legitimate interests / consent via your toggle — delete it any time in browser storage.</td><td>Your browser only — never sent to us.</td></tr>
         <tr><td>No contact form. No account on the site.</td><td>—</td><td>—</td></tr>
         <tr><td>Server logs from <b>GitHub Pages</b> (IP address, user-agent) for delivery and security</td><td>GitHub as hosting provider; legitimate interests. We do not receive or process these logs ourselves.</td><td>GitHub, Inc. (US) per <a href="https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement">GitHub Privacy Statement</a>.</td></tr>
         <tr><td>Google Fonts request (IP, user-agent) if your browser fetches <code>fonts.googleapis.com</code></td><td>Deliver the font; consent via loading the page (you can block it — the site still works).</td><td>Google LLC (see <a href="https://policies.google.com/privacy">Google Privacy Policy</a>).</td></tr>
+        <tr><td><b>Cloudflare Web Analytics</b> beacon — anonymous page-view counts (no cookie, no browser storage, IP truncated, no cross-site tracking)</td><td>See which pages help people, so we improve the right ones. Legitimate interests — the counts cannot identify you, and they are never linked to anything you do inside the app.</td><td>Aggregate counts with Cloudflare, Inc. (see <a href="https://www.cloudflare.com/learning/privacy/what-is-web-analytics/">how it works</a>).</td></tr>
       </table>
       <p>We do not use fingerprinting, advertising pixels or cross-site tracking.</p>
 
@@ -310,5 +311,6 @@
   const nav=document.getElementById("site-nav"),burger=document.getElementById("nav-burger");
   const syncNavH=()=>{if(nav)document.documentElement.style.setProperty("--nav-h",nav.getBoundingClientRect().height+"px")};const closeNav=()=>{if(!nav||!burger)return;nav.classList.remove("open");burger.setAttribute("aria-expanded","false");burger.setAttribute("aria-label","Menu");document.body.classList.remove("nav-menu-open");document.documentElement.style.removeProperty("--nav-h")};if (burger && nav) burger.addEventListener("click",()=>{const o=nav.classList.toggle("open");burger.setAttribute("aria-expanded",String(o));burger.setAttribute("aria-label",o?"Close menu":"Menu");document.body.classList.toggle("nav-menu-open",o);if(o)syncNavH();else document.documentElement.style.removeProperty("--nav-h")});if (nav) nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>closeNav()));document.addEventListener("keydown",e=>{if(e.key==="Escape")closeNav()});document.addEventListener("click",e=>{if(!nav||!nav.classList.contains("open"))return;if(!nav.contains(e.target))closeNav()});window.addEventListener("resize",()=>{if(nav&&nav.classList.contains("open"))syncNavH()});
 </script>
+<script src="analytics.js" defer></script>
 </body>
 </html>

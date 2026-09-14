@@ -468,5 +468,6 @@
   const io = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .12 });
   document.querySelectorAll(".reveal").forEach((el,i) => { if (i<3) { el.classList.add("in"); return; } io.observe(el); });
 </script>
+<script src="analytics.js" defer></script>
 </body>
 </html>
