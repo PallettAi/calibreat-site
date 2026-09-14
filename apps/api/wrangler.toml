@@ -2,6 +2,16 @@ name = "calibreat-license"
 main = "src/worker.ts"
 compatibility_date = "2026-09-01"
 
+# Stable custom domain (DNS + cert are provisioned automatically by wrangler
+# on deploy). Requires the calibreat.co.uk zone in this Cloudflare account.
+# workers_dev stays TRUE: shipped APKs (≤ v0.0.4) have the workers.dev URL
+# baked in, so it must keep answering until the custom domain is baked into a
+# future build.
+workers_dev = true
+routes = [
+  { pattern = "api.calibreat.co.uk", custom_domain = true }
+]
+
 # The whole license DB lives in one Durable Object instance (SQLite-backed,
 # included on the Workers Free plan). Single writer = simple, correct store.
 [durable_objects]

@@ -12,7 +12,7 @@ account as the API — no third-party monitor, no new vendor, no free-tier quirk
 
 | Target | URL | Healthy means |
 | --- | --- | --- |
-| license API | `https://calibreat-license.coreypallett20.workers.dev/health` | HTTP 200 **and** body contains `calibreat-license` |
+| license API | `https://api.calibreat.co.uk/health` (checked via the service binding — see below) | HTTP 200 **and** body contains `calibreat-license` |
 | website | `https://calibreat.co.uk` | HTTP 200 |
 
 ## Alerting (via Resend)

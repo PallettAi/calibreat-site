@@ -10,8 +10,8 @@
  * Checks:
  *  1. eas.json builds an APK (an .aab cannot be sideloaded from the website),
  *     from the local version source, with one licence-API URL across profiles.
- *  2. That URL's host matches the Worker name in apps/api/wrangler.toml, so a
- *     renamed or re-deployed Worker can't silently orphan the app.
+ *  2. That URL's host is bound to the Worker as a custom domain in
+ *     apps/api/wrangler.toml, so a re-deploy can't silently orphan the app.
  *  3. app.json and package.json agree on the version, and versionCode is real.
  *  4. download.html defines APK_URL exactly once and pairs it with #apk-btn —
  *     the site used to wire a button that did not exist, so this asserts the
@@ -96,8 +96,12 @@ try {
 const workerName = wrangler.match(/^\s*name\s*=\s*"([^"]+)"/m)?.[1] ?? '';
 check('worker name is declared in wrangler.toml', Boolean(workerName));
 if (host && workerName) {
-  check('API host matches the declared Worker', host === `${workerName}.${host.split('.').slice(1).join('.')}`,
-    `${host} does not start with ${workerName}. — a renamed Worker would orphan this URL`);
+  const hostRe = host.replace(/[.]/g, '\\.');
+  const boundAsCustomDomain = new RegExp(
+    `pattern\\s*=\\s*"${hostRe}"[\\s\\S]{0,80}?custom_domain\\s*=\\s*true`,
+  ).test(wrangler);
+  check('API host is bound as a Worker custom domain in wrangler.toml', boundAsCustomDomain,
+    `${host} has no custom_domain route in apps/api/wrangler.toml — a re-deploy would drop the host the app talks to`);
 }
 check('the app does not hardcode the API host',
   !read('apps', 'mobile', 'src', 'constants', 'app.ts').includes(host),

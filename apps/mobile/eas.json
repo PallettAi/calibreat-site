@@ -10,7 +10,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_LICENSE_API_URL": "https://calibreat-license.coreypallett20.workers.dev"
+        "EXPO_PUBLIC_LICENSE_API_URL": "https://api.calibreat.co.uk"
       }
     },
     "production": {
@@ -19,7 +19,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_LICENSE_API_URL": "https://calibreat-license.coreypallett20.workers.dev"
+        "EXPO_PUBLIC_LICENSE_API_URL": "https://api.calibreat.co.uk"
       }
     }
   }

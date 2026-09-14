@@ -18,10 +18,13 @@ node scripts/check-release.mjs --online   # + a live probe of the licence API
 
 ## What is already true
 
-- The licence API **is deployed and healthy** —
-  `https://calibreat-license.coreypallett20.workers.dev` (`/health` → `{"ok":true}`).
-  `apps/mobile/eas.json` pins that URL into both build profiles, and
-  `check-release.mjs` asserts its host still matches `name` in `apps/api/wrangler.toml`.
+- The licence API **is deployed and healthy** — `https://api.calibreat.co.uk`
+  (custom domain; `/health` → `{"ok":true}`), with the legacy
+  `https://calibreat-license.coreypallett20.workers.dev` kept answering as a
+  fallback for APKs already shipped with that URL baked in.
+  `apps/mobile/eas.json` pins the custom domain into both build profiles, and
+  `check-release.mjs` asserts that host is still bound as a Worker custom
+  domain in `apps/api/wrangler.toml`.
 - **Release builds fail closed.** Without `EXPO_PUBLIC_LICENSE_API_URL` baked in,
   activation returns "Activation is not configured on this build yet" — by design,
   so a mis-built APK can never be unlocked with a guessed code.
@@ -74,7 +77,7 @@ is gitignored on purpose, and `check-release.mjs` asserts it stays that way.
 Mint a real licence code for your own inbox (from `apps/api/README.md`):
 
 ```bash
-curl -X POST https://calibreat-license.coreypallett20.workers.dev/v1/admin/licenses \
+curl -X POST https://api.calibreat.co.uk/v1/admin/licenses \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"email":"you@example.com"}'
