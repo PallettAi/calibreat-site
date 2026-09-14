@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "deploy:uptime": "wrangler deploy -c wrangler.uptime.toml",
     "test": "node --experimental-strip-types --test 'test/*.test.ts'",
     "typecheck": "tsc --noEmit"
   },

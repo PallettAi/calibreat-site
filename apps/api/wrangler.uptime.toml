@@ -1,0 +1,22 @@
+name = "calibreat-uptime"
+main = "src/uptime-worker.ts"
+compatibility_date = "2026-09-01"
+
+# Self-hosted watchdog: checks the license API and site every 5 minutes and
+# emails only on state changes. Secrets (RESEND_API_KEY, ALERT_TO, ALERT_FROM,
+# ADMIN_TOKEN) go to THIS worker via:
+#   npx wrangler secret put <NAME> -c wrangler.uptime.toml
+[triggers]
+crons = ["*/5 * * * *"]
+
+# State (uptime/state.json) lives in the existing backup bucket — no new resources.
+[[r2_buckets]]
+binding = "BACKUP_BUCKET"
+bucket_name = "calibreat-license-backups"
+
+# The license API is checked via a service binding (same account), NOT via its
+# public workers.dev URL — Cloudflare refuses same-account workers.dev subrequests,
+# which showed up as a false 404 in live testing.
+[[services]]
+binding = "LICENSE"
+service = "calibreat-license"
