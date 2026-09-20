@@ -2,13 +2,38 @@
 
 A readable history of how calibrEAT was built — kept in markdown so it can be shared as-is.
 
-Current version: **beta v0.0.4** · `apps/mobile` `v0.0.4` · Last updated: 2026-09-13
+Current version: **beta v0.0.4** · `apps/mobile` `v0.0.4` (versionCode 5) · Last updated: 2026-09-15
 
 ---
 
 ## beta v0.0.4 — Logging without the friction
 
 **Theme:** the app stops making you re-type the meals you eat every day.
+
+- **Growth loop: weekly share card** — Trends gains a **Share week** button
+  that renders the week (logging streak, coverage, measured True Burn drift)
+  into a branded 1080×1350 image with the site link baked in once, then hands
+  it to the OS share sheet. The copy rules are the contract: it celebrates
+  *behaviour* — never weight before/after framing, no moralizing — and a
+  broken run is shared as a "best logging run", not a failure. Content logic
+  is pure (`check:share`, 23 cases); capture uses `react-native-view-shot` →
+  cache PNG → `expo-sharing`, no new permissions.
+- **First-scan onboarding** — finishing setup now lands on Home with the meal
+  sheet already open on the **barcode viewfinder**, so the first session's
+  aha moment is scanning a real pack rather than facing a form. Consumed once
+  via a `?first=1` handoff from setup; every later sheet open defaults to the
+  Search tab as before.
+- **APK waitlist** — while the APK link is still being finalized, the download
+  page captures demand instead of dead-ending: an email form POSTs to the
+  new `POST /v1/notify` endpoint on the license Worker, which stores the
+  signup in the Durable Object, rate-limits by IP (5/h), dedupes by email,
+  and sends a confirmation email so subscribers know they're on the list.
+  Covered by three new API test cases.
+- **Landing-page conversion assets** — a hero price-contrast line, a
+  "what a year of tracking actually costs" bar visual (subscription prices
+  ×12 from the existing compare table — calibrEAT is the short bar with
+  "year two costs £0.00"), and an honest savings line on the buy card. No
+  fabricated testimonials — the social proof is the math.
 
 - **License database backups** — the license service now exports every license
   and activation to R2 daily (03:00 UTC cron), so a lost Durable Object can

@@ -47,6 +47,7 @@
 <script>
   const CHECKOUT_URL = "https://checkout.dodopayments.com/buy/pdt_0NnJYkayhhVbOB0gyOyyE?quantity=1";
   const APK_URL = "#apk-coming-soon"; // TODO: paste the hosted .apk link
+  const NOTIFY_API_BASE = "https://api.calibreat.co.uk"; // license Worker base (POST /v1/notify lives there)
   const MARK_NIGHT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
     <path d="M 220 370 L 292 370 L 272 335 L 240 335 Z" fill="#B7E93C"/>
     <rect x="206" y="370" width="100" height="12" rx="6" fill="#B7E93C"/>
@@ -172,6 +173,21 @@
   .dl-card p { color:var(--text-2); font-size:14.5px; margin:0 0 6px; flex:1; line-height:1.6; }
   .dl-meta { display:block; margin-top:12px; color:var(--muted); font-size:12px; line-height:1.5; }
   .dl-actions { display:flex; gap:10px; margin-top:16px; align-items:center; }
+  /* Notify-me card (APK waitlist) — revealed by JS only while APK_URL is a placeholder */
+  .notify-card { margin-top:18px; background: var(--surface); border:1px solid var(--line); border-radius: var(--radius-lg); padding:24px 22px; box-shadow:var(--shadow-sm); }
+  .notify-card h3 { margin:0 0 6px; font-size:19px; letter-spacing:-.015em; }
+  .notify-card p { color: var(--text-2); font-size:14.5px; margin:0; line-height:1.6; }
+  .notify-form { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+  .notify-form input { flex:1; min-width:220px; background: var(--surface-2); border:1.5px solid var(--line-strong); border-radius:12px; padding:13px 16px; font:inherit; font-size:15px; color:var(--text); transition:border-color .18s ease; }
+  .notify-form input:focus { outline:none; border-color: var(--green); }
+  .notify-form input::placeholder { color: var(--muted); }
+  .notify-card .notify-status { margin-top:10px; font-size:13.5px; min-height:1.2em; }
+  .notify-status.err { color:#ff8f8f; }
+  .notify-status.good { color: var(--lime); }
+  .notify-card .notify-fineprint { margin-top:8px; font-size:12px; color: var(--muted); }
+  [data-theme="light"] .notify-status.err { color:#b3261e; }
+  [data-theme="light"] .notify-status.good { color: var(--green-deep); }
+  @media (max-width: 520px) { .notify-form .btn { width:100%; } }
   /* Guides */
   .guide-grid { display:grid; grid-template-columns: 1fr 1fr; gap:18px; align-items:start; }
   .guide-card { background: var(--surface); border:1px solid var(--line); border-radius: var(--radius-lg); padding:24px; position:relative; overflow:hidden; box-shadow:var(--shadow-sm); transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease; }
@@ -266,7 +282,7 @@
 
 <main id="top">
 
-  <section class="hero hero-centered">
+  <section class="reveal hero hero-centered">
     <div class="hero-grid-bg"></div>
     <div class="wrap">
       <h1>Download <span class="lime">calibrEAT</span></h1>
@@ -278,7 +294,7 @@
     </div>
   </section>
 
-  <section style="padding-bottom:0;">
+  <section class="reveal reveal" style="padding-bottom:0;">
     <div class="wrap">
       <div class="sec-head center reveal">
         <span class="kicker">Choose your platform</span>
@@ -308,10 +324,21 @@
         </div>
       </div>
 
+      <!-- ── Notify me (revealed by JS only while APK_URL is still a placeholder) ── -->
+      <div class="notify-card reveal" id="notify" hidden>
+        <h3>Want it the moment it ships?</h3>
+        <p>Leave your email and we’ll send you one message — with the download link — when the Android build is ready. No newsletter, nothing else.</p>
+        <form class="notify-form" id="notify-form" novalidate>
+          <input id="notify-email" name="email" type="email" inputmode="email" autocomplete="email" aria-label="Email address" placeholder="you@example.com" required />
+          <button class="btn btn-primary" id="notify-btn" type="submit">Notify me</button>
+        </form>
+        <p class="notify-status" id="notify-status" role="status"></p>
+        <p class="notify-fineprint">One email when it ships — that’s the only thing we’ll ever send to this address.</p>
+      </div>
     </div>
   </section>
 
-  <section id="guides">
+  <section class="reveal reveal" id="guides">
     <div class="wrap">
       <div class="sec-head center reveal">
         <span class="kicker">Installation guides</span>
@@ -352,7 +379,7 @@
 
       <div class="guide-note reveal" style="margin-top:16px; background: var(--surface); border-color: var(--line);">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5.2 5.9v5.2c0 4.5 2.9 8 6.8 9.7 3.9-1.7 6.8-5.2 6.8-9.7V5.9Z"/><path d="m9.3 12.2 2 1.9 3.6-4"/></svg>
-        <span><b>Already bought a license?</b> Your code is permanent — enter it on the welcome screen (one active device at a time, phone / tablet). Use <b>Deactivate on this device</b> in-app to free a slot, or email <a href="mailto:support@calibreat.co.uk" style="text-decoration:underline; color:var(--green);">support@calibreat.co.uk</a> if you lost it.</span>
+        <span><b>Already bought a license?</b> Your code is permanent — enter it on the welcome screen (one active device at a time, phone / tablet). Use <b>Deactivate on this device</b> in-app to free a slot, or if you lost it, <a href="resend.html" style="text-decoration:underline; color:var(--green);">get a replacement code here</a>.</span>
       </div>
 
     </div>
@@ -448,6 +475,57 @@
       heroDl.innerHTML = 'Download for Android <span class="arr">→</span>';
     }
   }
+
+  // ── Notify-me waitlist (only while the APK is still a placeholder) ──
+  // POST /v1/notify on the license Worker: idempotent, no OTP — the signup's
+  // only consequence is one launch email to the address given.
+  const notifyCard = document.getElementById("notify");
+  if (notifyCard && !APK_READY) {
+    notifyCard.hidden = false;
+    const notifyForm = document.getElementById("notify-form");
+    const notifyEmail = document.getElementById("notify-email");
+    const notifyBtn = document.getElementById("notify-btn");
+    const notifyStatus = document.getElementById("notify-status");
+    let notifyBusy = false;
+    notifyForm.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      if (notifyBusy) return;
+      const email = notifyEmail.value.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        notifyStatus.textContent = "Enter a valid email address.";
+        notifyStatus.className = "notify-status err";
+        notifyEmail.focus();
+        return;
+      }
+      notifyBusy = true;
+      notifyBtn.disabled = true;
+      notifyBtn.textContent = "One moment…";
+      notifyStatus.textContent = "";
+      notifyStatus.className = "notify-status";
+      let data = {};
+      try {
+        const res = await fetch(NOTIFY_API_BASE + "/v1/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, source: "download-page" }),
+        });
+        data = await res.json().catch(() => ({}));
+      } catch (e) {
+        data = { ok: false, message: "" };
+      }
+      notifyBusy = false;
+      notifyBtn.disabled = false;
+      notifyBtn.textContent = "Notify me";
+      if (data.ok !== false) {
+        notifyStatus.textContent = data.message || "You're on the list — we'll email you when calibrEAT is ready to download.";
+        notifyStatus.className = "notify-status good";
+        notifyEmail.value = "";
+      } else {
+        notifyStatus.textContent = data.message || "Could not reach the license service — check your connection and try again.";
+        notifyStatus.className = "notify-status err";
+      }
+    });
+  }
   const _y=document.getElementById("year"); if(_y) _y.textContent=new Date().getFullYear();
   const MARK_URI = "data:image/svg+xml;utf8," + encodeURIComponent(MARK_NIGHT_SVG.trim());
   document.querySelectorAll("img[data-mark]").forEach((img) => { img.src = MARK_URI; });
@@ -468,6 +546,8 @@
   const io = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .12 });
   document.querySelectorAll(".reveal").forEach((el,i) => { if (i<3) { el.classList.add("in"); return; } io.observe(el); });
 </script>
+<link rel="stylesheet" href="polish.css" />
+<script src="site.js" defer></script>
 <script src="analytics.js" defer></script>
 </body>
 </html>
