@@ -10,6 +10,7 @@ import {
   type InboundRecord,
   type LicenseRecord,
   type LicenseStore,
+  type NotifyRecord,
   type OtpRecord,
   type StoreSnapshot,
 } from './store.ts';
@@ -24,6 +25,10 @@ import { type Env } from './worker.ts';
 export class LicenseStoreDO extends DurableObject<Env> implements LicenseStore {
   async getLicense(codeHash: string): Promise<LicenseRecord | null> {
     return (await this.ctx.storage.get<LicenseRecord>(keys.license(codeHash))) ?? null;
+  }
+  async listLicenses(): Promise<LicenseRecord[]> {
+    const entries = await this.ctx.storage.list<LicenseRecord>({ prefix: 'lic:' });
+    return [...entries.values()];
   }
   async upsertLicense(record: LicenseRecord): Promise<void> {
     await this.ctx.storage.put(keys.license(record.codeHash), record);
@@ -96,6 +101,25 @@ export class LicenseStoreDO extends DurableObject<Env> implements LicenseStore {
   }
   async markEmailVerified(emailHash: string): Promise<void> {
     await this.ctx.storage.put(keys.verified(emailHash), Date.now());
+  }
+  async getResends(emailHash: string): Promise<number[]> {
+    return (await this.ctx.storage.get<number[]>(keys.resends(emailHash))) ?? [];
+  }
+  async recordResend(emailHash: string, at: number): Promise<void> {
+    const current = (await this.ctx.storage.get<number[]>(keys.resends(emailHash))) ?? [];
+    await this.ctx.storage.put(keys.resends(emailHash), [...current, at]);
+  }
+
+  async getNotify(email: string): Promise<NotifyRecord | null> {
+    return (await this.ctx.storage.get<NotifyRecord>(keys.notify(email))) ?? null;
+  }
+  async putNotify(record: NotifyRecord): Promise<void> {
+    await this.ctx.storage.put(keys.notify(record.email), record);
+  }
+  async listNotify(): Promise<NotifyRecord[]> {
+    // Oldest first: the signup order is the launch-list order.
+    const entries = await this.ctx.storage.list<NotifyRecord>({ prefix: 'ntf:' });
+    return [...entries.values()].sort((a, b) => a.createdAt - b.createdAt);
   }
 
   async putInbound(record: InboundRecord): Promise<void> {

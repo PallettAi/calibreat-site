@@ -1,5 +1,5 @@
 import { type ApiConfig } from './config.ts';
-import { sendLicenseDeliveryEmail, sendSupportAck, sendVerificationEmail } from './email.ts';
+import { sendLicenseDeliveryEmail, sendNotifyConfirmEmail, sendReplacementCodeEmail, sendSupportAck, sendVerificationEmail } from './email.ts';
 import {
   generateCode,
   generateOtp,
@@ -30,6 +30,11 @@ import { Webhook } from 'svix';
  *   POST /v1/deactivate            { code, email, installId }
  *   POST /v1/release               { code, email } — OTP-gated slot clear from a new phone
  *   POST /v1/validate              { code, email, installId }
+ *   POST /v1/license/resend        { email } — self-service replacement code
+ *                                  (OTP-gated; re-emails a NEW code when every
+ *                                  stored license for the address is revoked)
+ *   POST /v1/notify                { email } — download-page waitlist: one email
+ *                                  when the Android APK ships (idempotent)
  *   POST /v1/webhook/mor           MoR purchase/refund events
  *   POST /v1/webhook/dodo          Dodo Payments Standard Webhooks
  *   POST /v1/webhook/inbound       Resend Inbound: received support email (Svix-signed)
@@ -58,6 +63,8 @@ export const routeTable: Record<
   'POST /v1/deactivate': (ctx, req) => deactivate(ctx, req.body),
   'POST /v1/release': (ctx, req) => release(ctx, req.body),
   'POST /v1/validate': (ctx, req) => validate(ctx, req.body),
+  'POST /v1/license/resend': (ctx, req) => resendLicense(ctx, req.body),
+  'POST /v1/notify': (ctx, req) => notifySignup(ctx, req.body),
   'POST /v1/webhook/mor': morWebhook,
   'POST /v1/webhook/dodo': dodoWebhook,
   'POST /v1/webhook/inbound': inboundWebhook,
@@ -710,6 +717,114 @@ async function adminListInbound(ctx: Context, req: HttpRequest): Promise<HttpRes
   const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(Math.floor(limitRaw), 100) : 50;
   const items = await store.listInbound(limit);
   return ok({ items });
+}
+
+/* ── Download-page waitlist ("tell me when it ships") ───────────────── */
+
+/**
+ * The Android APK is a build in progress, so the download page collects
+ * emails instead of losing the visitor. One endpoint, no OTP: there is
+ * nothing to protect here except the list itself — the signup's only
+ * consequence is one launch email to the address given.
+ *
+ * Defenses are the usual three: an exact-match probe (identical response
+ * whether or not the address is already on the list), a modest per-IP-ish
+ * payload cap (the email is length-limited, so a flood costs nothing to
+ * store), and idempotency (re-signups update the source and never re-email
+ * the confirmation). Abuse ceiling: one row per address — an attacker can
+ * only sign up addresses they type by hand.
+ */
+const NOTIFY_EMAIL_MAX = 320;
+
+async function notifySignup(ctx: Context, body: Record<string, unknown>): Promise<HttpResponse> {
+  const { store } = ctx;
+  const email = str(body.email).trim().toLowerCase();
+  const source = str(body.source).trim().slice(0, 64);
+  if (!isValidEmail(email) || email.length > NOTIFY_EMAIL_MAX) {
+    return fail(400, 'Please provide a valid email address.');
+  }
+
+  const existing = await store.getNotify(email);
+  await store.putNotify({
+    email,
+    source: source || existing?.source || '',
+    createdAt: existing?.createdAt ?? Date.now(),
+    notifiedAt: existing?.notifiedAt ?? null,
+  });
+  if (!existing) {
+    await sendNotifyConfirmEmail(email, ctx.config.resendApiKey, ctx.config.emailFrom);
+  }
+  return ok({ message: "You're on the list — we'll email you when calibrEAT is ready to download." });
+}
+
+/* ── Self-service replacement code (lost-code flow) ─────────────────── */
+
+/**
+ * Self-service "I've lost my code", driven from resend.html.
+ *
+ * The inbox proof is NOT re-implemented here — the page drives the app's own
+ * flow first (POST /v1/request-verification → POST /v1/verify-email, with all
+ * their existing cooldown, send-cap and attempt gates), then calls this
+ * endpoint, which only acts on an email verified within verifiedTtlMs. So the
+ * only new surface is the mint itself, and only someone who can read the
+ * buyer's inbox can reach it.
+ *
+ * Codes are stored hashed, so the original code can never be re-emailed — the
+ * service mints a REPLACEMENT and revokes the code it replaces (the same
+ * trust model as a password reset). An address with NO live license — never
+ * bought, or every code revoked by a refund or fraud webhook — gets a no-op
+ * success instead: there is nothing to replace, a refunded customer cannot
+ * mint a fresh license, and the identical response means the endpoint cannot
+ * probe who bought calibrEAT. Minting is capped per email per rolling year
+ * (MAX_RESENDS_PER_YEAR, default 3).
+ */
+const RESEND_WINDOW_MS = 365 * 24 * 60 * 60 * 1000;
+
+async function resendLicense(ctx: Context, body: Record<string, unknown>): Promise<HttpResponse> {
+  const { store, config } = ctx;
+  const email = str(body.email).trim().toLowerCase();
+  if (!isValidEmail(email)) {
+    return fail(400, 'Please provide a valid email address.');
+  }
+
+  const emailHash = await hashEmail(email);
+  const verifiedAt = await store.getEmailVerifiedAt(emailHash);
+  if (verifiedAt === null || Date.now() - verifiedAt > config.verifiedTtlMs) {
+    return fail(403, 'Verify your email first — request the 6-digit code on this page.');
+  }
+
+  const owned = (await store.listLicenses()).filter((l) => l.email === email);
+  if (owned.length === 0 || !owned.some((l) => !l.revoked)) {
+    // Nothing to replace: never bought, or every code revoked (refund / fraud
+    // webhook). Identical response either way — no existence probe, and a
+    // refunded customer cannot mint a fresh license.
+    return ok({ message: `If a replacement is needed for ${email}, it has been emailed.` });
+  }
+
+  const resends = await store.getResends(emailHash);
+  const yearAgo = Date.now() - RESEND_WINDOW_MS;
+  const recentCount = resends.filter((at) => at >= yearAgo).length;
+  if (recentCount >= config.maxResendsPerYear) {
+    return fail(429, 'You have requested the maximum number of replacement codes for now. Email support@calibreat.co.uk and we will sort it out.');
+  }
+
+  const rawCode = generateCode();
+  const codeHash = await hashCode(rawCode);
+  await store.upsertLicense({ codeHash, email, createdAt: new Date().toISOString(), revoked: false });
+  for (const old of owned) {
+    if (old.codeHash !== codeHash) await store.setLicenseRevoked(old.codeHash, true);
+  }
+  // A revoked license cannot hold an activation, but clear the slot anyway —
+  // the replacement starts with a guaranteed-free device slot.
+  const staleActivation = await store.getActivation(codeHash);
+  if (staleActivation) await store.clearActivation(codeHash);
+  await store.recordResend(emailHash, Date.now());
+  await sendReplacementCodeEmail(email, rawCode, config.resendApiKey, config.emailFrom);
+
+  console.log(
+    `[calibrEAT] self-service replacement issued for ${email} (${recentCount + 1}/${config.maxResendsPerYear} in the last year)`,
+  );
+  return ok({ message: `A replacement license code has been emailed to ${email}.` });
 }
 
 /* ── Router ───────────────────────────────────────────────────────── */

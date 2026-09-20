@@ -41,6 +41,21 @@ export type InboundRecord = {
   acked: boolean;
 };
 
+/**
+ * A notify-me signup from the website's download page: the Android APK is a
+ * build in progress, so interested visitors leave their address and get one
+ * email when it ships. Email is stored in full (plaintext, not hashed) because
+ * the whole point is to be able to write to these people later.
+ */
+export type NotifyRecord = {
+  email: string;
+  /** Page the signup came from (utm / referrer bookkeeping). */
+  source: string;
+  createdAt: number;
+  /** Set when the launch announcement has gone out, so it is never sent twice. */
+  notifiedAt: number | null;
+};
+
 /** Prune horizon for stored inbound mail (Resend retains the full content). */
 export const INBOUND_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 
@@ -59,6 +74,8 @@ export type StoreSnapshot = {
 
 export interface LicenseStore {
   getLicense(codeHash: string): Promise<LicenseRecord | null>;
+  /** Every stored license (live, revoked and tombstone) — resend looks up ownership by email. */
+  listLicenses(): Promise<LicenseRecord[]>;
   upsertLicense(record: LicenseRecord): Promise<void>;
   setLicenseRevoked(codeHash: string, revoked: boolean): Promise<void>;
   getActivation(codeHash: string): Promise<ActivationRecord | null>;
@@ -77,8 +94,15 @@ export interface LicenseStore {
   recordOtpSend(emailHash: string, windowEndsAt: number): Promise<void>;
   getEmailVerifiedAt(emailHash: string): Promise<number | null>;
   markEmailVerified(emailHash: string): Promise<void>;
+  /** Timestamps of past self-service license replacements (capped per year). */
+  getResends(emailHash: string): Promise<number[]>;
+  recordResend(emailHash: string, at: number): Promise<void>;
   putInbound(record: InboundRecord): Promise<void>;
   getInbound(id: string): Promise<InboundRecord | null>;
+  getNotify(email: string): Promise<NotifyRecord | null>;
+  putNotify(record: NotifyRecord): Promise<void>;
+  /** Every notify-me signup, oldest first — the launch-announcement export. */
+  listNotify(): Promise<NotifyRecord[]>;
   listInbound(limit: number): Promise<InboundRecord[]>;
   /** Deletes inbound records older than `before` — returns how many were removed. */
   pruneInbound(before: number): Promise<number>;
@@ -96,7 +120,9 @@ export const keys = {
   sentAt: (emailHash: string) => `sent:${emailHash}`,
   otpSends: (emailHash: string) => `snd:${emailHash}`,
   verified: (emailHash: string) => `ver:${emailHash}`,
+  resends: (emailHash: string) => `res:${emailHash}`,
   inbound: (id: string) => `inb:${id}`,
+  notify: (email: string) => `ntf:${email}`,
 } as const;
 
 /** In-memory implementation used by the node:test suite. */
@@ -108,9 +134,13 @@ export class InMemoryStore implements LicenseStore {
   private sentAt = new Map<string, number>();
   private otpSends = new Map<string, AttemptRecord>();
   private verifiedAt = new Map<string, number>();
+  private resends = new Map<string, number[]>();
 
   async getLicense(codeHash: string): Promise<LicenseRecord | null> {
     return this.licenses.get(keys.license(codeHash)) ?? null;
+  }
+  async listLicenses(): Promise<LicenseRecord[]> {
+    return [...this.licenses.values()];
   }
   async upsertLicense(record: LicenseRecord): Promise<void> {
     this.licenses.set(keys.license(record.codeHash), record);
@@ -180,8 +210,26 @@ export class InMemoryStore implements LicenseStore {
   async markEmailVerified(emailHash: string): Promise<void> {
     this.verifiedAt.set(keys.verified(emailHash), Date.now());
   }
+  async getResends(emailHash: string): Promise<number[]> {
+    return this.resends.get(keys.resends(emailHash)) ?? [];
+  }
+  async recordResend(emailHash: string, at: number): Promise<void> {
+    const current = this.resends.get(keys.resends(emailHash)) ?? [];
+    this.resends.set(keys.resends(emailHash), [...current, at]);
+  }
 
   private inbound = new Map<string, InboundRecord>();
+  private notify = new Map<string, NotifyRecord>();
+
+  async getNotify(email: string): Promise<NotifyRecord | null> {
+    return this.notify.get(keys.notify(email)) ?? null;
+  }
+  async putNotify(record: NotifyRecord): Promise<void> {
+    this.notify.set(keys.notify(record.email), record);
+  }
+  async listNotify(): Promise<NotifyRecord[]> {
+    return [...this.notify.values()].sort((a, b) => a.createdAt - b.createdAt);
+  }
 
   async putInbound(record: InboundRecord): Promise<void> {
     this.inbound.set(record.id, record);

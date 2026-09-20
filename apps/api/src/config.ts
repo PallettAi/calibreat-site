@@ -25,6 +25,8 @@ export type ApiConfig = {
   resendWebhookSecret: string;
   /** Support auto-ack sender. Empty → auto-ack disabled. */
   supportFrom: string;
+  /** Max self-service license replacements per email per rolling year. */
+  maxResendsPerYear: number;
 };
 
 function read(env: object, key: string): string | undefined {
@@ -54,5 +56,6 @@ export function configFromEnv(env: object): ApiConfig {
     adminToken: read(env, 'ADMIN_TOKEN') ?? '',
     resendWebhookSecret: read(env, 'RESEND_WEBHOOK_SECRET') ?? '',
     supportFrom: read(env, 'SUPPORT_FROM') ?? '',
+    maxResendsPerYear: num(read(env, 'MAX_RESENDS_PER_YEAR'), 3),
   };
 }

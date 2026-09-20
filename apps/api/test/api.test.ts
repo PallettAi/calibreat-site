@@ -33,7 +33,7 @@ async function seedLicense(email: string): Promise<string> {
   return code;
 }
 
-const { devCapturedOtps } = await import('../src/email.ts');
+const { devCapturedOtps, devCapturedReplacementCodes } = await import('../src/email.ts');
 
 /** Completes the email OTP gate so /v1/activate will accept this address. */
 async function proveEmail(email: string): Promise<void> {
@@ -768,4 +768,146 @@ test('every route in the table is reachable (no dead dispatch lists)', async () 
   assert.equal(isKnownRoute('GET', '/v1/nonexistent'), false);
   assert.equal(isKnownRoute('DELETE', '/v1/activate'), false);
   assert.equal((await handleHttp({ store, config }, { method: 'GET', path: '/v1/nonexistent', body: {} })).status, 404);
+});
+
+/* ── Self-service replacement code (lost-code flow) ─────────────────── */
+
+test('license/resend requires a recent email verification', async () => {
+  const denied = await api('POST', '/v1/license/resend', { email: 'resend-unverified@example.com' });
+  assert.equal(denied.status, 403);
+
+  const bad = await api('POST', '/v1/license/resend', { email: 'not-an-email' });
+  assert.equal(bad.status, 400);
+});
+
+test('license/resend mints a replacement, revokes the old code, and the new one activates', async () => {
+  const email = 'resend@example.com';
+  const code = await seedLicense(email);
+  await proveEmail(email);
+
+  const res = await api('POST', '/v1/license/resend', { email });
+  assert.equal(res.status, 200);
+
+  const replacement = devCapturedReplacementCodes[email];
+  assert.equal(typeof replacement, 'string');
+  assert.notEqual(replacement, code);
+
+  // The old code is dead in both directions a customer might still try.
+  const oldValidate = await api('POST', '/v1/validate', { code, email, installId: 'resend-dev' });
+  assert.equal(oldValidate.body.valid, false);
+  const oldActivate = await api('POST', '/v1/activate', { code, email, installId: 'resend-dev' });
+  assert.equal(oldActivate.status, 403);
+
+  // The replacement is live end to end.
+  const activated = await api('POST', '/v1/activate', { code: replacement, email, installId: 'resend-dev' });
+  assert.equal(activated.status, 200);
+  assert.equal(activated.body.valid, true);
+});
+
+test('license/resend mints for a live license only and reveals nothing when there is none', async () => {
+  // Lost-code case: a live license exists, so a replacement is minted and the
+  // replaced code is revoked (password-reset trust model).
+  const liveEmail = 'resend-live@example.com';
+  const liveCode = await seedLicense(liveEmail);
+  await proveEmail(liveEmail);
+  delete devCapturedReplacementCodes[liveEmail];
+  const liveRes = await api('POST', '/v1/license/resend', { email: liveEmail });
+  assert.equal(liveRes.status, 200);
+  const replacement = devCapturedReplacementCodes[liveEmail];
+  assert.equal(typeof replacement, 'string', 'a live license must be replaceable');
+  assert.notEqual(replacement, liveCode);
+
+  // Never-bought case: identical response, no mint, no existence leak.
+  const noneEmail = 'resend-none@example.com';
+  await proveEmail(noneEmail);
+  const noneRes = await api('POST', '/v1/license/resend', { email: noneEmail });
+  assert.equal(noneRes.status, 200);
+  assert.equal(devCapturedReplacementCodes[noneEmail], undefined, 'no license must mean no mint');
+});
+
+test('refunded (all-revoked) licenses cannot be self-replaced', async () => {
+  const email = 'resend-refunded@example.com';
+  await seedLicense(email);
+  await proveEmail(email);
+  for (const l of await store.listLicenses()) {
+    if (l.email === email) await store.setLicenseRevoked(l.codeHash, true);
+  }
+  delete devCapturedReplacementCodes[email];
+
+  const res = await api('POST', '/v1/license/resend', { email });
+  assert.equal(res.status, 200);
+  assert.equal(devCapturedReplacementCodes[email], undefined, 'a refunded customer must not mint a fresh license');
+});
+
+test('license/resend is capped per rolling year', async () => {
+  const capped = configFromEnv({ MAX_RESENDS_PER_YEAR: '1' });
+  const email = 'resend-capped@example.com';
+  const call = () =>
+    handleHttp({ store, config: capped }, { method: 'POST', path: '/v1/license/resend', body: { email } });
+
+  await seedLicense(email);
+  await proveEmail(email);
+  const first = await call();
+  assert.equal(first.status, 200);
+  assert.equal(typeof devCapturedReplacementCodes[email], 'string');
+
+  // Lost the replacement too: a fresh live license exists, so minting is
+  // "needed" again — but the yearly cap must block it.
+  await seedLicense(email);
+  delete devCapturedReplacementCodes[email];
+  const second = await call();
+  assert.equal(second.status, 429);
+  assert.equal(devCapturedReplacementCodes[email], undefined);
+});
+
+/* ── POST /v1/notify — download-page waitlist ────────────────────────── */
+
+test('notify stores the address; re-signups are idempotent', async () => {
+  const email = 'waitlist@example.com';
+  const first = await api('POST', '/v1/notify', { email, source: 'download' });
+  assert.equal(first.status, 200);
+  assert.match(first.body.message, /on the list/i);
+  const rec = await store.getNotify(email);
+  assert.ok(rec, 'signup must be stored');
+  assert.equal(rec.source, 'download');
+  assert.equal(rec.notifiedAt, null, 'launch email not yet sent');
+  assert.ok(rec.createdAt > 0);
+
+  // Re-signup: identical success, keeps the original queue position.
+  const again = await api('POST', '/v1/notify', { email });
+  assert.equal(again.status, 200);
+  const after = await store.getNotify(email);
+  assert.equal(after.createdAt, rec.createdAt, 're-signup keeps the original createdAt');
+  assert.equal(after.source, 'download', 're-signup keeps the original source');
+  assert.deepEqual(await store.listNotify(), [rec], 'still exactly one row');
+});
+
+test('notify rejects invalid and over-long addresses', async () => {
+  const bad = await api('POST', '/v1/notify', { email: 'not-an-email' });
+  assert.equal(bad.status, 400);
+  const missing = await api('POST', '/v1/notify', {});
+  assert.equal(missing.status, 400);
+  const long = await api('POST', '/v1/notify', { email: `${'x'.repeat(320)}@example.com` });
+  assert.equal(long.status, 400);
+  for (const rec of ['not-an-email', `${'x'.repeat(320)}@example.com`]) {
+    assert.equal(await store.getNotify(rec), null, 'rejected input must not be stored');
+  }
+});
+
+test('notify clamps an oversized source instead of rejecting', async () => {
+  const email = 'source-cap@example.com';
+  const res = await api('POST', '/v1/notify', { email, source: 'x'.repeat(999) });
+  assert.equal(res.status, 200);
+  const rec = await store.getNotify(email);
+  assert.ok(rec && rec.source.length <= 64);
+});
+
+test('notify listNotify orders signups oldest first', async () => {
+  const a = 'wait-a@example.com';
+  const b = 'wait-b@example.com';
+  await api('POST', '/v1/notify', { email: a });
+  await api('POST', '/v1/notify', { email: b });
+  const list = await store.listNotify();
+  const emails = list.map((r) => r.email);
+  assert.ok(emails.indexOf(a) < emails.indexOf(b), 'signup order is preserved');
 });

@@ -34,6 +34,7 @@ App lock screen                 Worker (this repo)
 | POST | `/v1/deactivate` | `{ code, email, installId }` | 200 `{ ok }` — frees the device slot (idempotent) |
 | POST | `/v1/release` | `{ code, email }` | 200 `{ ok }` — OTP-gated slot clear from a new phone (lost / reinstall) |
 | POST | `/v1/validate` | `{ code, email, installId }` | 200 `{ ok, valid, revoked, activatedAt, plan, customerEmail, activeDevice? }` |
+| POST | `/v1/license/resend` | `{ email }` (verified within `VERIFIED_TTL_MS`) | 200 mint & email a replacement code (revokes the code it replaces; identical response when nothing is replaceable — no existence probe) · 403 email not verified · 429 yearly cap (`MAX_RESENDS_PER_YEAR`, default 3). Driven by the site's [Resend my code](https://calibreat.co.uk/resend.html) page. |
 | POST | `/v1/webhook/mor` | MoR purchase/refund events + `x-webhook-secret` (or `Authorization: Bearer`) | 200 registers / revokes · 401 bad secret · 503 if `MOR_WEBHOOK_SECRET` is unset |
 | POST | `/v1/webhook/dodo` | Dodo Payments Standard Webhooks (`license_key.created`, `entitlement_grant.delivered` / `.revoked`) | 200 registers / revokes · 401 bad signature · 503 if `DODO_WEBHOOK_SECRET` is unset. Purchase events often omit email; with `DODO_API_KEY` the Worker looks up `customer_id` via `GET /customers/{id}`. |
 | POST | `/v1/webhook/inbound` | Resend Inbound event (Svix-signed) | stores support mail metadata + auto-acks the sender |
