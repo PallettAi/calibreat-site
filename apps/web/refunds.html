@@ -161,14 +161,14 @@
 </header>
 
 <main>
-  <section class="hero"><div class="hero-grid-bg"></div><div class="wrap">
+  <section class="reveal hero"><div class="hero-grid-bg"></div><div class="wrap">
     <span class="kicker">Legal</span>
     <h1>Refunds</h1>
     <p class="lede">Your lifetime code is delivered instantly by email. To keep things fair — a code can’t be “returned” once you’ve seen it — orders are final once the code is delivered. If something hasn’t arrived or isn’t working as it should, we’re here to help and put it right quickly. This page explains how, and your UK statutory rights are always protected.</p>
     <p style="color:var(--muted);font-size:13px;margin-top:10px;">Last updated: 8 September 2026 · Effective: 8 September 2026 · <a href="#contact" style="color:var(--accent);">Contact: support@calibreat.co.uk</a></p>
   </div></section>
 
-  <section style="padding-top:32px;">
+  <section class="reveal reveal" style="padding-top:32px;">
     <div class="wrap"><div class="legal">
 
       <!-- FIRST BIT — kept as requested -->
@@ -221,7 +221,7 @@
             <li><b>Change of mind</b> — even if you haven’t activated the code yet, delivery counts as supply.</li>
             <li><b>Device preferences</b> (e.g. prefer Play Store over sideload) where the app works as described on Android 8+ or iOS 15+.</li>
             <li><b>Diet results</b> — calorie estimates vary per person; this isn’t a fault.</li>
-            <li><b>Lost the email?</b> We’ll happily re-send — just ask.</li>
+            <li><b>Lost the email?</b> Verify your email at <a href="resend.html">Resend my code</a> for an instant replacement — or just ask.</li>
           </ul>
         </div>
         <div class="split-card yep">
@@ -289,7 +289,7 @@
         <div class="foot-trust"><span class="chip">No ads</span><span class="chip">No subscriptions</span><span class="chip">No tracking</span></div>
       </div>
       <div><h4>Product</h4><ul><li><a href="license.html">License</a></li><li><a href="download.html">Download</a></li><li><a href="about.html">About</a></li><li><a href="index.html#features">Features</a></li><li><a href="index.html#compare">Compare</a></li><li><a href="index.html#faq">FAQ</a></li></ul></div>
-      <div><h4>Support</h4><ul><li><a href="mailto:support@calibreat.co.uk">Contact</a></li><li><a href="privacy.html">Privacy policy</a></li><li><a href="terms.html">Terms of sale</a></li><li><a href="refunds.html" aria-current="page">Refunds</a></li></ul></div>
+      <div><h4>Support</h4><ul><li><a href="resend.html">Resend my code</a></li><li><a href="mailto:support@calibreat.co.uk">Contact</a></li><li><a href="privacy.html">Privacy policy</a></li><li><a href="terms.html">Terms of sale</a></li><li><a href="refunds.html" aria-current="page">Refunds</a></li></ul></div>
       <div><h4>The app</h4><ul><li><a href="download.html">Download</a></li><li><a href="download.html#android">Android APK</a></li><li><a href="download.html#ios">iPhone &amp; iPad</a></li></ul></div>
     </div>
     <div class="footer-bottom"><span>© <span id="year">2026</span> calibrEAT · All rights reserved.</span><span>Made with <span class="heart">🥦</span> and a kitchen scale.</span></div>
@@ -308,6 +308,8 @@
   const nav=document.getElementById("site-nav"),burger=document.getElementById("nav-burger");
   const syncNavH=()=>{if(nav)document.documentElement.style.setProperty("--nav-h",nav.getBoundingClientRect().height+"px")};const closeNav=()=>{if(!nav||!burger)return;nav.classList.remove("open");burger.setAttribute("aria-expanded","false");burger.setAttribute("aria-label","Menu");document.body.classList.remove("nav-menu-open");document.documentElement.style.removeProperty("--nav-h")};if (burger && nav) burger.addEventListener("click",()=>{const o=nav.classList.toggle("open");burger.setAttribute("aria-expanded",String(o));burger.setAttribute("aria-label",o?"Close menu":"Menu");document.body.classList.toggle("nav-menu-open",o);if(o)syncNavH();else document.documentElement.style.removeProperty("--nav-h")});if (nav) nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>closeNav()));document.addEventListener("keydown",e=>{if(e.key==="Escape")closeNav()});document.addEventListener("click",e=>{if(!nav||!nav.classList.contains("open"))return;if(!nav.contains(e.target))closeNav()});window.addEventListener("resize",()=>{if(nav&&nav.classList.contains("open"))syncNavH()});
 </script>
+<link rel="stylesheet" href="polish.css" />
+<script src="site.js" defer></script>
 <script src="analytics.js" defer></script>
 </body>
 </html>

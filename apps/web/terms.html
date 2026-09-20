@@ -141,14 +141,14 @@
 </header>
 
 <main>
-  <section class="hero"><div class="hero-grid-bg"></div><div class="wrap">
+  <section class="reveal hero"><div class="hero-grid-bg"></div><div class="wrap">
     <span class="kicker">Legal — calibrEAT</span>
     <h1>Terms of Sale</h1>
     <p class="lede">What you buy, how delivery works, how the lifetime license behaves on your devices, and your rights as a UK consumer. Plain English — but binding.</p>
     <p style="color:var(--muted);font-size:13px;margin-top:10px;">Last updated: 8 September 2026 · Effective: 8 September 2026 · <a href="#contact" style="color:var(--accent);">Contact: support@calibreat.co.uk</a></p>
   </div></section>
 
-  <section style="padding-top:32px;">
+  <section class="reveal reveal" style="padding-top:32px;">
     <div class="wrap"><div class="legal">
 
       <div class="callout"><strong>The product:</strong> What you pay for on this website is a <b>single digital item not on a tangible medium</b> — a permanent <b>lifetime activation code</b> (£4.99 inc VAT) that unlocks the app forever. Android is distributed as an APK sideload when the build is ready; iOS will follow via the App Store. No subscription, no tiers, no in-app purchases. One code per purchase, delivered <b>instantly by email</b> at checkout.</div>
@@ -201,7 +201,7 @@
         <li>On successful payment, the MoR (and our license API via webhook) generates your permanent code and emails it — typically within seconds — to the <b>email you entered at checkout</b>, with the subject containing your activation code.</li>
         <li>Enter that code on the app’s welcome screen (after verifying the same email via a 6-digit OTP) to unlock.</li>
       </ol>
-      <p>If you don’t see it: check spam/junk, check you typed the email correctly, and check the MoR’s “My orders” / customer portal (link on the receipt). Still missing? Email <a href="mailto:support@calibreat.co.uk">support@calibreat.co.uk</a> with the buyer email and order reference and we will re-send (see also <a href="refunds.html">Refunds</a> for non-delivery).</p>
+      <p>If you don’t see it: check spam/junk, check you typed the email correctly, and check the MoR’s “My orders” / customer portal (link on the receipt). Still missing? Verify your email on our <a href="resend.html">Resend my code</a> page for an instant replacement — or email <a href="mailto:support@calibreat.co.uk">support@calibreat.co.uk</a> with the buyer email and order reference and we will re-send (see also <a href="refunds.html">Refunds</a> for non-delivery).</p>
 
       <h2 id="license">5. Your lifetime license — what you may and may not do</h2>
       <p>When activation succeeds we grant you a <b>non-exclusive, non-transferable, perpetual</b> license to <b>install and use calibrEAT</b> for your personal, non-commercial use, unlocked by that code, on devices you control — subject to the <b>1 active device per code+email</b> rule (see §6).</p>
@@ -289,7 +289,7 @@
         <div class="foot-trust"><span class="chip">No ads</span><span class="chip">No subscriptions</span><span class="chip">No tracking</span></div>
       </div>
       <div><h4>Product</h4><ul><li><a href="license.html">License</a></li><li><a href="download.html">Download</a></li><li><a href="about.html">About</a></li><li><a href="index.html#features">Features</a></li><li><a href="index.html#compare">Compare</a></li><li><a href="index.html#faq">FAQ</a></li></ul></div>
-      <div><h4>Support</h4><ul><li><a href="mailto:support@calibreat.co.uk">Contact</a></li><li><a href="privacy.html">Privacy policy</a></li><li><a href="terms.html" aria-current="page">Terms of sale</a></li><li><a href="refunds.html">Refunds</a></li></ul></div>
+      <div><h4>Support</h4><ul><li><a href="resend.html">Resend my code</a></li><li><a href="mailto:support@calibreat.co.uk">Contact</a></li><li><a href="privacy.html">Privacy policy</a></li><li><a href="terms.html" aria-current="page">Terms of sale</a></li><li><a href="refunds.html">Refunds</a></li></ul></div>
       <div><h4>The app</h4><ul><li><a href="download.html">Download</a></li><li><a href="download.html#android">Android APK</a></li><li><a href="download.html#ios">iPhone &amp; iPad</a></li></ul></div>
     </div>
     <div class="footer-bottom"><span>© <span id="year">2026</span> calibrEAT · All rights reserved.</span><span>Made with <span class="heart">🥦</span> and a kitchen scale.</span></div>
@@ -308,6 +308,8 @@
   const nav=document.getElementById("site-nav"),burger=document.getElementById("nav-burger");
   const syncNavH=()=>{if(nav)document.documentElement.style.setProperty("--nav-h",nav.getBoundingClientRect().height+"px")};const closeNav=()=>{if(!nav||!burger)return;nav.classList.remove("open");burger.setAttribute("aria-expanded","false");burger.setAttribute("aria-label","Menu");document.body.classList.remove("nav-menu-open");document.documentElement.style.removeProperty("--nav-h")};if (burger && nav) burger.addEventListener("click",()=>{const o=nav.classList.toggle("open");burger.setAttribute("aria-expanded",String(o));burger.setAttribute("aria-label",o?"Close menu":"Menu");document.body.classList.toggle("nav-menu-open",o);if(o)syncNavH();else document.documentElement.style.removeProperty("--nav-h")});if (nav) nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>closeNav()));document.addEventListener("keydown",e=>{if(e.key==="Escape")closeNav()});document.addEventListener("click",e=>{if(!nav||!nav.classList.contains("open"))return;if(!nav.contains(e.target))closeNav()});window.addEventListener("resize",()=>{if(nav&&nav.classList.contains("open"))syncNavH()});
 </script>
+<link rel="stylesheet" href="polish.css" />
+<script src="site.js" defer></script>
 <script src="analytics.js" defer></script>
 </body>
 </html>

@@ -238,7 +238,7 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
       (`src/data/cofid-foods.json`, searched by `src/lib/food-search.ts`)
 - [x] **Open Food Facts** (free, open API) — UK barcode scanning for packaged products with
       a session cache and timeout; nutrients wherever the product label lists them
-- [ ] **USDA FoodData Central** (free API) — fallback / cross-check for items neither covers
+- [x] **USDA FoodData Central** (free API) — graceful name-search fallback when Open Food Facts has no results; uses the public `DEMO_KEY` by default and supports `EXPO_PUBLIC_USDA_API_KEY` for production rate limits
 - [x] Barcode scan via the camera (`expo-camera`) → product lookup → log
 - [x] Search UI with recents
 - [x] **Photo label OCR** — "Label" tab in the log sheet: photograph the

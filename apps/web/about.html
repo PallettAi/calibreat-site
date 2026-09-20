@@ -129,7 +129,7 @@
 </header>
 
 <main>
-  <section class="hero"><div class="hero-grid-bg"></div><div class="wrap">
+  <section class="reveal hero"><div class="hero-grid-bg"></div><div class="wrap">
     <span class="kicker">About PallettAi · Why we exist</span>
     <h1>Everyday tools should be <span>cheap, honest, and yours.</span></h1>
     <p class="lede">We’re PallettAi — a new AI development company building software that actually lowers the cost of daily life. calibrEAT is our first proof: a proper calorie and lifestyle tracker without the subscription, without the ads, and without the data grab.</p>
@@ -139,7 +139,7 @@
     </div>
   </div></section>
 
-  <section style="padding-top:32px;padding-bottom:48px;">
+  <section class="reveal reveal" style="padding-top:32px;padding-bottom:48px;">
     <div class="wrap"><div class="proof">
 
       <p style="color:var(--text);font-weight:600;font-size:15px;margin-bottom:10px;">We use AI to build faster and cheaper — then pass that saving to you.</p>
@@ -163,7 +163,7 @@
         </div>
       </div>
 
-      <div class="transparency" id="transparency">
+      <div class="transparency lift" id="transparency">
         <div class="trans-head">
           <span class="kicker">Our highlight · Transparency</span>
           <h2>Honesty is the feature</h2>
@@ -226,7 +226,7 @@
         <div class="foot-trust"><span class="chip">No ads</span><span class="chip">No subscriptions</span><span class="chip">No tracking</span></div>
       </div>
       <div><h4>Product</h4><ul><li><a href="license.html">License</a></li><li><a href="download.html">Download</a></li><li><a href="about.html" aria-current="page">About</a></li><li><a href="index.html#features">Features</a></li><li><a href="index.html#compare">Compare</a></li><li><a href="index.html#faq">FAQ</a></li></ul></div>
-      <div><h4>Support</h4><ul><li><a href="mailto:support@calibreat.co.uk">Contact</a></li><li><a href="privacy.html">Privacy policy</a></li><li><a href="terms.html">Terms of sale</a></li><li><a href="refunds.html">Refunds</a></li></ul></div>
+      <div><h4>Support</h4><ul><li><a href="resend.html">Resend my code</a></li><li><a href="mailto:support@calibreat.co.uk">Contact</a></li><li><a href="privacy.html">Privacy policy</a></li><li><a href="terms.html">Terms of sale</a></li><li><a href="refunds.html">Refunds</a></li></ul></div>
       <div><h4>The app</h4><ul><li><a href="download.html">Download</a></li><li><a href="download.html#android">Android APK</a></li><li><a href="download.html#ios">iPhone &amp; iPad</a></li></ul></div>
     </div>
     <div class="footer-bottom"><span>© <span id="year">2026</span> calibrEAT · All rights reserved.</span><span>Made with <span class="heart">🥦</span> and a kitchen scale.</span></div>
@@ -245,6 +245,8 @@
   const nav=document.getElementById("site-nav"),burger=document.getElementById("nav-burger");
   const syncNavH=()=>{if(nav)document.documentElement.style.setProperty("--nav-h",nav.getBoundingClientRect().height+"px")};const closeNav=()=>{if(!nav||!burger)return;nav.classList.remove("open");burger.setAttribute("aria-expanded","false");burger.setAttribute("aria-label","Menu");document.body.classList.remove("nav-menu-open");document.documentElement.style.removeProperty("--nav-h")};if (burger && nav) burger.addEventListener("click",()=>{const o=nav.classList.toggle("open");burger.setAttribute("aria-expanded",String(o));burger.setAttribute("aria-label",o?"Close menu":"Menu");document.body.classList.toggle("nav-menu-open",o);if(o)syncNavH();else document.documentElement.style.removeProperty("--nav-h")});if (nav) nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>closeNav()));document.addEventListener("keydown",e=>{if(e.key==="Escape")closeNav()});document.addEventListener("click",e=>{if(!nav||!nav.classList.contains("open"))return;if(!nav.contains(e.target))closeNav()});window.addEventListener("resize",()=>{if(nav&&nav.classList.contains("open"))syncNavH()});
 </script>
+<link rel="stylesheet" href="polish.css" />
+<script src="site.js" defer></script>
 <script src="analytics.js" defer></script>
 </body>
 </html>

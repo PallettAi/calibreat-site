@@ -1,0 +1,45 @@
+/*
+ * Shared polish layer for calibreat.co.uk — behaviour is in site.js.
+ * Everything here is additive: pages look complete without JS, and all
+ * motion is disabled under prefers-reduced-motion.
+ */
+
+/* Scroll reveals — see site.js. Stagger optional via --reveal-delay. */
+.reveal.pre-reveal.revealed {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal.pre-reveal:not(.revealed) {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+/* Card hover lift — opt-in via .lift where a section has no hover of its own. */
+.lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+@media (hover: hover) {
+  .lift:hover,
+  .lift:focus-within {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md, 0 14px 34px -14px rgba(0, 0, 0, 0.25));
+  }
+}
+
+/* Full stop for reduced motion, whatever the entry path. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal.pre-reveal,
+  .reveal.pre-reveal.revealed {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .lift,
+  .lift:hover,
+  .lift:focus-within {
+    transform: none;
+    transition: none;
+  }
+}
