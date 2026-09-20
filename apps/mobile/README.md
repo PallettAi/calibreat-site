@@ -35,7 +35,10 @@ the device like everything else — no account, no server, no new permissions.
 Offline-first and local-only: **no account, no server copy of your logs.** `src/lib/db.ts`
 uses SQLite on native; `src/lib/db.web.ts` is the same API over `localStorage` for the browser
 preview. Food search runs against **UK CoFID** bundled offline
-(`src/data/cofid-foods.json`) with **Open Food Facts** for barcode lookups when online.
+(`src/data/cofid-foods.json`) with **Open Food Facts** for barcode lookups when online, and
+falls back to the open U.S. government **USDA FoodData Central** search when the pack database
+has no results. USDA uses its public `DEMO_KEY` by default; set `EXPO_PUBLIC_USDA_API_KEY` in a
+build environment for a higher rate limit.
 
 ## Run it
 
@@ -105,6 +108,7 @@ are **inlined into the bundle**, so changing one requires a rebuild, not a resta
 | `EXPO_PUBLIC_LICENSE_API_URL` | *(empty → dev activation)* | Licence API base URL. Set in `eas.json` for both APK profiles. |
 | `EXPO_PUBLIC_LICENSE_STORE_URL` | `https://calibreat.co.uk/license.html` | Where users buy a code. |
 | `EXPO_PUBLIC_LICENSE_HELP_URL` | `https://calibreat.co.uk/license.html#faq` | In-app "manage my licence" help. |
+| `EXPO_PUBLIC_USDA_API_KEY` | `DEMO_KEY` | Optional FoodData Central key for higher search rate limits. |
 
 ## Layout
 
@@ -122,5 +126,6 @@ scripts/        check-*.mjs logic suites + run-checks.mjs + glyph-gallery.mjs
 
 ## Still to come
 
-Tracked in PLAN.md: data **export/import** for backups and device migration (M1), a USDA
-FoodData Central fallback (M2), and iOS (parked until an Apple Developer account exists).
+Tracked in PLAN.md: data **export/import** for backups and device migration (M1), and iOS
+(parked until an Apple Developer account exists). USDA FoodData Central is now a graceful search
+fallback when Open Food Facts has no results.

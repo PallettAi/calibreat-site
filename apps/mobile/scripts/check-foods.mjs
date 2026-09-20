@@ -8,6 +8,7 @@ import {
   searchCofid,
   searchFoods,
 } from '../src/lib/food-search.ts';
+import { parseUsdaSearchPayload } from '../src/lib/usda.ts';
 
 let fails = 0;
 const eq = (label, got, want) => {
@@ -84,6 +85,28 @@ eq('offline empty still marks packs failed', emptyOffline.packsFailed, true);
 const reachedEmpty = mergeFoodSearch([], []);
 eq('online miss is not a connection failure', reachedEmpty.packsFailed, false);
 
+const usda = parseUsdaSearchPayload({
+  foods: [{
+    fdcId: 123,
+    description: 'Chicken breast, roasted',
+    brandOwner: 'Open Kitchen',
+    foodNutrients: [
+      { nutrientId: 1008, value: 165 },
+      { nutrientId: 1003, value: 31 },
+      { nutrientId: 1005, value: 0 },
+      { nutrientId: 1004, value: 3.6 },
+      { nutrientId: 1079, value: 0 },
+      { nutrientId: 1093, value: 74 },
+    ],
+  }],
+});
+eq('USDA parses a food', usda.length, 1);
+eq('USDA adds brand to name', usda[0]?.name, 'Open Kitchen Chicken breast, roasted');
+eq('USDA uses per-100-g serving', usda[0]?.portion, '100g');
+eq('USDA maps calories', usda[0]?.kcal, 165);
+eq('USDA maps sodium', usda[0]?.sodiumMg, 74);
+eq('USDA source label', usda[0]?.source, 'usda');
+
 const many = Array.from({ length: 30 }, (_, i) => cofidToFood({ ...catalog[0], code: `x-${i}`, name: `Chicken cut ${i}` }));
 eq('merged list caps at 20', mergeFoodSearch(many, remote).hits.length, 20);
 eq('packs still appear when CoFID is crowded', mergeFoodSearch(many, remote).hits.some((h) => h.source === 'off'), true);
@@ -92,6 +115,8 @@ eq('crowded merge still leads with CoFID', mergeFoodSearch(many, remote).hits[0]
 const down = await searchFoods('chicken', {
   catalog,
   lookup: async () => null,
+  usdaLookup: async () => ({ foods: [] }),
+  parseUsda: parseUsdaSearchPayload,
 });
 eq('searchFoods keeps CoFID when OFF is down', down.hits[0]?.name, 'Chicken, roast');
 eq('searchFoods does not throw when OFF is down', down.packsFailed, true);

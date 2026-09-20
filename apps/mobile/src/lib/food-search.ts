@@ -5,7 +5,7 @@
  * search must still return generic foods instead of a connection error.
  */
 
-export type FoodSource = 'cofid' | 'off';
+export type FoodSource = 'cofid' | 'off' | 'usda';
 
 export type SearchFood = {
   barcode: string;
@@ -46,6 +46,8 @@ type SearchDeps = {
   catalog?: CofidFood[];
   lookup?: (url: string) => Promise<unknown | null>;
   parseRemote?: (payload: unknown) => SearchFood[];
+  usdaLookup?: (query: string) => Promise<unknown | null>;
+  parseUsda?: (payload: unknown) => SearchFood[];
 };
 
 const SEARCH_LIMIT = 20;
@@ -145,18 +147,27 @@ export async function searchFoods(raw: string, deps: SearchDeps = {}): Promise<F
   if (query.length < 2) return { hits: local, packsFailed: false };
 
   const lookup = deps.lookup;
-  if (!lookup) {
-    return mergeFoodSearch(local, null);
+  const parseRemote = deps.parseRemote ?? (() => []);
+  let remote: SearchFood[] | null = null;
+  if (lookup) {
+    // Single attempt on purpose: OFF failures are network-down, CORS or
+    // rate-limiting — an immediate second try loses every time.
+    const payload = await lookup(ukSearchUrl(query));
+    remote = payload == null ? null : parseRemote(payload);
   }
 
-  // Single attempt on purpose: OFF failures are network-down, CORS or
-  // rate-limiting — an immediate second try loses every time, and the retry
-  // used to double the worst-case wait to ~16s. The user can re-tap Search;
-  // generic foods are already on screen either way.
-  const payload = await lookup(ukSearchUrl(query));
-  if (payload == null) return mergeFoodSearch(local, null);
-  const parseRemote = deps.parseRemote ?? (() => []);
-  return mergeFoodSearch(local, parseRemote(payload));
+  // USDA is an open government dataset and a useful second source for common
+  // foods. Only use it when OFF did not produce results, avoiding duplicate
+  // results and an extra request for the normal path.
+  if ((!remote || remote.length === 0) && deps.usdaLookup && deps.parseUsda) {
+    const payload = await deps.usdaLookup(query);
+    if (payload != null) {
+      const usdaHits = deps.parseUsda(payload);
+      if (usdaHits.length) remote = [...(remote ?? []), ...usdaHits];
+    }
+  }
+
+  return mergeFoodSearch(local, remote);
 }
 
 export const COFID_CREDIT =

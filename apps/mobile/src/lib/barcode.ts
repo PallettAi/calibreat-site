@@ -10,7 +10,7 @@
 
 export type OffPortion = 'serving' | '100g';
 
-export type FoodSource = 'cofid' | 'off';
+export type FoodSource = 'cofid' | 'off' | 'usda';
 
 export type OffFood = {
   barcode: string;
