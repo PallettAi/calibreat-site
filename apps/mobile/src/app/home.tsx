@@ -1,4 +1,4 @@
-import { Redirect, useFocusEffect, useRouter } from 'expo-router';
+import { Redirect, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -53,6 +53,7 @@ import {
   type RecentMeal,
 } from '@/lib/db';
 import { groupLogsByMeal, logDisplayName, MEAL_SLOTS, sumDayMacros } from '@/lib/diary';
+import { hapticLight, hapticSelect } from '@/lib/haptics';
 import { adaptiveHistory, adaptiveTdee, calorieBudget, caloriesRemaining, detectPlateau } from '@/lib/nutrition';
 import { getCalorieOverride, getTrueBurnState, saveTrueBurnState, setCalorieOverride, shouldShowAdoptPrompt, type TrueBurnState } from '@/lib/trueburn';
 import { useLicense } from '@/lib/license-context';
@@ -61,7 +62,7 @@ import { claimStreak, emptyStreak, expireStreak, STREAK_CLAIM_MS, streakNeedsCla
 import { loadStreak, saveStreak } from '@/lib/streak-store';
 import { emptyFastState, fastElapsedMs, formatElapsed, isFasting, nextFastMilestone, startFast, stopFast, type FastState } from '@/lib/fasting';
 import { loadFastState, saveFastState } from '@/lib/fasting-store';
-import { CUP_ML, waterToMl, type WaterUnit } from '@/lib/units';
+import { CUP_ML, formatWeightKg, weightToKg, waterToMl, type WaterUnit, type WeightUnit } from '@/lib/units';
 
 function formatISO(date: Date): string {
   const y = date.getFullYear();
@@ -85,6 +86,7 @@ export default function HomeScreen() {
   const { license, deactivate } = useLicense();
   const router = useRouter();
   const scheme = useColorScheme();
+  const params = useLocalSearchParams<{ first?: string }>();
   const isDark = scheme === 'dark';
   const theme = useTheme();
 
@@ -97,6 +99,7 @@ export default function HomeScreen() {
   const [addingWater, setAddingWater] = useState(false);
   const [waterInput, setWaterInput] = useState('');
   const [waterUnit, setWaterUnit] = useState<WaterUnit>('ml');
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg');
   const [selectedDate, setSelectedDate] = useState(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -116,6 +119,7 @@ export default function HomeScreen() {
   const [recents, setRecents] = useState<RecentMeal[]>([]);
   const [showLogSheet, setShowLogSheet] = useState(false);
   const [editingLog, setEditingLog] = useState<LogEntry | null>(null);
+  const [firstScanOpen, setFirstScanOpen] = useState(false);
   const [weighInInput, setWeighInInput] = useState('');
   const [addingWeighIn, setAddingWeighIn] = useState(false);
   const [weighIns, setWeighIns] = useState<{ kg: number; measuredAt: string }[]>([]);
@@ -130,6 +134,20 @@ export default function HomeScreen() {
   const waterPulse = useRef(new Animated.Value(0)).current;
 
   const selectedKey = formatISO(selectedDate);
+
+  // First-session onboarding: setup finishes with ?first=1 and this screen
+  // answers by opening the meal sheet straight onto the barcode viewfinder.
+  // Consumed once; the flag is cleared the moment the sheet closes so a later
+  // sheet open never re-triggers it.
+  useEffect(() => {
+    const first = params?.first === '1';
+    if (first && !firstScanOpen) {
+      setFirstScanOpen(true);
+      setEditingLog(null);
+      setShowLogSheet(true);
+      router.setParams({ first: undefined });
+    }
+  }, [params?.first, firstScanOpen, router]);
 
   useEffect(() => {
     let cancelled = false;
@@ -158,6 +176,7 @@ export default function HomeScreen() {
         setProfile(p);
         setGoals(g);
         setWaterUnit(prefs.water);
+        setWeightUnit(prefs.weight);
         setTrueBurnPersist(tb);
         setOverrideKcal(ov);
         setStreak(nextStreak);
@@ -205,14 +224,14 @@ export default function HomeScreen() {
     if (showPicker) setPickerMonth(startOfMonth(selectedDate));
   }, [showPicker, selectedDate]);
 
-  // Keep the streak flame honest. A 1-second ticker would re-render the whole
-  // SVG dashboard 86,400 times a day for a state that changes twice daily, so
-  // the tick is rare — and the exact moment the flame flips (claim unlocks or
-  // the run expires) wakes the screen once, on time, via a timeout.
+  // Keep the streak flame honest — but when fasting, show a live clock.
+  // 1s while fasting so 14h 05m feels alive; 60s otherwise to spare renders.
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 60_000);
+    const active = isFasting(fast, Date.now());
+    const ms = active ? 1000 : 60_000;
+    const id = setInterval(() => setNow(Date.now()), ms);
     return () => clearInterval(id);
-  }, []);
+  }, [fast.startedAt]);
 
   useEffect(() => {
     const next = expireStreak(streak, now);
@@ -266,7 +285,9 @@ export default function HomeScreen() {
   }
   if (profile === null) return <Redirect href="/setup" />;
 
-  const waterGoal = 4000;
+  // ~35 ml/kg is the common baseline; clamped to a sane 1500–4500 window
+  const latestKg = weighIns.length ? weighIns[weighIns.length - 1]!.kg : profile.weightKg;
+  const waterGoal = Math.min(4500, Math.max(1500, Math.round(latestKg * 35)));
 
   const adaptive = (() => {
     if (!goals || !profile) return null;
@@ -374,12 +395,25 @@ export default function HomeScreen() {
     await refreshLogs();
   }
 
+  function parseWeighInKg(text: string, unit: WeightUnit): number | null {
+    const nums = text.match(/\d+(?:[.,]\d+)?/g)?.map((s) => parseFloat(s.replace(',', '.'))) ?? [];
+    if (!nums.length) return null;
+    if (unit === 'kg') return weightToKg(0, 0, nums[0]!, 'kg');
+    if (unit === 'lb') return weightToKg(0, 0, nums[0]!, 'lb');
+    if (nums.length >= 2) return weightToKg(Math.floor(nums[0]!), Math.round(nums[1]!), 0, 'st');
+    const v = nums[0]!;
+    const st = Math.floor(v);
+    const lb = Math.round((v - st) * 14);
+    return weightToKg(st, lb, 0, 'st');
+  }
+
   async function handleAddWeighIn() {
-    const v = parseFloat(weighInInput.replace(',', '.'));
-    if (!Number.isFinite(v) || v < 20 || v > 400) return;
+    const kg = parseWeighInKg(weighInInput, weightUnit);
+    if (kg == null || !Number.isFinite(kg) || kg < 20 || kg > 400) return;
+    hapticLight();
     setAddingWeighIn(true);
     try {
-      await addWeighIn(v, selectedDate);
+      await addWeighIn(kg, selectedDate);
       const wi = await getWeighIns(60);
       setWeighIns(wi.map((x) => ({ kg: x.kg, measuredAt: x.measuredAt })));
       setWeighInInput('');
@@ -425,16 +459,22 @@ export default function HomeScreen() {
   }
 
   async function handleStartFast() {
-    const next = startFast(fast, Date.now());
+    hapticSelect();
+    const at = Date.now();
+    const next = startFast(fast, at);
     if (next === fast) return;
     setFast(next);
+    setNow(at);
     await saveFastState(next);
   }
 
   async function handleStopFast() {
-    const next = stopFast(fast, Date.now());
+    hapticLight();
+    const at = Date.now();
+    const next = stopFast(fast, at);
     if (next === fast) return;
     setFast(next);
+    setNow(at);
     await saveFastState(next);
   }
 
@@ -616,7 +656,13 @@ export default function HomeScreen() {
             </ThemedText>
             <View style={[styles.todayStripDot, { backgroundColor: theme.muted }]} />
             <ThemedText type="small" themeColor="textSecondary" style={styles.todayStripText}>
-              {Math.round((waterMl / 100)) / 10} / 4 L
+              {(() => {
+                const goalLitres = Math.round(waterGoal / 100) / 10;
+                const currentLitres = Math.round(waterMl / 100) / 10;
+                return waterUnit === 'cups'
+                  ? `${Math.round((waterMl / 240) * 10) / 10} / ${Math.round((waterGoal / 240) * 10) / 10} cups`
+                  : `${currentLitres} / ${goalLitres} L`;
+              })()}
             </ThemedText>
             <View style={[styles.todayStripDot, { backgroundColor: theme.muted }]} />
             <WeekPips
@@ -1012,8 +1058,7 @@ export default function HomeScreen() {
               WEIGHT
             </ThemedText>
             <View style={styles.weightReadout}>
-              <Text style={[styles.weightBig, { color: accentText }]}>{weighIns.length ? weighIns[weighIns.length - 1]!.kg : profile.weightKg}</Text>
-              <Text style={[styles.weightUnit, { color: theme.textSecondary }]}>kg</Text>
+              <Text style={[styles.weightBig, { color: accentText }]}>{formatWeightKg(weighIns.length ? weighIns[weighIns.length - 1]!.kg : profile.weightKg, weightUnit)}</Text>
             </View>
             <ThemedText type="small" themeColor="textSecondary">
               {weightMeta}
@@ -1021,10 +1066,10 @@ export default function HomeScreen() {
             <View style={[styles.waterInputRowFull, { marginTop: 8 }]}>
               <TextInput
                 value={weighInInput}
-                onChangeText={(t) => setWeighInInput(t.replace(/[^0-9.]/g, ''))}
-                placeholder="kg"
+                onChangeText={(t) => setWeighInInput(t.replace(weightUnit === 'st' ? /[^0-9.\s]/g : /[^0-9.]/g, ''))}
+                placeholder={weightUnit === 'kg' ? 'kg' : weightUnit === 'lb' ? 'lb' : 'st lb'}
                 placeholderTextColor={theme.muted}
-                keyboardType="numeric"
+                keyboardType={weightUnit === 'st' ? 'default' : 'numeric'}
                 returnKeyType="done"
                 onSubmitEditing={handleAddWeighIn}
                 style={[styles.waterInputField, { color: theme.text, backgroundColor: isDark ? '#0C1420' : '#FFFFFF', borderColor: weighInInput.length ? accentText : hairline }]}
@@ -1118,6 +1163,7 @@ export default function HomeScreen() {
             <MealLogSheet
               key={editingLog ? `edit-${editingLog.id}` : 'new'}
               visible
+              initialMode={firstScanOpen ? 'scan' : undefined}
               onClose={() => {
                 setShowLogSheet(false);
                 setEditingLog(null);

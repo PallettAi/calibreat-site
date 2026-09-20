@@ -234,7 +234,10 @@ export default function SetupScreen() {
         await setCalorieOverride(null);
         await saveTrueBurnState({});
       } catch {}
-      router.replace('/home');
+      // First-session flow: hand off to Home with the scan-first flag so the
+      // meal sheet opens straight onto the barcode viewfinder — the app's
+      // aha moment — instead of the default search tab.
+      router.replace({ pathname: '/home', params: { first: '1' } });
     } catch {
       setError("Couldn't save your profile. Please try again.");
       setSaving(false);

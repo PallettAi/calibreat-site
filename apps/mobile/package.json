@@ -36,6 +36,7 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-svg": "15.15.4",
+    "react-native-view-shot": "~4.0.3",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.10.1"
   },
@@ -71,6 +72,7 @@
     "check:dates": "node --experimental-strip-types scripts/check-dates.mjs",
     "check:reminders": "node --experimental-strip-types scripts/check-reminders.mjs",
     "check:streak": "node --experimental-strip-types scripts/check-streak.mjs",
+    "check:share": "node --experimental-strip-types scripts/check-share.mjs",
     "check:muscles": "node --experimental-strip-types scripts/check-muscles.mjs",
     "check:workout": "node --experimental-strip-types scripts/check-workout.mjs",
     "check:glyphs": "node --experimental-strip-types scripts/check-glyphs.mjs",

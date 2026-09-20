@@ -1,11 +1,12 @@
 import { Redirect, useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop } from 'react-native-svg';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { WeeklyShareCard, SHARE_CARD_HEIGHT, SHARE_CARD_WIDTH } from '@/components/weekly-share-card';
 import { Brand } from '@/constants/app';
 import { Fonts, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -15,6 +16,10 @@ import { adaptiveHistory, adaptiveTdee, detectPlateau } from '@/lib/nutrition';
 import { getCalorieOverride } from '@/lib/trueburn';
 import { useLicense } from '@/lib/license-context';
 import { burnTrend, loggingCoverage, movingAverage, slopePerWeek, weighSeries } from '@/lib/trends';
+import { buildShareCard } from '@/lib/share-card';
+import { loadStreak } from '@/lib/streak-store';
+import { shareCardImage } from '@/lib/share-card-capture';
+import { emptyStreak, weekPips, type StreakState } from '@/lib/streak';
 
 type Series = { t: number; value: number };
 
@@ -30,17 +35,21 @@ export default function TrendsScreen() {
   const [weighIns, setWeighIns] = useState<{ kg: number; measuredAt: string }[]>([]);
   const [intakeHistory, setIntakeHistory] = useState<{ dayKey: string; kcal: number }[]>([]);
   const [overrideKcal, setOverrideKcal] = useState<number | null>(null);
+  const [streak, setStreak] = useState<StreakState>(() => emptyStreak());
+  const [shareState, setShareState] = useState<'idle' | 'working' | 'error'>('idle');
+  const shareCardRef = useRef<View | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
       (async () => {
-        const [p, g, wi, ih, ov] = await Promise.all([
+        const [p, g, wi, ih, ov, st] = await Promise.all([
           getProfile(),
           getGoals(),
           getWeighIns(60),
           getIntakeHistory(60),
           getCalorieOverride(),
+          loadStreak(),
         ]);
         if (cancelled) return;
         setProfile(p);
@@ -48,6 +57,7 @@ export default function TrendsScreen() {
         setWeighIns(wi.map((x) => ({ kg: x.kg, measuredAt: x.measuredAt })));
         setIntakeHistory(ih);
         setOverrideKcal(ov);
+        setStreak(st);
         setLoaded(true);
       })();
       return () => {
@@ -98,24 +108,65 @@ export default function TrendsScreen() {
   const coverage = loggingCoverage(intakeHistory);
   const dialTarget = overrideKcal ?? goals?.calorieTarget ?? 2000;
 
+  // ── Weekly share card ─────────────────────────────────────────
+  const shareCard = buildShareCard({ streak, coverage, burn });
+  const share = async () => {
+    if (shareState === 'working' || !shareCardRef.current) return;
+    setShareState('working');
+    const result = await shareCardImage(shareCardRef);
+    setShareState(result.ok ? 'idle' : 'error');
+  };
+
   if (!license) return <Redirect href="/" />;
   if (!loaded) return <ThemedView style={styles.container} />;
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
+        {/*
+         * Off-screen capture stage for the share image. Rendered (never
+         * unmounted — captureRef needs a live view), fully transparent,
+         * behind the scroll content, and invisible to accessibility.
+         */}
+        {shareCard.eligible && Platform.OS !== 'web' ? (
+          <View
+            style={[styles.shareCardStage, { width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT }]}
+            pointerEvents="none"
+            importantForAccessibility="no-hide-descendants"
+            aria-hidden
+          >
+            <View ref={shareCardRef} collapsable={false}>
+              <WeeklyShareCard copy={shareCard.copy} litDays={weekPips(streak.current)} />
+            </View>
+          </View>
+        ) : null}
         <ScrollView style={styles.flex} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Pressable
-              onPress={() => router.back()}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              style={({ pressed }) => [styles.backBtn, { borderColor: theme.line }, pressed && styles.pressed]}
-            >
-              <Text style={[styles.backChevron, { color: accentText }]}>‹</Text>
-              <ThemedText type="smallBold">Back</ThemedText>
-            </Pressable>
+            <View style={styles.headerRow}>
+              <Pressable
+                onPress={() => router.back()}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+                style={({ pressed }) => [styles.backBtn, { borderColor: theme.line }, pressed && styles.pressed]}
+              >
+                <Text style={[styles.backChevron, { color: accentText }]}>‹</Text>
+                <ThemedText type="smallBold">Back</ThemedText>
+              </Pressable>
+              {shareCard.eligible && Platform.OS !== 'web' ? (
+                <Pressable
+                  onPress={share}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Share your week as an image"
+                  style={({ pressed }) => [styles.backBtn, { borderColor: theme.line }, pressed && styles.pressed]}
+                >
+                  <ThemedText type="smallBold" style={{ color: accentText }}>
+                    {shareState === 'working' ? 'Preparing…' : shareState === 'error' ? 'Try again' : 'Share week'}
+                  </ThemedText>
+                </Pressable>
+              ) : null}
+            </View>
             <ThemedText type="subtitle" style={styles.title}>
               True Burn trends
             </ThemedText>
@@ -365,6 +416,14 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   header: { gap: Spacing.two },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  shareCardStage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    opacity: 0,
+    overflow: 'hidden',
+  },
   backBtn: {
     alignSelf: 'flex-start',
     flexDirection: 'row',

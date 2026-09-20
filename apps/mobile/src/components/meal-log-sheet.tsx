@@ -24,6 +24,7 @@ import { scanLabel } from '@/lib/label-ocr';
 import { importRecipeUrl } from '@/lib/recipe-fetch';
 import { COFID_FOODS } from '@/lib/cofid-catalog';
 import { COFID_CREDIT, searchFoods } from '@/lib/food-search';
+import { fetchUsdaFoods, parseUsdaSearchPayload } from '@/lib/usda';
 import { previousDayKey } from '@/lib/dates';
 import { MEAL_SLOTS, logDisplayName, type LogEntry, type MealSlot, type RecentMeal } from '@/lib/diary';
 import {
@@ -103,6 +104,7 @@ function specimenFromEdit(editing: LogEntry | null): OffFood | null {
 
 export function MealLogSheet({
   visible,
+  initialMode,
   onClose,
   dayKey,
   dayLabel,
@@ -118,6 +120,8 @@ export function MealLogSheet({
   onDelete,
 }: {
   visible: boolean;
+  /** Which capture tab opens first. 'scan' powers the first-run barcode moment. */
+  initialMode?: Mode;
   onClose: () => void;
   dayKey: string;
   dayLabel: string;
@@ -138,7 +142,7 @@ export function MealLogSheet({
 
   const initialSpecimen = specimenFromEdit(editing);
   const [meal, setMeal] = useState<MealSlot>(editing?.meal ?? defaultMealSlot());
-  const [mode, setMode] = useState<Mode>('search');
+  const [mode, setMode] = useState<Mode>(initialMode ?? 'search');
   const [specimen, setSpecimen] = useState<OffFood | null>(initialSpecimen);
   const [amount, setAmount] = useState(() => (initialSpecimen ? String(defaultAmount(initialSpecimen)) : '1'));
   const [looking, setLooking] = useState(false);
@@ -395,14 +399,18 @@ export function MealLogSheet({
         catalog: COFID_FOODS,
         lookup: fetchOpenFoodFacts,
         parseRemote: (payload) => parseSearchPayload(payload),
+        usdaLookup: fetchUsdaFoods,
+        parseUsda: parseUsdaSearchPayload,
       });
       setSearchHits(hits);
+      // Three distinct states: nothing at all, only generic CoFID, or full results.
+      // packsFailed covers OFF down + USDA exhausted; CoFID is always tried.
       if (!hits.length && packsFailed) {
-        setError('Could not reach the food database. Check the connection and try again.');
+        setError('Could not reach the food databases. Your UK generics could not load — check the connection and try again.');
       } else if (!hits.length) {
-        setError('Nothing matched. Try another name, or scan the pack.');
+        setError(`Nothing matched "${query}" — try another name, or scan the pack.`);
       } else if (packsFailed) {
-        setError('Generic foods loaded. Packaged products didn’t load — check the connection and try again.');
+        setError(`Generic foods loaded for "${query}". Branded packs didn't load — check the connection or try again for more results.`);
       }
     } catch {
       setError('Could not reach the food database. Check the connection and try again.');
@@ -789,9 +797,11 @@ export function MealLogSheet({
                           <Text style={[styles.hitMeta, { color: mutedColor }]}>
                             {hit.source === 'cofid'
                               ? 'UK CoFID · per 100 g'
-                              : hit.portion === 'serving'
-                                ? `Open Food Facts · 1 serving (${hit.portionLabel})`
-                                : 'Open Food Facts · per 100 g'}
+                              : hit.source === 'usda'
+                                ? 'USDA FoodData Central · per 100 g'
+                                : hit.portion === 'serving'
+                                  ? `Open Food Facts · 1 serving (${hit.portionLabel})`
+                                  : 'Open Food Facts · per 100 g'}
                           </Text>
                         </View>
                         <Text style={[styles.hitKcal, { color: accentText }]}>{hit.kcal}</Text>
@@ -799,7 +809,7 @@ export function MealLogSheet({
                     ))}
                   </View>
                 ) : null}
-                <Text style={styles.credit}>{COFID_CREDIT}</Text>
+                <Text style={styles.credit}>{COFID_CREDIT} USDA FoodData Central is a U.S. government open dataset.</Text>
               </View>
             ) : null}
 
