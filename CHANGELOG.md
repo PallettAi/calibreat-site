@@ -184,6 +184,22 @@ someone — all without an account, and all on the device.
   clamped, with a goal of zero treated as "no target" rather than dividing by
   it. Water keeps its own blue rather than borrowing the calorie green: it is
   a different quantity, and the green accent is spent, not filled.
+- **A rejected license now actually locks the app** — validation treated every
+  non-2xx answer as a transient network problem and let the previous verdict
+  stand, so a 403 or a 404 — the server being *reached*, and saying no — was
+  indistinguishable from a dropped connection. Because the license context only
+  clears its state on a definite verdict, that left the paid screens unlocked
+  for anyone whose check happened to hit a blocked or spoofed host. A 4xx is a
+  refusal and now locks; only a 5xx or an unreachable host still fails open,
+  because those genuinely do not know the answer.
+- **Training stopped crashing on the way in** — the screen redirected
+  un-licensed users before three of its `useMemo` calls had run, and React
+  reads a changed hook count as a broken render rather than an early branch,
+  so opening Train mid-check threw "Rendered fewer hooks than expected" and
+  took the root view down with it. `license` can go null at any point — a
+  revalidation, a resume from the background, the device being displaced — so
+  this was reachable rather than theoretical. The guard now sits below the
+  last hook.
 
 ## beta v0.0.4 — Logging without the friction
 
