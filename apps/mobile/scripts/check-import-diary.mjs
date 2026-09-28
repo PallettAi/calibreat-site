@@ -201,6 +201,35 @@ eq('and the conversion is reported, not silent', grams.ok && grams.scan.sodiumWa
 ok('with a note explaining it', grams.ok && grams.scan.notes.some((n) => n.includes('grams')));
 eq('a header that says mg is left alone', mfp.ok && mfp.scan.rows[1].sodiumMg, 1450);
 
+/* ── The unit the header names ─────────────────────────────────── */
+
+const KJ = [
+  'Date,Time,Group,Food Name,Energy (kJ)',
+  '2026-09-10,08:00,Breakfast,Oats,1339',
+  '2026-09-10,19:00,Dinner,Salmon,2176',
+  '',
+].join('\n');
+const kj = readDiaryCsv(KJ);
+ok('a kJ diary still reads', kj.ok);
+eq('kJ is converted to kcal, not copied across', kj.ok && kj.scan.rows[0].kcal, 320);
+eq('and every row converts', kj.ok && kj.scan.rows[1].kcal, 520);
+ok('the conversion is reported', kj.ok && kj.scan.notes.some((n) => n.includes('kJ')));
+eq('a kJ file is still recognised as Cronometer', kj.ok && kj.scan.source, 'cronometer');
+eq('a kcal file is left alone', mfp.ok && mfp.scan.rows[0].kcal, 320);
+
+const SALT = [
+  'Date,Time,Meal,Food Name,Calories,Salt (mg)',
+  '2026-09-10,08:00,Breakfast,Oats,320,450',
+  '2026-09-10,12:00,Lunch,Soup,250,2000',
+  '',
+].join('\n');
+const salt = readDiaryCsv(SALT);
+ok('a salt column still reads', salt.ok);
+eq('salt mg becomes sodium mg (divided by 2.5)', salt.ok && salt.scan.rows[0].sodiumMg, 180);
+eq('and the bigger row too', salt.ok && salt.scan.rows[1].sodiumMg, 800);
+ok('the salt conversion is reported', salt.ok && salt.scan.notes.some((n) => n.includes('Salt')));
+eq('a real sodium column is untouched by the salt rule', mfp.ok && mfp.scan.rows[1].sodiumMg, 1450);
+
 const UNMAPPED = [
   'Date,Time,Group,Food Name,Energy (kcal)',
   '2026-09-10,22:00,Supper,Toast,200',

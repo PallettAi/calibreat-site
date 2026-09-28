@@ -17,7 +17,7 @@
  * | time         | Time                | Time of Day         |
  * | slot         | Meal                | Group               |
  * | name         | Food Name           | Food Name           |
- * | kcal         | Calories            | Energy (kcal)       |
+ * | kcal         | Calories            | Energy (kcal)/(kJ)  |
  * | carbs        | Carbohydrates (g)   | Carbs (g)           |
  *
  * Columns are matched by alias rather than by position, because both apps have
@@ -85,6 +85,11 @@ export type DiaryParse =
 export const IMPORT_MAX_BYTES = 25 * 1024 * 1024;
 /** Mirrors RESTORE_MAX_ROWS in restore.ts (drift-checked in CI). */
 export const IMPORT_MAX_ROWS = 250_000;
+
+/** 1 kcal = 4.184 kJ. A kJ energy column read as kcal overstates a day 4.18x. */
+const KJ_PER_KCAL = 4.184;
+/** Salt is sodium x 2.5, so 1 mg of salt is 0.4 mg of sodium. */
+const SODIUM_MG_PER_SALT_MG = 0.4;
 
 /* ── CSV ───────────────────────────────────────────────────────── */
 
@@ -316,7 +321,7 @@ function sodiumHeaderSaidMg(headers: string[]): boolean {
 
 function detectSource(headers: string[]): DiarySource {
   const joined = headers.map(normalizeHeader);
-  if (joined.some((h) => h.includes('energy (kcal)') || h === 'energy')) return 'cronometer';
+  if (joined.some((h) => h.includes('energy (kcal)') || h.includes('energy (kj)') || h === 'energy')) return 'cronometer';
   if (joined.some((h) => h.startsWith('carbohydrates'))) return 'myfitnesspal';
   return 'unknown';
 }
@@ -401,6 +406,17 @@ export function readDiaryCsv(text: string, dateOrderOverride?: DateOrder): Diary
     return { ok: false, message: 'That file has no date column. Pick a diary CSV that includes dates.' };
   }
 
+  // The header's own unit is honoured, because the two readings differ by 4.18x
+  // and neither looks impossible in a day's total: a 1,339 kJ breakfast read as
+  // kcal is a whole day's budget from one bowl of oats, and nothing downstream
+  // can tell it was the unit and not the meal.
+  const kcalHeader = index.kcal === undefined ? '' : (normalized[index.kcal] ?? '');
+  const energyInKj = /\bkj\b/.test(kcalHeader);
+  // Likewise a UK-style "Salt" column: salt is sodium x 2.5, so reading it as
+  // sodium overstates the day by that factor. Converted, never trusted raw.
+  const sodiumHeader = index.sodiumMg === undefined ? '' : (normalized[index.sodiumMg] ?? '');
+  const sodiumColumnIsSalt = sodiumHeader.includes('salt');
+
   const dataRows = table.slice(1);
   const detected = detectDateOrder(dataRows, index.dayKey);
   const order = dateOrderOverride ?? detected.order;
@@ -421,11 +437,12 @@ export function readDiaryCsv(text: string, dateOrderOverride?: DateOrder): Diary
       continue;
     }
 
-    const kcal = readNumber(cell(row, index.kcal));
-    if (kcal === null) {
+    const rawKcal = readNumber(cell(row, index.kcal));
+    if (rawKcal === null) {
       unusable += 1;
       continue;
     }
+    const kcal = energyInKj ? Math.round(rawKcal / KJ_PER_KCAL) : rawKcal;
 
     const minutes = minutesFrom(cell(row, index.loggedAt));
     if (minutes === null) rowsWithNoTime += 1;
@@ -482,9 +499,11 @@ export function readDiaryCsv(text: string, dateOrderOverride?: DateOrder): Diary
   const sodiumHeaderMg = sodiumHeaderSaidMg(headers);
   const sodiumWasGrams =
     !sodiumHeaderMg && sodiumValues.length > 0 && sodiumValues.every((v) => v > 0 && v < 20);
-  if (sodiumWasGrams) {
+  if (sodiumWasGrams || sodiumColumnIsSalt) {
     for (const row of rows) {
-      if (row.sodiumMg !== null) row.sodiumMg = row.sodiumMg * 1000;
+      if (row.sodiumMg === null) continue;
+      const mg = (sodiumWasGrams ? row.sodiumMg * 1000 : row.sodiumMg) * (sodiumColumnIsSalt ? SODIUM_MG_PER_SALT_MG : 1);
+      row.sodiumMg = Math.round(mg * 10) / 10;
     }
   }
 
@@ -498,6 +517,8 @@ export function readDiaryCsv(text: string, dateOrderOverride?: DateOrder): Diary
     humanNotes.push(`${groups.size === 1 ? 'One meal group' : `${groups.size} meal groups`} had no slot, so they became snacks.`);
   }
   if (sodiumWasGrams) humanNotes.push('Sodium was in grams and has been converted to mg.');
+  if (energyInKj) humanNotes.push('Energy was in kJ and has been converted to kcal.');
+  if (sodiumColumnIsSalt) humanNotes.push('Salt has been converted to sodium (salt ÷ 2.5).');
   if (rowsWithNoTime) {
     humanNotes.push(`${rowsWithNoTime} ${rowsWithNoTime === 1 ? 'row had' : 'rows had'} no time and were placed at midday.`);
   }
