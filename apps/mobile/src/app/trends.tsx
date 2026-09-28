@@ -6,7 +6,7 @@ import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop } from 'react-nativ
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { WeeklyShareCard, SHARE_CARD_HEIGHT, SHARE_CARD_WIDTH } from '@/components/weekly-share-card';
+import { ShareCardStage } from '@/components/share-card';
 import { Brand } from '@/constants/app';
 import { Fonts, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -16,9 +16,10 @@ import { adaptiveHistory, adaptiveTdee, detectPlateau } from '@/lib/nutrition';
 import { getCalorieOverride } from '@/lib/trueburn';
 import { useLicense } from '@/lib/license-context';
 import { burnTrend, loggingCoverage, movingAverage, slopePerWeek, weighSeries } from '@/lib/trends';
-import { buildShareCard } from '@/lib/share-card';
+import { buildShareCard, shareDateLabel } from '@/lib/share-card';
 import { loadStreak } from '@/lib/streak-store';
 import { shareCardImage } from '@/lib/share-card-capture';
+import { DEFAULT_SHARE_FORMAT, DEFAULT_SHARE_TEMPLATE, type ShareFormatId, type ShareTemplateId } from '@/lib/share-templates';
 import { emptyStreak, weekPips, type StreakState } from '@/lib/streak';
 
 type Series = { t: number; value: number };
@@ -38,6 +39,10 @@ export default function TrendsScreen() {
   const [streak, setStreak] = useState<StreakState>(() => emptyStreak());
   const [shareState, setShareState] = useState<'idle' | 'working' | 'error'>('idle');
   const shareCardRef = useRef<View | null>(null);
+  // Shape + look of the image. Same defaults as the streak sheet, so the card
+  // a user gets from Trends is the card they get from Home.
+  const [shareFormat, setShareFormat] = useState<ShareFormatId>(DEFAULT_SHARE_FORMAT);
+  const [shareTemplate, setShareTemplate] = useState<ShareTemplateId>(DEFAULT_SHARE_TEMPLATE);
 
   useFocusEffect(
     useCallback(() => {
@@ -113,7 +118,7 @@ export default function TrendsScreen() {
   const share = async () => {
     if (shareState === 'working' || !shareCardRef.current) return;
     setShareState('working');
-    const result = await shareCardImage(shareCardRef);
+    const result = await shareCardImage(shareCardRef, { format: shareFormat, template: shareTemplate });
     setShareState(result.ok ? 'idle' : 'error');
   };
 
@@ -127,18 +132,31 @@ export default function TrendsScreen() {
          * Off-screen capture stage for the share image. Rendered (never
          * unmounted — captureRef needs a live view), fully transparent,
          * behind the scroll content, and invisible to accessibility.
+         *
+         * `loggedDays` below is sliced to the trailing 7 on purpose: the Grid
+         * layout renders it 7 per row, and intakeHistory is the dense 60-day
+         * array that also feeds True Burn — passing it whole drew a 9-row
+         * calendar and a "12/60 LOGGED" header. The array itself stays 60 days.
          */}
         {shareCard.eligible && Platform.OS !== 'web' ? (
-          <View
-            style={[styles.shareCardStage, { width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT }]}
-            pointerEvents="none"
-            importantForAccessibility="no-hide-descendants"
-            aria-hidden
-          >
-            <View ref={shareCardRef} collapsable={false}>
-              <WeeklyShareCard copy={shareCard.copy} litDays={weekPips(streak.current)} />
-            </View>
-          </View>
+          <ShareCardStage
+            cardRef={shareCardRef}
+            format={shareFormat}
+            template={shareTemplate}
+            copy={shareCard.copy}
+            hero={shareCard.hero}
+            rows={shareCard.rows}
+            eyebrow={shareCard.eyebrow}
+            achievement={shareCard.achievement}
+            status={shareCard.status}
+            best={shareCard.best}
+            progress={shareCard.progress}
+            dateLabel={shareDateLabel(new Date())}
+            litDays={weekPips(streak.current)}
+            loggedDays={intakeHistory.slice(-7).map((point) => point.kcal > 0)}
+            burnPoints={burnHistory.map((point) => point.measuredTdee)}
+            burnEst={adaptive?.estimatedTdee}
+          />
         ) : null}
         <ScrollView style={styles.flex} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
@@ -417,13 +435,6 @@ const styles = StyleSheet.create({
   },
   header: { gap: Spacing.two },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  shareCardStage: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    opacity: 0,
-    overflow: 'hidden',
-  },
   backBtn: {
     alignSelf: 'flex-start',
     flexDirection: 'row',

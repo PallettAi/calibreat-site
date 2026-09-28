@@ -45,7 +45,7 @@ import {
   savedMealMeta,
 } from '@/lib/saved-meals';
 
-type Mode = 'scan' | 'search' | 'label' | 'web';
+type Mode = 'scan' | 'search' | 'label' | 'web' | 'quick';
 
 function defaultMealSlot(date = new Date()): MealSlot {
   const hour = date.getHours();
@@ -155,6 +155,13 @@ export function MealLogSheet({
   const [labelBusy, setLabelBusy] = useState(false);
   const [recipeUrl, setRecipeUrl] = useState('');
   const [recipeBusy, setRecipeBusy] = useState(false);
+  // Quick-add: name + raw kcal/P/C/F, no search needed (shakes, supplements).
+  const [quickName, setQuickName] = useState('');
+  const [quickKcal, setQuickKcal] = useState('');
+  const [quickP, setQuickP] = useState('');
+  const [quickC, setQuickC] = useState('');
+  const [quickF, setQuickF] = useState('');
+  const [quickSaving, setQuickSaving] = useState(false);
 
   // Repeat-eater shortcut (see src/lib/saved-meals.ts). The chip list, the
   // "save this meal" input and the copy-yesterday action all describe the slot
@@ -263,14 +270,21 @@ export function MealLogSheet({
     setLooking(true);
     setError(null);
     try {
-      const food = await lookupBarcode(code);
-      if (!food) {
-        setError('No energy data on that pack. Search for a similar food instead.');
-        setMode('search');
+      const result = await lookupBarcode(code);
+      if (result.status === 'found') {
+        dockFood(result.food);
+        setMode('scan');
         return;
       }
-      dockFood(food);
-      setMode('scan');
+      // Both outcomes go to search, because the bundled CoFID generics are
+      // on-device and still work with no connection at all. What differs is
+      // what we tell the user: being offline is not evidence about the pack.
+      setMode('search');
+      setError(
+        result.status === 'unreachable'
+          ? "Couldn't reach the food database. Your generic foods still work — search below, or scan again once you have a connection."
+          : 'No energy data on that pack. Search for a similar food instead.',
+      );
     } catch {
       setError('Could not reach the food database. Check the connection and try again.');
     } finally {
@@ -395,7 +409,7 @@ export function MealLogSheet({
     setError(null);
     setSpecimen(null);
     try {
-      const { hits, packsFailed } = await searchFoods(query, {
+      const { hits, packsFailed, usdaFailed } = await searchFoods(query, {
         catalog: COFID_FOODS,
         lookup: fetchOpenFoodFacts,
         parseRemote: (payload) => parseSearchPayload(payload),
@@ -404,12 +418,14 @@ export function MealLogSheet({
       });
       setSearchHits(hits);
       // Three distinct states: nothing at all, only generic CoFID, or full results.
-      // packsFailed covers OFF down + USDA exhausted; CoFID is always tried.
-      if (!hits.length && packsFailed) {
+      // Either remote source being dark makes an empty list inconclusive, so
+      // "nothing matched" is only ever said when both were actually asked.
+      const degraded = packsFailed || usdaFailed;
+      if (!hits.length && degraded) {
         setError('Could not reach the food databases. Your UK generics could not load — check the connection and try again.');
       } else if (!hits.length) {
         setError(`Nothing matched "${query}" — try another name, or scan the pack.`);
-      } else if (packsFailed) {
+      } else if (degraded) {
         setError(`Generic foods loaded for "${query}". Branded packs didn't load — check the connection or try again for more results.`);
       }
     } catch {
@@ -451,6 +467,53 @@ export function MealLogSheet({
     }
   }
 
+  async function handleQuickAdd() {
+    const name = quickName.trim();
+    if (!name || name.length < 2) {
+      setError('Give this a name — e.g. Protein shake.');
+      return;
+    }
+    const kcal = Math.max(0, Math.round(Number(quickKcal.replace(',', '.')) || 0));
+    if (!Number.isFinite(kcal) || kcal <= 0) {
+      setError('Add the calories for this serving.');
+      return;
+    }
+    const p = quickP.trim() === '' ? null : Math.max(0, Math.round(Number(quickP.replace(',', '.'))));
+    const c = quickC.trim() === '' ? null : Math.max(0, Math.round(Number(quickC.replace(',', '.'))));
+    const f = quickF.trim() === '' ? null : Math.max(0, Math.round(Number(quickF.replace(',', '.'))));
+    if ([p, c, f].some((v) => v != null && !Number.isFinite(v))) {
+      setError('Check the protein, carbs and fat — numbers only.');
+      return;
+    }
+    setQuickSaving(true);
+    setError(null);
+    try {
+      await onSave({
+        dayKey,
+        meal,
+        name,
+        kcal,
+        proteinG: p,
+        carbsG: c,
+        fatG: f,
+        fiberG: null,
+        sugarG: null,
+        satFatG: null,
+        sodiumMg: null,
+      });
+      setQuickName('');
+      setQuickKcal('');
+      setQuickP('');
+      setQuickC('');
+      setQuickF('');
+      onClose();
+    } catch {
+      setError('Could not log this. Try again.');
+    } finally {
+      setQuickSaving(false);
+    }
+  }
+
   async function handleDelete() {
     if (!editing || !onDelete) return;
     setSaving(true);
@@ -467,7 +530,20 @@ export function MealLogSheet({
   const nativeScan = Platform.OS !== 'web';
   const canLock = scaled != null && scaled.kcal > 0;
   const showCamera = nativeScan && mode === 'scan' && !specimen && !looking && permission?.granted;
-  const wellLabel = looking || searching ? 'READING' : specimen ? 'LOCKED READING' : mode === 'search' ? 'SEARCH' : mode === 'label' ? 'LABEL SCAN' : mode === 'web' ? 'WEB RECIPE' : 'VIEWFINDER';
+  const wellLabel =
+    mode === 'quick'
+      ? 'QUICK ADD'
+      : looking || searching
+        ? 'READING'
+        : specimen
+          ? 'LOCKED READING'
+          : mode === 'search'
+            ? 'SEARCH'
+            : mode === 'label'
+              ? 'LABEL SCAN'
+              : mode === 'web'
+                ? 'WEB RECIPE'
+                : 'VIEWFINDER';
   const inkOnAccent = isDark ? '#0A1019' : '#FFFFFF';
   const trackBg = isDark ? '#0B121C' : '#EEF0EC';
 
@@ -504,9 +580,10 @@ export function MealLogSheet({
             <SlidingBand
               values={[
                 { id: 'search', label: 'Search' },
-                { id: 'scan', label: 'Scan pack' },
+                { id: 'scan', label: 'Scan' },
                 { id: 'label', label: 'Label' },
                 { id: 'web', label: 'Web' },
+                { id: 'quick', label: 'Quick' },
               ]}
               selected={mode}
               onChange={switchMode}
@@ -644,9 +721,63 @@ export function MealLogSheet({
                     barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128'] }}
                     onBarcodeScanned={onBarcodeScanned}
                   />
-                  <View style={styles.reticleWrap} pointerEvents="none">
+                  <View style={[styles.reticleWrap, { pointerEvents: 'none' }]}>
                     <Reticle />
                   </View>
+                </View>
+              ) : mode === 'quick' ? (
+                <View style={styles.quickWell}>
+                  <Text style={styles.finderHint}>
+                    Type the name and numbers straight from the label — no search needed. Ideal for shakes and supplements.
+                  </Text>
+                  <TextInput
+                    value={quickName}
+                    onChangeText={setQuickName}
+                    placeholder="Name — e.g. Protein shake"
+                    placeholderTextColor={mutedColor}
+                    returnKeyType="next"
+                    style={[styles.manualInput, styles.quickNameInput, { color: textColor, borderColor: hairline, backgroundColor: isDark ? '#0C1420' : '#F6F7F4' }]}
+                  />
+                  <View style={styles.quickGrid}>
+                    <TextInput
+                      value={quickKcal}
+                      onChangeText={(t) => setQuickKcal(t.replace(/[^0-9.,]/g, ''))}
+                      placeholder="kcal *"
+                      placeholderTextColor={mutedColor}
+                      keyboardType="decimal-pad"
+                      returnKeyType="next"
+                      style={[styles.manualInput, styles.quickNumInput, { color: textColor, borderColor: hairline, backgroundColor: isDark ? '#0C1420' : '#F6F7F4' }]}
+                    />
+                    <TextInput
+                      value={quickP}
+                      onChangeText={(t) => setQuickP(t.replace(/[^0-9.,]/g, ''))}
+                      placeholder="P g"
+                      placeholderTextColor={mutedColor}
+                      keyboardType="decimal-pad"
+                      returnKeyType="next"
+                      style={[styles.manualInput, styles.quickNumInput, { color: textColor, borderColor: hairline, backgroundColor: isDark ? '#0C1420' : '#F6F7F4' }]}
+                    />
+                    <TextInput
+                      value={quickC}
+                      onChangeText={(t) => setQuickC(t.replace(/[^0-9.,]/g, ''))}
+                      placeholder="C g"
+                      placeholderTextColor={mutedColor}
+                      keyboardType="decimal-pad"
+                      returnKeyType="next"
+                      style={[styles.manualInput, styles.quickNumInput, { color: textColor, borderColor: hairline, backgroundColor: isDark ? '#0C1420' : '#F6F7F4' }]}
+                    />
+                    <TextInput
+                      value={quickF}
+                      onChangeText={(t) => setQuickF(t.replace(/[^0-9.,]/g, ''))}
+                      placeholder="F g"
+                      placeholderTextColor={mutedColor}
+                      keyboardType="decimal-pad"
+                      returnKeyType="done"
+                      onSubmitEditing={() => void handleQuickAdd()}
+                      style={[styles.manualInput, styles.quickNumInput, { color: textColor, borderColor: hairline, backgroundColor: isDark ? '#0C1420' : '#F6F7F4' }]}
+                    />
+                  </View>
+                  <Text style={[styles.quickFoot, { color: mutedColor }]}>Calories required. Protein, carbs and fat are optional — leave blank if not on the label.</Text>
                 </View>
               ) : specimen ? (
                 <SpecimenDock
@@ -838,21 +969,43 @@ export function MealLogSheet({
             </ScrollView>
 
             <View style={[styles.actions, { borderTopColor: hairline }]}>
-              {editing && onDelete ? (
-                <CrispPress onPress={() => void handleDelete()} disabled={saving} innerStyle={[styles.ghostBtn, { borderColor: 'rgba(214,69,69,0.35)' }]}>
-                  <Text style={styles.deleteText}>Remove</Text>
-                </CrispPress>
-              ) : null}
-              <CrispPress
-                onPress={() => void handleSave()}
-                disabled={saving || !canLock}
-                scaleTo={0.98}
-                style={styles.lockWrap}
-                innerStyle={[styles.lockBtn, { backgroundColor: accentText }]}
-              >
-                <View style={styles.lockSheen} />
-                <Text style={[styles.lockText, { color: inkOnAccent }]}>{saving ? 'Locking…' : 'Lock in'}</Text>
-              </CrispPress>
+              {mode === 'quick' ? (
+                <>
+                  {editing && onDelete ? (
+                    <CrispPress onPress={() => void handleDelete()} disabled={saving || quickSaving} innerStyle={[styles.ghostBtn, { borderColor: 'rgba(214,69,69,0.35)' }]}>
+                      <Text style={styles.deleteText}>Remove</Text>
+                    </CrispPress>
+                  ) : null}
+                  <CrispPress
+                    onPress={() => void handleQuickAdd()}
+                    disabled={quickSaving || !quickName.trim() || !(Number(quickKcal.replace(',', '.')) > 0)}
+                    scaleTo={0.98}
+                    style={styles.lockWrap}
+                    innerStyle={[styles.lockBtn, { backgroundColor: accentText, opacity: quickSaving ? 0.7 : 1 }]}
+                  >
+                    <View style={styles.lockSheen} />
+                    <Text style={[styles.lockText, { color: inkOnAccent }]}>{quickSaving ? 'Logging…' : `Log to ${slotLabel}`}</Text>
+                  </CrispPress>
+                </>
+              ) : (
+                <>
+                  {editing && onDelete ? (
+                    <CrispPress onPress={() => void handleDelete()} disabled={saving} innerStyle={[styles.ghostBtn, { borderColor: 'rgba(214,69,69,0.35)' }]}>
+                      <Text style={styles.deleteText}>Remove</Text>
+                    </CrispPress>
+                  ) : null}
+                  <CrispPress
+                    onPress={() => void handleSave()}
+                    disabled={saving || !canLock}
+                    scaleTo={0.98}
+                    style={styles.lockWrap}
+                    innerStyle={[styles.lockBtn, { backgroundColor: accentText }]}
+                  >
+                    <View style={styles.lockSheen} />
+                    <Text style={[styles.lockText, { color: inkOnAccent }]}>{saving ? 'Locking…' : 'Lock in'}</Text>
+                  </CrispPress>
+                </>
+              )}
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -884,7 +1037,10 @@ function SlidingBand<T extends string>({
 }) {
   const index = Math.max(0, values.findIndex((v) => v.id === selected));
   const [trackW, setTrackW] = useState(0);
-  const slide = useRef(new Animated.Value(index)).current;
+  // Lazy, so the Animated.Value is built once instead of on every render of
+  // this sheet. Same first value either way, and the effect below springs to
+  // the current index on mount as well as on change.
+  const [slide] = useState(() => new Animated.Value(index));
 
   useEffect(() => {
     Animated.spring(slide, { toValue: index, useNativeDriver: true, friction: 8, tension: 170 }).start();
@@ -901,10 +1057,10 @@ function SlidingBand<T extends string>({
     >
       {cell > 0 ? (
         <Animated.View
-          pointerEvents="none"
           style={[
             styles.bandPill,
             compact && styles.bandPillCompact,
+            { pointerEvents: 'none' },
             {
               width: cell,
               backgroundColor: pillColor,
@@ -1098,6 +1254,10 @@ const styles = StyleSheet.create({
   searchWell: { minHeight: 120, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18, paddingVertical: 16 },
   labelWell: { minHeight: 120, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 18, paddingVertical: 16 },
   labelActions: { flexDirection: 'row', gap: 10, alignSelf: 'stretch' as const },
+  quickWell: { gap: 10, paddingHorizontal: 14, paddingVertical: 12, alignItems: 'stretch' as const },
+  quickGrid: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 8 },
+  quickNameInput: { minHeight: 46 },
+  quickNumInput: { minWidth: 64, flexBasis: '22%' as const, flexGrow: 1 as const, textAlign: 'center' as const },
   webNote: { fontSize: 11, lineHeight: 15, textAlign: 'center' as const },
   labelBtn: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 16, borderWidth: 1.5 },
   labelBtnText: { fontSize: 13, fontWeight: '800' },

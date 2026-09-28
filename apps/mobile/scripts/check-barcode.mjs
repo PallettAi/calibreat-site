@@ -1,7 +1,7 @@
 /**
  * Accuracy checks for Open Food Facts → log-entry mapping (npm run check:barcode).
  */
-import { parseOffProduct, scaleFood, shouldRememberLookup } from '../src/lib/barcode.ts';
+import { lookupBarcode, parseOffProduct, scaleFood } from '../src/lib/barcode.ts';
 
 let fails = 0;
 const eq = (label, got, want) => {
@@ -89,8 +89,64 @@ const kjOnly = parseOffProduct({
 });
 eq('kJ converted to kcal', kjOnly?.kcal, 350);
 
-eq('hits are remembered', shouldRememberLookup(per100), true);
-eq('misses are not remembered so a later retry can succeed', shouldRememberLookup(null), false);
+/* Offline vs. genuinely-unlabelled. These drive the real `fetch` through a
+ * stub, because the whole point is what happens when the request never lands. */
+
+const realFetch = globalThis.fetch;
+const jsonOk = (payload) => ({ ok: true, status: 200, json: async () => payload });
+const httpSays = (status) => ({ ok: false, status, json: async () => ({}) });
+const goesDark = () => {
+  throw new TypeError('Network request failed');
+};
+const stubFetch = (handler) => {
+  globalThis.fetch = async (url) => handler(String(url));
+};
+
+const MISS = '11111111';
+stubFetch(() => httpSays(404));
+eq('two mirrors both answering 404 is a missing product', (await lookupBarcode(MISS)).status, 'not-found');
+
+let missCalls = 0;
+stubFetch(() => {
+  missCalls += 1;
+  return httpSays(404);
+});
+eq('an answered miss is served from cache on re-scan', (await lookupBarcode(MISS)).status, 'not-found');
+eq('...and costs no further requests', missCalls, 0);
+
+// One mirror down is not a dead lookup: the other deployment still answers.
+const HALF = '22222222';
+stubFetch((url) => (url.includes('uk.openfoodfacts') ? goesDark() : httpSays(404)));
+eq('one dead mirror, one answering 404, is still a missing product', (await lookupBarcode(HALF)).status, 'not-found');
+
+const DARK = '33333333';
+stubFetch(goesDark);
+eq('no connection at all is not a missing product', (await lookupBarcode(DARK)).status, 'unreachable');
+
+// The regression this all exists for: a pack first seen in a tunnel must not
+// stay unscannable for the length of the negative-cache window.
+const TUNNEL = '44444444';
+stubFetch(goesDark);
+eq('scanning offline reports unreachable', (await lookupBarcode(TUNNEL)).status, 'unreachable');
+let backCalls = 0;
+stubFetch((url) => {
+  backCalls += 1;
+  if (url.includes('uk.openfoodfacts')) return goesDark();
+  return jsonOk({
+    status: 1,
+    code: TUNNEL,
+    product: { product_name: 'Tunnelled crisps', brands: '', nutriments: { 'energy-kcal_100g': 42 } },
+  });
+});
+const recovered = await lookupBarcode(TUNNEL);
+eq('a pack missed while offline is not negatively cached', backCalls > 0, true);
+eq('...so the very next scan actually asks again', recovered.status, 'found');
+eq('...and gets the pack', recovered.food?.kcal, 42);
+
+stubFetch(() => httpSays(404));
+eq('a short code is rejected without touching the network', (await lookupBarcode('123')).status, 'not-found');
+
+globalThis.fetch = realFetch;
 
 eq('serving base unit', serving?.portion, 'serving');
 eq('serving grams parsed', serving?.servingGrams, 150);

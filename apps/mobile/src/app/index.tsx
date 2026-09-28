@@ -33,11 +33,24 @@ import {
 } from '@/lib/license';
 import { useLicense } from '@/lib/license-context';
 
+/** What the app does, in the reader's terms. The privacy sentence used to be
+ *  the fourth bullet here, behind a checkmark — a disclosure wearing the
+ *  decoration of a feature, which lends it a confidence the rest of the list
+ *  is actually earned. It is stated plainly in the fine print instead. */
 const FEATURES = [
   'Log meals, snacks & water in seconds',
   'Scan barcodes from a free food database',
   'Calorie & macro goals that adapt to you',
-  'No customer data collected — signup details stored in a secure third-party database',
+];
+
+/** The instrument's spec plate, in the same register as the dial on Home.
+ *  Facts rather than adjectives, because the two claims this screen has to
+ *  earn — that it is paid for once and that the data stays put — are exactly
+ *  the ones a competitor can copy in a sentence. */
+const SPECS: [string, string][] = [
+  ['LIFETIME', 'One payment, once. No subscription and no renewal to forget.'],
+  ['ON-DEVICE', 'Your diary, weigh-ins and photos never leave the phone.'],
+  ['TRUE BURN', 'Learns your burn from your own weigh-ins, not a formula.'],
 ];
 
 type Step = 'email' | 'otp' | 'code';
@@ -446,11 +459,29 @@ export default function LockScreen() {
                     pressed && styles.buttonPressed,
                   ]}>
                   <ThemedText type="smallBold" style={styles.storeButtonText}>
-                    Don't have a license? Click here to buy yours.
+                    {/* A typographic apostrophe, not `&apos;`: the lint rule
+                        suggests the entity, but React Native does not decode
+                        HTML entities, so that would render as the literal text
+                        "&apos;". */}
+                    Don’t have a license? Click here to buy yours.
                   </ThemedText>
                 </Pressable>
               </ExternalLink>
             </ThemedView>
+
+            {/* ── Spec plate ──────────────────────────────────────── */}
+            <View style={[styles.specPlate, { borderColor: theme.line }]}>
+              {SPECS.map(([label, value], i) => (
+                <View
+                  key={label}
+                  style={[styles.specRow, i > 0 ? { borderTopWidth: 1, borderTopColor: theme.line } : null]}>
+                  <Text style={[styles.specLabel, { color: accentText }]}>{label}</Text>
+                  <ThemedText type="small" themeColor="textSecondary" style={styles.specValue}>
+                    {value}
+                  </ThemedText>
+                </View>
+              ))}
+            </View>
 
             {/* ── What you get ─────────────────────────────────────── */}
             <View style={styles.features}>
@@ -470,6 +501,9 @@ export default function LockScreen() {
               style={styles.finePrint}>
               One-time payment · Instant email delivery · 1 active device. Deactivate on
               this device to move, or email support if that device is gone.
+              {'\n\n'}
+              Nothing about your eating is collected. Only the email you sign up with is
+              held, in a third-party database, so the license can be delivered to you.
             </ThemedText>
 
             {devMode ? (
@@ -645,6 +679,33 @@ const styles = StyleSheet.create({
   },
   storeButtonText: {
     textAlign: 'center',
+  },
+  specPlate: {
+    marginTop: Spacing.five,
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: Spacing.three + 2,
+    overflow: 'hidden',
+  },
+  specRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.three,
+    paddingVertical: Spacing.three,
+  },
+  // Fixed column so the three values start on the same x, the way a nameplate
+  // does — the eye should scan one edge, not hunt for where each line begins.
+  specLabel: {
+    width: 78,
+    fontFamily: Fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1,
+    lineHeight: 18,
+    paddingTop: 1,
+  },
+  specValue: {
+    flex: 1,
+    lineHeight: 18,
   },
   features: {
     gap: Spacing.three,

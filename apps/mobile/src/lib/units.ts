@@ -84,7 +84,17 @@ export function weightFromKg(kg: number, unit: WeightUnit): { value: number; sto
       return { value: Math.round(kg * LB_PER_KG), stones: 0, pounds: 0 };
     case 'st': {
       const totalLb = kg * LB_PER_KG;
-      return { value: 0, stones: Math.floor(totalLb / LB_PER_STONE), pounds: Math.round(totalLb % LB_PER_STONE) };
+      const stones = Math.floor(totalLb / LB_PER_STONE);
+      const remainder = Math.round(totalLb % LB_PER_STONE);
+      // A remainder that rounds up to a full 14 lb is not a valid weight, so
+      // carry it into the next stone. 63.5 kg is exactly 10 st, but
+      // 63.5 × 2.2046 = 139.993 lb, which floors to "9 st 14 lb" — and setup.tsx
+      // prefills from here while validateStep rejects lb > 13, so the wizard
+      // refused its own prefill and deadlocked.
+      if (remainder >= LB_PER_STONE) {
+        return { value: 0, stones: stones + 1, pounds: remainder - LB_PER_STONE };
+      }
+      return { value: 0, stones, pounds: remainder };
     }
   }
 }
@@ -100,6 +110,50 @@ export function formatWeightKg(kg: number, unit: WeightUnit): string {
     case 'st':
       return w.pounds === 0 ? `${w.stones} st` : `${w.stones} st ${w.pounds} lb`;
   }
+}
+
+/* ── Typed input ────────────────────────────────────────────────── */
+
+/**
+ * Normalise a typed number for `parseFloat`, which stops at the first
+ * separator it does not recognise — "2,5" parsed as 2, and "1,000" as 1.
+ * A dot settles the question: the commas can only be thousands separators.
+ * Failing one, a comma followed by exactly three digits also groups thousands
+ * ("1,000" is 1000, not 1.0), while one or two digits after it means a
+ * decimal comma ("2,5" is 2.5).
+ */
+export function normalizeDecimalNumber(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) return trimmed;
+  if (trimmed.includes('.')) return trimmed.replace(/,/g, '');
+  if (/\d,\d{3}(?!\d)/.test(trimmed)) return trimmed.replace(/,/g, '');
+  return trimmed.replace(/,/g, '.');
+}
+
+/**
+ * Parse a typed weight into kg, or null when it cannot be read with
+ * confidence. Accepts "70.5", "70,5", "9 6" and "9,6" for the unit given.
+ *
+ * Stones take two fields rather than one decimal, so the comma is a separator
+ * there ("9,6" is 9 st 6 lb) and never a decimal point.
+ *
+ * Anything unreadable returns null instead of a best guess. The failure mode
+ * is not a crash, it is a confident wrong number: "10 500" is 10 st 500 lb,
+ * which converts to 290 kg and passes any plausibility check, and rounding a
+ * single value can land the remainder on a full 14 lb ("9.99" -> 13.86 -> 14).
+ * Both used to convert straight through and record a weight nobody entered.
+ */
+export function parseWeightInput(text: string, unit: WeightUnit): number | null {
+  const source = unit === 'st' ? text.replace(/,/g, ' ') : normalizeDecimalNumber(text);
+  const nums = source.match(/\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+  if (!nums.length) return null;
+  if (unit === 'kg') return weightToKg(0, 0, nums[0]!, 'kg');
+  if (unit === 'lb') return weightToKg(0, 0, nums[0]!, 'lb');
+  const stones = Math.floor(nums[0]!);
+  const pounds = nums.length >= 2 ? Math.round(nums[1]!) : Math.round((nums[0]! - stones) * LB_PER_STONE);
+  // A stone is exactly 14 lb, so the pounds half can only be 0-13.
+  if (pounds < 0 || pounds >= LB_PER_STONE) return null;
+  return weightToKg(stones, pounds, 0, 'st');
 }
 
 /* ── Water ──────────────────────────────────────────────────────── */

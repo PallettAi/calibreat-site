@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>calibrEAT — share card preview</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 42px 32px 72px;
+    background: #05080D; color: #EEF2F5;
+    font-family: ui-rounded, -apple-system, "SF Pro Rounded", system-ui, sans-serif;
+  }
+  header, #gallery, .footnote { max-width: 1180px; margin-left: auto; margin-right: auto; }
+  h1 { font-size: 22px; letter-spacing: -0.3px; margin: 0 0 8px; }
+  h1 span { color: #B7E93C; }
+  .lede { color: #A7B2BC; font-size: 13.5px; line-height: 1.55; max-width: 820px; margin: 0 0 12px; }
+  .lede code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; color: #CBD5DC; background: rgba(255,255,255,.06); padding: 1px 5px; border-radius: 5px; }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; color: #A7B2BC; font-size: 12.5px; cursor: pointer; user-select: none; }
+  .toggle input { accent-color: #B7E93C; }
+  #gallery { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 34px 30px; align-items: flex-start; }
+  .item { display: flex; flex-direction: column; gap: 10px; }
+  .frame {
+    position: relative; align-self: flex-start; border-radius: 22px; overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.07);
+  }
+  .cap { color: #8B98A5; font-size: 12px; letter-spacing: .4px; }
+  .cap b { color: #EEF2F5; font-weight: 700; }
+  .guide { position: absolute; left: 0; right: 0; border-top: 1.5px dashed rgba(183,233,60,.55); display: none; z-index: 3; pointer-events: none; }
+  .guide i { position: absolute; right: 8px; top: 4px; font-style: normal; font-size: 9px; letter-spacing: .6px; color: rgba(183,233,60,.85); background: rgba(5,8,13,.85); padding: 2px 6px; border-radius: 6px; }
+  .guide.bottom { border-top: none; border-bottom: 1.5px dashed rgba(183,233,60,.55); }
+  .guide.bottom i { top: auto; bottom: 4px; }
+  body.show-guides .frame[data-format="story"] .guide { display: block; }
+  .footnote { margin-top: 38px; color: #7D8A96; font-size: 12.5px; line-height: 1.65; max-width: 860px; }
+  .f-round { font-family: ui-rounded, -apple-system, "SF Pro Rounded", system-ui, sans-serif; }
+  .f-serif { font-family: ui-serif, Georgia, "Iowan Old Style", serif; }
+  .f-mono  { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace; }
+</style>
+</head>
+<body>
+<header>
+  <h1>calibr<span>EAT</span> — share card preview</h1>
+  <p class="lede">
+    The card a user posts to stories, feeds and chats, drawn here from the layout constants in
+    <code>apps/mobile/src/components/share-card.tsx</code> and <code>share-templates.ts</code> — palettes,
+    type scale, story safe-zones and the real QR matrix for calibreat.co.uk. Cards are shown at layout size
+    (base px); the exported PNG is captured at 3× (e.g. portrait = 1080 × 1350).<br>
+    <b>Static snapshot — not the source of truth.</b> This page mirrors the module by hand, so it can lag
+    behind it. The app's own <code>/share-lab</code> (dev-only) renders the real components, reports any
+    template × format pair that overflows its frame, and is what to design against.
+  </p>
+  <label class="toggle">
+    <input type="checkbox" id="guides"> Show Instagram story safe-zone guides
+  </label>
+</header>
+<main id="gallery"></main>
+<p class="footnote">
+  Sample data: a 12-day logging streak, 6/7 days logged, True Burn measured at 2,210 kcal against a 2,310
+  formula estimate. In the app every number is the user's own, computed on-device — the image is captured
+  locally and shared as a PNG, and nothing about the week is uploaded. The QR is generated from the real
+  module matrix (25 × 25, level M), so it scans straight to the site even from a re-shared screenshot.
+</p>
+
+<script>
+/* ── The real QR path (https://calibreat.co.uk), identical to shareQrMatrix() ── */
+const QR_PATH = "M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM8 0h1v1h-1zM10 0h1v1h-1zM11 0h1v1h-1zM12 0h1v1h-1zM14 0h1v1h-1zM16 0h1v1h-1zM18 0h1v1h-1zM19 0h1v1h-1zM20 0h1v1h-1zM21 0h1v1h-1zM22 0h1v1h-1zM23 0h1v1h-1zM24 0h1v1h-1zM0 1h1v1h-1zM6 1h1v1h-1zM9 1h1v1h-1zM11 1h1v1h-1zM13 1h1v1h-1zM14 1h1v1h-1zM18 1h1v1h-1zM24 1h1v1h-1zM0 2h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM8 2h1v1h-1zM10 2h1v1h-1zM11 2h1v1h-1zM13 2h1v1h-1zM14 2h1v1h-1zM15 2h1v1h-1zM18 2h1v1h-1zM20 2h1v1h-1zM21 2h1v1h-1zM22 2h1v1h-1zM24 2h1v1h-1zM0 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM6 3h1v1h-1zM9 3h1v1h-1zM11 3h1v1h-1zM13 3h1v1h-1zM14 3h1v1h-1zM16 3h1v1h-1zM18 3h1v1h-1zM20 3h1v1h-1zM21 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM0 4h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM9 4h1v1h-1zM10 4h1v1h-1zM11 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM18 4h1v1h-1zM20 4h1v1h-1zM21 4h1v1h-1zM22 4h1v1h-1zM24 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h1v1h-1zM10 5h1v1h-1zM13 5h1v1h-1zM16 5h1v1h-1zM18 5h1v1h-1zM24 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM19 6h1v1h-1zM20 6h1v1h-1zM21 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM24 6h1v1h-1zM9 7h1v1h-1zM11 7h1v1h-1zM12 7h1v1h-1zM14 7h1v1h-1zM0 8h1v1h-1zM2 8h1v1h-1zM6 8h1v1h-1zM7 8h1v1h-1zM10 8h1v1h-1zM15 8h1v1h-1zM16 8h1v1h-1zM19 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM0 9h1v1h-1zM2 9h1v1h-1zM3 9h1v1h-1zM4 9h1v1h-1zM5 9h1v1h-1zM8 9h1v1h-1zM13 9h1v1h-1zM15 9h1v1h-1zM16 9h1v1h-1zM18 9h1v1h-1zM19 9h1v1h-1zM21 9h1v1h-1zM23 9h1v1h-1zM24 9h1v1h-1zM2 10h1v1h-1zM6 10h1v1h-1zM8 10h1v1h-1zM10 10h1v1h-1zM11 10h1v1h-1zM12 10h1v1h-1zM15 10h1v1h-1zM17 10h1v1h-1zM18 10h1v1h-1zM21 10h1v1h-1zM22 10h1v1h-1zM24 10h1v1h-1zM2 11h1v1h-1zM7 11h1v1h-1zM8 11h1v1h-1zM9 11h1v1h-1zM10 11h1v1h-1zM14 11h1v1h-1zM16 11h1v1h-1zM17 11h1v1h-1zM21 11h1v1h-1zM0 12h1v1h-1zM5 12h1v1h-1zM6 12h1v1h-1zM7 12h1v1h-1zM9 12h1v1h-1zM10 12h1v1h-1zM11 12h1v1h-1zM12 12h1v1h-1zM14 12h1v1h-1zM15 12h1v1h-1zM16 12h1v1h-1zM18 12h1v1h-1zM19 12h1v1h-1zM24 12h1v1h-1zM1 13h1v1h-1zM2 13h1v1h-1zM8 13h1v1h-1zM12 13h1v1h-1zM13 13h1v1h-1zM15 13h1v1h-1zM16 13h1v1h-1zM18 13h1v1h-1zM19 13h1v1h-1zM23 13h1v1h-1zM24 13h1v1h-1zM0 14h1v1h-1zM1 14h1v1h-1zM2 14h1v1h-1zM4 14h1v1h-1zM6 14h1v1h-1zM7 14h1v1h-1zM8 14h1v1h-1zM10 14h1v1h-1zM12 14h1v1h-1zM15 14h1v1h-1zM16 14h1v1h-1zM21 14h1v1h-1zM22 14h1v1h-1zM24 14h1v1h-1zM3 15h1v1h-1zM4 15h1v1h-1zM5 15h1v1h-1zM8 15h1v1h-1zM11 15h1v1h-1zM12 15h1v1h-1zM15 15h1v1h-1zM19 15h1v1h-1zM20 15h1v1h-1zM21 15h1v1h-1zM0 16h1v1h-1zM1 16h1v1h-1zM2 16h1v1h-1zM4 16h1v1h-1zM5 16h1v1h-1zM6 16h1v1h-1zM7 16h1v1h-1zM9 16h1v1h-1zM10 16h1v1h-1zM15 16h1v1h-1zM16 16h1v1h-1zM17 16h1v1h-1zM18 16h1v1h-1zM19 16h1v1h-1zM20 16h1v1h-1zM23 16h1v1h-1zM8 17h1v1h-1zM14 17h1v1h-1zM15 17h1v1h-1zM16 17h1v1h-1zM20 17h1v1h-1zM24 17h1v1h-1zM0 18h1v1h-1zM1 18h1v1h-1zM2 18h1v1h-1zM3 18h1v1h-1zM4 18h1v1h-1zM5 18h1v1h-1zM6 18h1v1h-1zM8 18h1v1h-1zM10 18h1v1h-1zM11 18h1v1h-1zM13 18h1v1h-1zM16 18h1v1h-1zM18 18h1v1h-1zM20 18h1v1h-1zM24 18h1v1h-1zM0 19h1v1h-1zM6 19h1v1h-1zM9 19h1v1h-1zM14 19h1v1h-1zM15 19h1v1h-1zM16 19h1v1h-1zM20 19h1v1h-1zM23 19h1v1h-1zM24 19h1v1h-1zM0 20h1v1h-1zM2 20h1v1h-1zM3 20h1v1h-1zM4 20h1v1h-1zM6 20h1v1h-1zM9 20h1v1h-1zM11 20h1v1h-1zM12 20h1v1h-1zM15 20h1v1h-1zM16 20h1v1h-1zM17 20h1v1h-1zM18 20h1v1h-1zM19 20h1v1h-1zM20 20h1v1h-1zM24 20h1v1h-1zM0 21h1v1h-1zM2 21h1v1h-1zM3 21h1v1h-1zM6 21h1v1h-1zM10 21h1v1h-1zM12 21h1v1h-1zM13 21h1v1h-1zM16 21h1v1h-1zM17 21h1v1h-1zM20 21h1v1h-1zM22 21h1v1h-1zM23 21h1v1h-1zM0 22h1v1h-1zM2 22h1v1h-1zM3 22h1v1h-1zM6 22h1v1h-1zM8 22h1v1h-1zM9 22h1v1h-1zM10 22h1v1h-1zM12 22h1v1h-1zM14 22h1v1h-1zM15 22h1v1h-1zM16 22h1v1h-1zM17 22h1v1h-1zM19 22h1v1h-1zM20 22h1v1h-1zM21 22h1v1h-1zM23 22h1v1h-1zM24 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM9 23h1v1h-1zM11 23h1v1h-1zM12 23h1v1h-1zM14 23h1v1h-1zM16 23h1v1h-1zM18 23h1v1h-1zM19 23h1v1h-1zM20 23h1v1h-1zM0 24h1v1h-1zM1 24h1v1h-1zM2 24h1v1h-1zM3 24h1v1h-1zM4 24h1v1h-1zM5 24h1v1h-1zM6 24h1v1h-1zM8 24h1v1h-1zM9 24h1v1h-1zM10 24h1v1h-1zM12 24h1v1h-1zM13 24h1v1h-1zM14 24h1v1h-1zM16 24h1v1h-1zM18 24h1v1h-1zM21 24h1v1h-1zM24 24h1v1h-1z";
+
+/* ── share-templates.ts, ported ── */
+const FORMATS = {
+  square:   { baseW: 360, baseH: 360, out: "1080 × 1080", safeTop: 0,   safeBottom: 0   },
+  portrait: { baseW: 360, baseH: 450, out: "1080 × 1350", safeTop: 0,   safeBottom: 0   },
+  story:    { baseW: 360, baseH: 640, out: "1080 × 1920", safeTop: 83,  safeBottom: 113 },
+  wide:     { baseW: 400, baseH: 210, out: "1200 × 630",  safeTop: 0,   safeBottom: 0   },
+};
+const PALETTES = {
+  instrument: { mode:"dark",  background:"#0A1019", surface:"#131D2D", text:"#EEF2F5", muted:"#A7B2BC", accent:"#B7E93C", hairline:"rgba(255,255,255,0.12)" },
+  grid:       { mode:"dark",  background:"#0E1623", surface:"#16202F", text:"#EEF2F5", muted:"#9FABB7", accent:"#23B25F", hairline:"rgba(255,255,255,0.10)" },
+  paper:      { mode:"light", background:"#F6F7F4", surface:"#FFFFFF", text:"#101820", muted:"#46525C", accent:"#0E6B38", hairline:"rgba(13,21,30,0.12)"   },
+  terminal:   { mode:"dark",  background:"#070B12", surface:"#0D1420", text:"#E6EDF3", muted:"#8B98A5", accent:"#B7E93C", hairline:"rgba(183,233,60,0.18)" },
+};
+const TEMPLATES = {
+  instrument: { name: "Instrument", blurb: "Dark dial, one hero number" },
+  grid:       { name: "Grid",       blurb: "Your streak as a calendar" },
+  paper:      { name: "Paper",      blurb: "Light, editorial, calm" },
+  terminal:   { name: "Terminal",   blurb: "The week as data" },
+};
+
+/* shareTypeScale() — ported verbatim */
+function typeScale(f) {
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const wf = f.baseW / 360, hf = f.baseH / 450;
+  const room = Math.min(wf, hf * 1.35);
+  return {
+    headline: Math.round(30 * room),
+    body: Math.round(14 * clamp(room, 0.9, 1.15)),
+    label: Math.round(11 * clamp(room, 0.9, 1.15)),
+    hero: Math.round(64 * clamp(hf, 0.85, 1.25)),
+    pad: Math.round(26 * clamp(wf, 0.85, 1.2)),
+  };
+}
+
+/* ── Sample week ── */
+const DATA = {
+  headline: "12-day logging streak",
+  subline: "6/7 days logged · True Burn steady at 2,210",
+  litDays: 6,
+  heroValue: "12", heroLabel: "day streak",
+  loggedDays: [1,1,1,1,1,0,1, 1,1,1,0,1,1,1, 1,1,1,1,1,1,1, 1,1,0,1,1,1,1],
+  burnPoints: [2185, 2200, 2190, 2215, 2205, 2220, 2210],
+  burnEst: 2310,
+  rows: [["days logged","6/7"],["streak","12 d"],["true burn","2,210 kcal"]],
+};
+const TAGLINE = "Calibrate your eating lifestyle. — calibreat.co.uk";
+
+/* ── tiny DOM helpers ── */
+const svgNS = "http://www.w3.org/2000/svg";
+const px = (n) => n + "px";
+function div(style, cls) { const d = document.createElement("div"); if (cls) d.className = cls; Object.assign(d.style, style); return d; }
+function txt(content, style, cls, tag) {
+  const t = document.createElement(tag || "div"); t.textContent = content;
+  if (cls) t.className = cls; Object.assign(t.style, style); return t;
+}
+
+/* ── shared pieces (ported from share-card.tsx) ── */
+function brandRow(p, label, wmSize) {
+  const row = div({ display:"flex", alignItems:"center", justifyContent:"space-between" });
+  const mark = txt("", { color:p.text, fontSize:px(wmSize), fontWeight:800, letterSpacing:"-0.3px" }, "f-round");
+  mark.innerHTML = 'calibr<span style="color:' + p.accent + '">EAT</span>';
+  const kick = txt(label, { color:p.muted, fontSize:px(Math.max(9, Math.round(wmSize * 0.34))), fontWeight:800, letterSpacing:"2px", textTransform:"uppercase" }, "f-round");
+  row.append(mark, kick);
+  return row;
+}
+function pips(lit, size, color, dim) {
+  const row = div({ display:"flex", gap:"6px", alignItems:"center" });
+  for (let i = 0; i < 7; i++) row.appendChild(div({ width:px(size), height:px(size), borderRadius:px(size), background: i < lit ? color : dim }));
+  return row;
+}
+function calendar(days, cell, color, dim, gap, hairline) {
+  const wrap = div({ display:"flex", gap:"6px", flexWrap:"wrap" });
+  const cols = [];
+  for (let i = 0; i < days.length; i += 7) { const col = days.slice(i, i + 7); while (col.length < 7) col.push(0); cols.push(col); }
+  cols.forEach((col) => {
+    const c = div({ display:"flex", flexDirection:"column", gap:px(gap) });
+    col.forEach((on) => c.appendChild(div({
+      width:px(cell), height:px(cell), borderRadius:px(Math.max(2, Math.round(cell * 0.24))),
+      background: on ? color : dim, border: on ? "none" : "1px solid " + hairline,
+    })));
+    wrap.appendChild(c);
+  });
+  return wrap;
+}
+function qrCode(size, dark, light, caption, captionColor) {
+  const border = Math.round(size * 0.07);
+  const wrap = div({ display:"flex", flexDirection:"column", alignItems:"center", gap:"6px" });
+  const plate = div({ width:px(size), height:px(size), padding:px(border), borderRadius:px(Math.round(size * 0.14)), background:light });
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("width", "100%"); svg.setAttribute("height", "100%"); svg.setAttribute("viewBox", "0 0 25 25");
+  const path = document.createElementNS(svgNS, "path");
+  path.setAttribute("d", QR_PATH); path.setAttribute("fill", dark);
+  svg.appendChild(path); plate.appendChild(svg); wrap.appendChild(plate);
+  if (caption) wrap.appendChild(txt(caption, { color:captionColor, fontSize:px(Math.max(8, Math.round(size * 0.12))), fontWeight:700, letterSpacing:"1px" }));
+  return wrap;
+}
+function burnSpark(points, est, p, width, height, uid) {
+  const pad = 4;
+  const all = points.concat([est]);
+  const lo = Math.min.apply(null, all) - 40, hi = Math.max.apply(null, all) + 40;
+  const span = Math.max(1, hi - lo);
+  const xs = points.map((_, i) => pad + (i / Math.max(1, points.length - 1)) * (width - pad * 2));
+  const ys = points.map((v) => pad + (1 - (v - lo) / span) * (height - pad * 2));
+  const estY = pad + (1 - (est - lo) / span) * (height - pad * 2);
+  const line = xs.map((x, i) => (i === 0 ? "M" : "L") + " " + x.toFixed(1) + " " + ys[i].toFixed(1)).join(" ");
+  const area = line + " L " + xs[xs.length - 1].toFixed(1) + " " + (height - pad) + " L " + xs[0].toFixed(1) + " " + (height - pad) + " Z";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("width", width); svg.setAttribute("height", height); svg.style.display = "block";
+  svg.innerHTML =
+    '<defs><linearGradient id="g' + uid + '" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="' + p.accent + '" stop-opacity="0.24"/>' +
+    '<stop offset="1" stop-color="' + p.accent + '" stop-opacity="0"/></linearGradient></defs>' +
+    '<line x1="' + pad + '" y1="' + estY.toFixed(1) + '" x2="' + (width - pad) + '" y2="' + estY.toFixed(1) +
+      '" stroke="' + p.hairline + '" stroke-width="1" stroke-dasharray="3 3"/>' +
+    '<path d="' + area + '" fill="url(#g' + uid + ')"/>' +
+    '<path d="' + line + '" stroke="' + p.accent + '" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
+    xs.map((x, i) => '<circle cx="' + x.toFixed(1) + '" cy="' + ys[i].toFixed(1) + '" r="2" fill="' + p.accent + '"/>').join("");
+  return svg;
+}
+function footer(p, t, qrSize, compact) {
+  const f = div({ display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:"14px" });
+  const dark = p.mode === "dark" ? "#070B12" : "#0A1019";
+  if (compact) {
+    Object.assign(f.style, { flex:"1", flexDirection:"column", alignItems:"flex-end", justifyContent:"flex-end", gap:"8px" });
+    f.appendChild(qrCode(qrSize, dark, "#FFFFFF", null, p.muted));
+    const tg = txt(TAGLINE, { color:p.muted, fontSize:px(t.body * 0.9), lineHeight:"17px", textAlign:"left", maxWidth:"170px" });
+    f.appendChild(tg);
+  } else {
+    f.appendChild(qrCode(qrSize, dark, "#FFFFFF", "SCAN TO VISIT CALIBREAT.CO.UK", p.muted));
+    const tg = txt(TAGLINE, { color:p.muted, fontSize:px(t.body * 0.9), lineHeight:"17px", textAlign:"right", flexShrink:"1" });
+    f.appendChild(tg);
+  }
+  return f;
+}
+
+/* ── template renderers ── */
+function rInstrument(kit) {
+  const { p, t, f, data, wide } = kit;
+  const out = [];
+  out.push(brandRow(p, "MY WEEK", wide ? 22 : 26));
+  if (wide) {
+    const heroSize = t.hero * 0.62;
+    const row = div({ display:"flex", alignItems:"center", gap:"16px" });
+    const main = div({ flex:"1", display:"flex", flexDirection:"column", gap:"6px" });
+    main.appendChild(txt(data.headline, { color:p.text, fontSize:px(t.headline * 0.7), lineHeight:(t.headline * 0.78) + "px", fontWeight:800, letterSpacing:"-0.5px" }, "f-round"));
+    main.appendChild(txt(data.subline, { color:p.muted, fontSize:px(t.body * 0.92) }));
+    const heroInline = div({ display:"flex", alignItems:"baseline", gap:"8px", marginTop:"6px" });
+    heroInline.appendChild(txt(data.heroValue, { color:p.accent, fontSize:px(heroSize), lineHeight:(heroSize * 1.05) + "px", fontWeight:800, letterSpacing:"-2px" }, "f-round"));
+    heroInline.appendChild(txt(data.heroLabel, { color:p.muted, fontSize:px(t.label), fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase" }));
+    main.appendChild(heroInline);
+    row.append(main, footer(p, t, Math.round(f.baseH * 0.34), true));
+    out.push(row);
+    return out;
+  }
+  const heroPanel = div({ borderWidth:"1px", borderStyle:"solid", borderColor:p.hairline, background:p.surface, borderRadius:px(Math.round(f.baseW * 0.06)), padding:"20px", display:"flex", flexDirection:"column", gap:"8px" });
+  heroPanel.appendChild(txt(data.headline, { color:p.text, fontSize:px(t.headline), lineHeight:(t.headline * 1.14) + "px", fontWeight:800, letterSpacing:"-0.5px" }, "f-round"));
+  heroPanel.appendChild(txt(data.subline, { color:p.muted, fontSize:px(t.body), lineHeight:"20px" }));
+  out.push(heroPanel);
+  const spacer = div({ flexGrow:"1", display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"flex-start", gap:"2px" });
+  spacer.appendChild(txt(data.heroValue, { color:p.accent, fontSize:px(t.hero), lineHeight:(t.hero * 1.02) + "px", fontWeight:800, letterSpacing:"-2px" }, "f-round"));
+  spacer.appendChild(txt(data.heroLabel, { color:p.muted, fontSize:px(t.label), fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase" }));
+  out.push(spacer);
+  if (data.burnEst != null && data.burnPoints && data.burnPoints.length >= 2) {
+    const panel = div({ borderWidth:"1px", borderStyle:"solid", borderColor:p.hairline, borderRadius:px(Math.round(f.baseW * 0.05)), padding:"12px", display:"flex", flexDirection:"column", gap:"8px" });
+    const head = div({ display:"flex", justifyContent:"space-between" });
+    head.appendChild(txt("TRUE BURN", { color:p.muted, fontSize:px(t.label * 0.9), fontWeight:800, letterSpacing:"2px" }, "f-round"));
+    head.appendChild(txt("MEASURED", { color:p.muted, fontSize:px(t.label * 0.9), fontWeight:800, letterSpacing:"2px" }, "f-round"));
+    panel.append(head, burnSpark(data.burnPoints, data.burnEst, p, f.baseW - t.pad * 2 - 24, Math.round(f.baseH * 0.11), kit.uid));
+    out.push(panel);
+  }
+  out.push(pips(data.litDays, Math.round(f.baseW * 0.028), p.accent, p.mode === "dark" ? "rgba(255,255,255,0.16)" : "rgba(13,21,30,0.14)"));
+  out.push(footer(p, t, Math.round(Math.min(f.baseW, f.baseH) * 0.17), false));
+  return out;
+}
+function rGrid(kit) {
+  const { p, t, f, data } = kit;
+  const out = [];
+  out.push(brandRow(p, "LOGGED", 24));
+  const hero = div({ gap:"4px", marginTop:"8px", display:"flex", flexDirection:"column" });
+  hero.appendChild(txt(data.heroValue, { color:p.accent, fontSize:px(t.hero * 1.25), lineHeight:(t.hero * 1.3) + "px", fontWeight:800, letterSpacing:"-2px" }, "f-round"));
+  hero.appendChild(txt(data.heroLabel, { color:p.text, fontSize:px(t.body * 1.2), fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase" }));
+  hero.appendChild(txt(data.headline, { color:p.muted, fontSize:px(t.body), lineHeight:"20px" }));
+  out.push(hero);
+  const panel = div({ background:p.surface, borderWidth:"1px", borderStyle:"solid", borderColor:p.hairline, borderRadius:px(Math.round(f.baseW * 0.06)), padding:"16px", display:"flex", flexDirection:"column", gap:"12px", alignItems:"flex-start" });
+  const cell = Math.round(Math.min(f.baseW * 0.05, f.baseH * 0.045));
+  const days = data.loggedDays || Array.from({ length: 7 }, (_, i) => (i < data.litDays ? 1 : 0));
+  panel.appendChild(calendar(days, cell, p.accent, p.mode === "dark" ? "rgba(255,255,255,0.10)" : "rgba(13,21,30,0.08)", Math.max(3, Math.round(cell * 0.3)), p.hairline));
+  panel.appendChild(txt(data.subline, { color:p.muted, fontSize:px(t.label * 0.92), lineHeight:"16px" }));
+  out.push(panel);
+  out.push(footer(p, t, Math.round(Math.min(f.baseW, f.baseH) * 0.15), false));
+  return out;
+}
+function rPaper(kit) {
+  const { p, t, f, data, wide } = kit;
+  const rule = { borderBottomWidth:"1px", borderBottomStyle:"solid", borderBottomColor:p.hairline };
+  const ruleT = { borderTopWidth:"1px", borderTopStyle:"solid", borderTopColor:p.hairline };
+  const out = [];
+  const top = div(Object.assign({ display:"flex", alignItems:"center", justifyContent:"space-between", paddingBottom:"10px" }, rule));
+  top.appendChild(txt("calibrEAT", { color:p.accent, fontSize:px(t.body * 1.1), fontWeight:800, letterSpacing:"0.4px" }, "f-round"));
+  top.appendChild(txt("01 / WEEK", { color:p.muted, fontSize:px(t.label), fontWeight:800, letterSpacing:"2.2px", textTransform:"uppercase" }));
+  out.push(top);
+  const body = div({ display:"flex", flexDirection:"column" });
+  body.appendChild(txt("THE WEEKLY CALIBRATION", { color:p.muted, fontSize:px(t.label), fontWeight:800, letterSpacing:"2.2px", textTransform:"uppercase" }));
+  const hSize = wide ? t.headline * 0.78 : t.headline * 1.35;
+  const head = txt(data.headline, { color:p.text, fontSize:px(hSize), lineHeight:(hSize * 1.06) + "px", fontWeight:700, letterSpacing:"-0.6px", marginTop:"6px" }, "f-serif");
+  body.appendChild(head);
+  body.appendChild(div(Object.assign({ borderTopWidth:"1px", borderTopStyle:"solid", borderTopColor:p.hairline, margin:"10px 0", width:"34%" }, {})));
+  body.appendChild(txt(data.subline, { color:p.muted, fontSize:px(t.body * 1.05), lineHeight:"20px" }));
+  if (wide) {
+    const row = div({ display:"flex", alignItems:"center", gap:"16px" });
+    const main = div({ flex:"1" });
+    main.appendChild(body);
+    const stat = div({ display:"flex", flexDirection:"column", alignItems:"flex-end", justifyContent:"center" });
+    stat.appendChild(txt(data.heroValue, { color:p.accent, fontSize:px(t.hero * 0.72), lineHeight:(t.hero * 0.78) + "px", fontWeight:700, letterSpacing:"-1.5px" }, "f-serif"));
+    stat.appendChild(txt(data.heroLabel, { color:p.muted, fontSize:px(t.label), fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase" }));
+    row.append(main, stat);
+    out.push(row);
+  } else {
+    out.push(body);
+    const spacer = div({ flexGrow:"1", display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"flex-start", gap:"2px" });
+    spacer.appendChild(txt(data.heroValue, { color:p.accent, fontSize:px(t.hero * 1.1), lineHeight:(t.hero * 1.15) + "px", fontWeight:700, letterSpacing:"-1.5px" }, "f-serif"));
+    spacer.appendChild(txt(data.heroLabel, { color:p.muted, fontSize:px(t.label), fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase" }));
+    out.push(spacer);
+  }
+  const bottom = div(Object.assign({ display:"flex", alignItems:"center", justifyContent:"space-between", gap:"12px", paddingTop:"10px" }, ruleT));
+  bottom.appendChild(pips(data.litDays, Math.round(f.baseW * 0.026), p.accent, p.mode === "dark" ? "rgba(255,255,255,0.16)" : "rgba(13,21,30,0.14)"));
+  bottom.appendChild(txt(TAGLINE, { color:p.muted, fontSize:px(t.body * 0.85) }));
+  out.push(bottom);
+  return out;
+}
+function rTerminal(kit) {
+  const { p, t, f, data } = kit;
+  const out = [];
+  const head = div({ display:"flex", justifyContent:"space-between", alignItems:"center" });
+  head.appendChild(txt("> calibreat --week", { color:p.accent, fontSize:px(t.body * 0.95), fontWeight:700 }, "f-mono"));
+  head.appendChild(txt("on device", { color:p.muted, fontSize:px(t.body * 0.95), fontWeight:700 }, "f-mono"));
+  out.push(head);
+  const table = div({ borderWidth:"1px", borderStyle:"solid", borderColor:p.hairline, borderRadius:px(Math.round(f.baseW * 0.04)), overflow:"hidden" });
+  data.rows.forEach(([label, value], i) => {
+    const row = div({ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 12px", gap:"10px" });
+    if (i < data.rows.length - 1) { row.style.borderBottomWidth = "1px"; row.style.borderBottomStyle = "solid"; row.style.borderBottomColor = p.hairline; }
+    row.appendChild(txt(label, { color:p.muted, fontSize:px(t.body * 0.92) }, "f-mono"));
+    row.appendChild(txt(value, { color:p.accent, fontSize:px(t.body * 1.25), fontWeight:700 }, "f-mono"));
+    table.appendChild(row);
+  });
+  out.push(table);
+  const foot = div({ gap:"4px", marginTop:"10px", display:"flex", flexDirection:"column" });
+  foot.appendChild(txt(data.headline, { color:p.text, fontSize:px(t.body * 1.05), fontWeight:700 }, "f-mono"));
+  foot.appendChild(txt(data.subline, { color:p.muted, fontSize:px(t.body * 0.92), lineHeight:"20px" }, "f-mono"));
+  out.push(foot);
+  out.push(div({ flexGrow:"1" }));
+  const bottom = div({ display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:"12px" });
+  bottom.appendChild(qrCode(Math.round(Math.min(f.baseW, f.baseH) * 0.26), p.mode === "dark" ? "#070B12" : "#0A1019", "#FFFFFF", null, p.muted));
+  bottom.appendChild(txt(TAGLINE, { color:p.muted, fontSize:px(t.body * 0.9), textAlign:"right" }, "f-mono"));
+  out.push(bottom);
+  return out;
+}
+const RENDERERS = { instrument: rInstrument, grid: rGrid, paper: rPaper, terminal: rTerminal };
+
+/* ── assemble the gallery ── */
+const SHOWCASE = [
+  ["instrument", "portrait"],
+  ["grid", "square"],
+  ["paper", "wide"],
+  ["terminal", "portrait"],
+  ["instrument", "story"],
+];
+const gallery = document.getElementById("gallery");
+SHOWCASE.forEach(([templateId, formatId], idx) => {
+  const f = FORMATS[formatId], p = PALETTES[templateId], tpl = TEMPLATES[templateId];
+  const t = typeScale(f);
+  const card = div({
+    width: px(f.baseW), height: px(f.baseH), background: p.background, color: p.text,
+    display: "flex", flexDirection: "column", justifyContent: "space-between", overflow: "hidden",
+    paddingTop: px(f.safeTop + t.pad), paddingBottom: px(f.safeBottom + t.pad),
+    paddingLeft: px(t.pad), paddingRight: px(t.pad),
+  });
+  const kit = { p, t, f, data: DATA, wide: f.baseW / f.baseH > 1.6, uid: idx };
+  RENDERERS[templateId](kit).forEach((n) => card.appendChild(n));
+
+  const frame = div({ position: "relative" }, "frame");
+  frame.dataset.format = formatId;
+  frame.appendChild(card);
+  if (formatId === "story") {
+    const g1 = div({ top: px(f.safeTop) }, "guide"); g1.innerHTML = "<i>Instagram UI above</i>";
+    const g2 = div({ bottom: px(f.safeBottom) }, "guide bottom"); g2.innerHTML = "<i>reply bar below</i>";
+    frame.append(g1, g2);
+  }
+  const item = div({ display: "flex", flexDirection: "column", gap: "10px" }, "item");
+  item.appendChild(frame);
+  item.appendChild(txt("", { fontSize: "12px" }, "cap", "div"));
+  item.lastChild.innerHTML = "<b>" + tpl.name + "</b> · " + formatId + " · exports " + f.out + " — " + tpl.blurb.toLowerCase();
+  gallery.appendChild(item);
+});
+
+document.getElementById("guides").addEventListener("change", (e) => {
+  document.body.classList.toggle("show-guides", e.target.checked);
+});
+</script>
+</body>
+</html>

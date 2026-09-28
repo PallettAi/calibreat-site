@@ -217,3 +217,19 @@ export function exercisesGrouped(equipment: Equipment): MuscleGroup[] {
     return [{ id: group.id, name: group.name, exercises }];
   });
 }
+
+export function exercisesForMuscle(slug: MuscleSlug): ExerciseDef[] {
+  return EXERCISES.filter((ex) => ex.primary.includes(slug) || ex.assisting.includes(slug));
+}
+
+export function exercisesForMuscleAndEquipment(slug: MuscleSlug, equipment: Equipment): ExerciseDef[] {
+  return exercisesForMuscle(slug).filter((ex) => ex.equipment === equipment);
+}
+
+export function muscleLabel(slug: MuscleSlug): string {
+  return LABELS[slug]?.name ?? slug;
+}
+
+export function allMuscleSlugs(): MuscleSlug[] {
+  return Object.keys(LABELS) as MuscleSlug[];
+}

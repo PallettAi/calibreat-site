@@ -8,6 +8,7 @@ import {
   type RecentMeal,
 } from '@/lib/diary';
 import { localDayKey } from '@/lib/dates';
+import type { RestorePlan } from '@/lib/restore';
 import {
   SAVED_MEAL_LIMIT,
   SAVED_MEAL_MAX_ITEMS,
@@ -79,6 +80,9 @@ export type WorkoutSession = {
   sets: number;
   reps: number;
   kcal: number;
+  weightKg: number;
+  volumeKg: number;
+  e1RMKg: number;
   loggedAt: string;
 };
 
@@ -323,6 +327,16 @@ export async function addWeighIn(kg: number, measuredAt: Date = new Date()): Pro
   localStorage.setItem(WEIGH_IN_KEY, JSON.stringify(list));
 }
 
+/**
+ * The most recent `limit` weigh-ins, oldest first.
+ *
+ * The native twin used to take the OLDEST 60 (ORDER BY measured_at ASC LIMIT),
+ * so past 60 entries the APK stopped showing recent data while this twin kept
+ * working. Both now return the newest page, oldest first — callers can rely on
+ * index 0 being the oldest row *in the window* and the last index the newest.
+ * For the first weigh-in ever, ask getFirstWeighIn: a limited page cannot
+ * report it, which is the trap the "since the first" copy used to fall into.
+ */
 export async function getWeighIns(limit: number = 60): Promise<WeighIn[]> {
   const list = readWeighIns().slice().sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
   return list.slice(-limit);
@@ -332,6 +346,13 @@ export async function getLatestWeighIn(): Promise<WeighIn | null> {
   const list = readWeighIns();
   if (!list.length) return null;
   return list.slice().sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))[0] ?? null;
+}
+
+/** The very first weigh-in ever recorded, which getWeighIns cannot report. */
+export async function getFirstWeighIn(): Promise<WeighIn | null> {
+  const list = readWeighIns();
+  if (!list.length) return null;
+  return list.slice().sort((a, b) => a.measuredAt.localeCompare(b.measuredAt))[0] ?? null;
 }
 
 export async function addLogEntry(input: LogInput): Promise<LogEntry> {
@@ -444,6 +465,9 @@ function readWorkouts(): WorkoutSession[] {
       sets: Number(row.sets) || 0,
       reps: Number(row.reps) || 0,
       kcal: Number(row.kcal) || 0,
+      weightKg: Number((row as Record<string, unknown>).weightKg ?? 0) || 0,
+      volumeKg: Number((row as Record<string, unknown>).volumeKg ?? 0) || 0,
+      e1RMKg: Number((row as Record<string, unknown>).e1RMKg ?? 0) || 0,
       loggedAt: String(row.loggedAt ?? ''),
     }));
   } catch {
@@ -461,16 +485,27 @@ export async function addWorkoutSession(input: {
   sets: number;
   reps: number;
   kcal: number;
+  weightKg?: number;
+  volumeKg?: number;
+  e1RMKg?: number;
 }): Promise<WorkoutSession> {
   const list = readWorkouts();
   const nextId = list.length ? Math.max(...list.map((e) => e.id)) + 1 : 1;
+  const weightKg = Math.max(0, Math.round((input.weightKg ?? 0) * 10) / 10);
+  const reps = Math.max(0, Math.round(input.reps));
+  const sets = Math.max(0, Math.round(input.sets));
+  const volumeKg = input.volumeKg != null ? Math.max(0, Math.round(input.volumeKg * 10) / 10) : weightKg > 0 && sets > 0 && reps > 0 ? Math.round(sets * reps * weightKg * 10) / 10 : 0;
+  const e1RMKg = input.e1RMKg != null ? Math.max(0, Math.round(input.e1RMKg * 10) / 10) : weightKg > 0 && reps > 0 ? Math.round(weightKg * (1 + reps / 30) * 10) / 10 : 0;
   const entry: WorkoutSession = {
     id: nextId,
     dayKey: input.dayKey,
     exerciseId: input.exerciseId,
-    sets: input.sets,
-    reps: input.reps,
+    sets,
+    reps,
     kcal: Math.max(0, Math.round(input.kcal)),
+    weightKg,
+    volumeKg,
+    e1RMKg,
     loggedAt: new Date().toISOString(),
   };
   list.push(entry);
@@ -588,4 +623,131 @@ export async function getAllWeighIns(): Promise<WeighIn[]> {
 
 export async function getAllWorkouts(): Promise<WorkoutSession[]> {
   return readWorkouts().sort((a, b) => a.loggedAt.localeCompare(b.loggedAt) || a.id - b.id);
+}
+
+/* ── Restore (see src/lib/restore.ts) ─────────────────────────── */
+
+export type RestoreApplied = {
+  logEntries: number;
+  weighIns: number;
+  water: number;
+  workouts: number;
+  savedMeals: number;
+  profile: boolean;
+};
+
+/**
+ * The localStorage twin of applyRestore in db.ts — same public API, same
+ * behaviour, same reason for existing: rows are written with the day_key and
+ * timestamp they were exported with, which addLogEntry cannot do because it
+ * stamps `logged_at` as now.
+ *
+ * The writes are staged in memory and only committed to localStorage once the
+ * whole plan is built, so a throw part-way through leaves the keys untouched —
+ * the localStorage stand-in for the transaction db.ts gets from SQLite.
+ */
+export async function applyRestore(plan: RestorePlan): Promise<RestoreApplied> {
+  const existingLogs = plan.clears ? [] : readLogs();
+  const existingWeighIns = plan.clears ? [] : readWeighIns();
+  const existingWater = plan.clears ? [] : readWater();
+  const existingWorkouts = plan.clears ? [] : readWorkouts();
+  const existingMeals = plan.clears ? [] : readSavedMeals();
+
+  // Ids are the storage layer's business, not the plan's — the plan dropped
+  // the old device's, so new ones continue from whatever is already here.
+  const nextId = (rows: { id: number }[]): number => (rows.length ? Math.max(...rows.map((r) => r.id)) + 1 : 1);
+  let logId = nextId(existingLogs);
+  let weighInId = nextId(existingWeighIns);
+  let waterId = nextId(existingWater);
+  let workoutId = nextId(existingWorkouts);
+  let mealId = nextId(existingMeals);
+
+  const logs: LogEntry[] = [...existingLogs];
+  for (const entry of plan.logEntries) {
+    logs.push({
+      id: logId++,
+      dayKey: entry.dayKey,
+      meal: entry.meal,
+      name: entry.name,
+      kcal: entry.kcal,
+      proteinG: entry.proteinG,
+      carbsG: entry.carbsG,
+      fatG: entry.fatG,
+      fiberG: entry.fiberG,
+      sugarG: entry.sugarG,
+      satFatG: entry.satFatG,
+      sodiumMg: entry.sodiumMg,
+      loggedAt: entry.loggedAt,
+    });
+  }
+
+  const weighIns: WeighIn[] = [...existingWeighIns];
+  for (const entry of plan.weighIns) {
+    weighIns.push({ id: weighInId++, kg: entry.kg, measuredAt: entry.measuredAt, dayKey: entry.dayKey });
+  }
+
+  const waterRows: WaterEntry[] = [...existingWater];
+  for (const entry of plan.water) {
+    waterRows.push({ id: waterId++, dayKey: entry.dayKey, ml: entry.ml, loggedAt: entry.loggedAt });
+  }
+
+  const workouts: WorkoutSession[] = [...existingWorkouts];
+  for (const entry of plan.workouts) {
+    workouts.push({
+      id: workoutId++,
+      dayKey: entry.dayKey,
+      exerciseId: entry.exerciseId,
+      sets: entry.sets,
+      reps: entry.reps,
+      kcal: entry.kcal,
+      weightKg: entry.weightKg,
+      volumeKg: entry.volumeKg,
+      e1RMKg: entry.e1RMKg,
+      loggedAt: entry.loggedAt,
+    });
+  }
+
+  const savedMeals: SavedMeal[] = [...existingMeals];
+  for (const meal of plan.savedMeals) {
+    savedMeals.push({ id: mealId++, name: meal.name, meal: meal.meal, items: meal.items, createdAt: meal.createdAt });
+  }
+
+  // The profile is written FIRST, before the tables. saveProfile is the one
+  // call here that can realistically throw on a bad value, and doing it first
+  // means that failure leaves no rows behind — the same guarantee db.ts gets
+  // from a real transaction. (localStorage has no transaction, so this is an
+  // ordering argument, not a rollback: a quota failure part-way through the
+  // key writes can still leave a partial diary. The web tier is a dev preview;
+  // the APK is the product, and it is fully atomic.)
+  if (plan.clears) {
+    // A replace must leave the device with what the backup had, not what it
+    // had — otherwise a backup that carried no profile would quietly keep the
+    // old one, and the user would restore onto targets they thought they'd
+    // thrown away. saveProfile below writes both back if the bundle had them.
+    localStorage.removeItem(PROFILE_KEY);
+    localStorage.removeItem(GOALS_KEY);
+    localStorage.removeItem(INTAKE_KEY);
+  }
+
+  // Mirrors db.ts: targets are recomputed from the restored profile by the
+  // app's own formula, so a backup written by an older version still lands on
+  // numbers this version would have calculated.
+  if (plan.profile) {
+    await saveProfile(plan.profile as Profile);
+  }
+
+  writeLogs(logs);
+  localStorage.setItem(WEIGH_IN_KEY, JSON.stringify(weighIns));
+  localStorage.setItem(WATER_KEY, JSON.stringify(waterRows));
+  writeWorkouts(workouts);
+  writeSavedMeals(savedMeals);
+
+  return {
+    logEntries: plan.logEntries.length,
+    weighIns: plan.weighIns.length,
+    water: plan.water.length,
+    workouts: plan.workouts.length,
+    savedMeals: plan.savedMeals.length,
+    profile: Boolean(plan.profile),
+  };
 }

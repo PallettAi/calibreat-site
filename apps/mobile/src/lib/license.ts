@@ -70,6 +70,37 @@ export type { LicenseCheckResult };
 const VALIDATE_TIMEOUT_MS = 8000;
 
 /**
+ * Give up waiting for a *user-initiated* call after this long.
+ *
+ * Longer than validate because these run while the user watches a spinner and
+ * the server may be cold-starting — but they must still end. Without a cap, a
+ * connection that opens and never answers (captive portal, flaky mobile data)
+ * left the button spinning forever and the only way out was a force-quit. On a
+ * timeout the fetch rejects and the caller's existing catch turns it into a
+ * retry message.
+ */
+const ACTIVATE_TIMEOUT_MS = 12000;
+
+/**
+ * POST JSON to the activation server with a hard cap, so no call in this file
+ * can hang. Every endpoint the user can trigger goes through here.
+ */
+async function licenseFetch(apiUrl: string, path: string, payload: unknown): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ACTIVATE_TIMEOUT_MS);
+  try {
+    return await fetch(`${apiUrl}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
  * Loose email shape check. The real gate is the verification/activation
  * server (M3); this only stops obvious typos before a network call.
  */
@@ -97,11 +128,7 @@ export async function requestEmailVerification(email: string): Promise<SimpleRes
     };
   }
   try {
-    const response = await fetch(`${apiUrl}/v1/request-verification`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
+    const response = await licenseFetch(apiUrl, '/v1/request-verification', { email });
     const body: unknown = await response.json().catch(() => null);
     const data = (body ?? {}) as { message?: string };
     if (!response.ok) {
@@ -138,11 +165,7 @@ export async function verifyEmailCode(email: string, otp: string): Promise<Simpl
     return { ok: true };
   }
   try {
-    const response = await fetch(`${apiUrl}/v1/verify-email`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, otp }),
-    });
+    const response = await licenseFetch(apiUrl, '/v1/verify-email', { email, otp });
     const body: unknown = await response.json().catch(() => null);
     const data = (body ?? {}) as { message?: string };
     if (!response.ok) {
@@ -215,11 +238,7 @@ export async function activateLicense(rawCode: string): Promise<ActivationResult
   const deviceLabel = currentDeviceLabel();
 
   try {
-    const response = await fetch(`${apiUrl}/v1/activate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, email, installId, deviceLabel }),
-    });
+    const response = await licenseFetch(apiUrl, '/v1/activate', { code, email, installId, deviceLabel });
     const body: unknown = await response.json().catch(() => null);
     const data = (body ?? {}) as {
       valid?: boolean;
@@ -352,11 +371,7 @@ export async function deactivateLicense(code: string): Promise<SimpleResult> {
   }
   try {
     const installId = await getInstallId();
-    const response = await fetch(`${apiUrl}/v1/deactivate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, email, installId }),
-    });
+    const response = await licenseFetch(apiUrl, '/v1/deactivate', { code, email, installId });
     return interpretDeactivateResponse(response.status, true);
   } catch {
     return interpretDeactivateResponse(0, false);
@@ -376,11 +391,7 @@ export async function releaseLicense(rawCode: string): Promise<SimpleResult> {
     return { ok: false, message: 'Verify your email first — enter it on the welcome screen to receive a code.' };
   }
   try {
-    const response = await fetch(`${apiUrl}/v1/release`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, email }),
-    });
+    const response = await licenseFetch(apiUrl, '/v1/release', { code, email });
     const body: unknown = await response.json().catch(() => null);
     const data = (body ?? {}) as { message?: string };
     if (!response.ok) {

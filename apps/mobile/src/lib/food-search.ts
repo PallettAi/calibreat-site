@@ -40,6 +40,13 @@ export type CofidFood = {
 export type FoodSearchResult = {
   hits: SearchFood[];
   packsFailed: boolean;
+  /**
+   * USDA is a second source, consulted only when OFF comes back empty. When
+   * it went dark, an empty result list means "we could not ask", not "no such
+   * food" — a distinction the user is owed, because otherwise the app states
+   * as fact something it simply did not check.
+   */
+  usdaFailed: boolean;
 };
 
 type SearchDeps = {
@@ -123,6 +130,7 @@ export function mergeFoodSearch(
   local: SearchFood[],
   remote: SearchFood[] | null,
   limit = SEARCH_LIMIT,
+  usdaFailed = false,
 ): FoodSearchResult {
   const packsFailed = remote == null;
   const remoteHits = (remote ?? []).map((food) => ({ ...food, source: food.source ?? 'off' }));
@@ -132,6 +140,7 @@ export function mergeFoodSearch(
   return {
     hits: [...local.slice(0, localTake), ...remoteHits.slice(0, remoteTake)],
     packsFailed,
+    usdaFailed,
   };
 }
 
@@ -144,7 +153,7 @@ export async function searchFoods(raw: string, deps: SearchDeps = {}): Promise<F
   const query = raw.trim();
   const catalog = deps.catalog ?? [];
   const local = searchCofid(query, catalog);
-  if (query.length < 2) return { hits: local, packsFailed: false };
+  if (query.length < 2) return { hits: local, packsFailed: false, usdaFailed: false };
 
   const lookup = deps.lookup;
   const parseRemote = deps.parseRemote ?? (() => []);
@@ -159,15 +168,20 @@ export async function searchFoods(raw: string, deps: SearchDeps = {}): Promise<F
   // USDA is an open government dataset and a useful second source for common
   // foods. Only use it when OFF did not produce results, avoiding duplicate
   // results and an extra request for the normal path.
+  let usdaFailed = false;
   if ((!remote || remote.length === 0) && deps.usdaLookup && deps.parseUsda) {
     const payload = await deps.usdaLookup(query);
-    if (payload != null) {
+    if (payload == null) {
+      // OFF answered (or was not consulted) and then this second source went
+      // dark. The empty list is now inconclusive, not a finding.
+      usdaFailed = true;
+    } else {
       const usdaHits = deps.parseUsda(payload);
       if (usdaHits.length) remote = [...(remote ?? []), ...usdaHits];
     }
   }
 
-  return mergeFoodSearch(local, remote);
+  return mergeFoodSearch(local, remote, SEARCH_LIMIT, usdaFailed);
 }
 
 export const COFID_CREDIT =

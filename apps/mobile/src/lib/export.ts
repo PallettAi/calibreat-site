@@ -61,6 +61,9 @@ export type ExportWorkout = {
   sets: number;
   reps: number;
   kcal: number;
+  weightKg?: number;
+  volumeKg?: number;
+  e1RMKg?: number;
   loggedAt: string;
 };
 

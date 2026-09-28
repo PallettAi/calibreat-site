@@ -7,6 +7,12 @@ import { Fonts, Spacing } from '@/constants/theme';
 import { copyText } from '@/lib/clipboard';
 import { currentDeviceLabel, type LicenseState } from '@/lib/license';
 
+function formatActivated(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return 'Unknown';
+  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 export function LicenseSheet({
   visible,
   onClose,
@@ -34,6 +40,17 @@ export function LicenseSheet({
 }) {
   const [copied, setCopied] = useState(false);
 
+  // The welcome screen promises a lifetime in three words; this is where a
+  // buyer goes to check whether the promise held. Same plate, same mono
+  // labels, and the activation date is the part that is actually evidence
+  // rather than another claim — without it the screen only repeats marketing
+  // back at someone who is already holding the thing they paid for.
+  const entitlement: [string, string][] = [
+    ['RENEWS', 'Never'],
+    ['DEVICES', '1 active, transferable'],
+    ['ACTIVATED', formatActivated(license.activatedAt)],
+  ];
+
   async function handleCopy() {
     const ok = await copyText(license.code);
     setCopied(ok);
@@ -48,6 +65,19 @@ export function LicenseSheet({
             <ThemedText type="smallBold" style={[styles.kicker, { color: mutedColor }]}>
               LICENSE
             </ThemedText>
+            <View style={[styles.plate, { borderColor: hairline }]}>
+              {entitlement.map(([label, value], i) => (
+                <View
+                  key={label}
+                  style={[
+                    styles.plateRow,
+                    i > 0 ? { borderTopWidth: 1, borderTopColor: hairline } : null,
+                  ]}>
+                  <Text style={[styles.plateLabel, { color: accentText }]}>{label}</Text>
+                  <Text style={[styles.plateValue, { color: textColor }]}>{value}</Text>
+                </View>
+              ))}
+            </View>
             <View style={styles.row}>
               <ThemedText type="small" themeColor="textSecondary">
                 This device
@@ -101,6 +131,17 @@ const styles = StyleSheet.create({
   handle: { width: 36, height: 4, borderRadius: 99, alignSelf: 'center', opacity: 0.22 },
   kicker: { fontSize: 11, letterSpacing: 1.2 },
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, alignItems: 'center' },
+  plate: { borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
+  plateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  plateLabel: { fontFamily: Fonts.mono, fontSize: 10, letterSpacing: 1 },
+  plateValue: { fontSize: 12, fontWeight: '600', textAlign: 'right', flexShrink: 1 },
   status: { fontSize: 13, fontWeight: '800' },
   value: { flex: 1, textAlign: 'right', fontSize: 13, fontWeight: '700' },
   code: { minHeight: 48, borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, fontSize: 16, fontWeight: '800', fontFamily: Fonts.rounded, letterSpacing: 1 },

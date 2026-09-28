@@ -103,6 +103,9 @@ export default function SetupScreen() {
 
   const accentText = isDark ? Brand.lime : Brand.primaryDeep;
   const accentBg = isDark ? 'rgba(183,233,60,0.12)' : 'rgba(31,157,85,0.10)';
+  // Solid fills, as on the Home and Trends gauges. Distinct from accentText,
+  // which is the tone for type on a surface and has to clear AA there.
+  const accent = isDark ? Brand.lime : Brand.primary;
 
   const heightCm = heightToCm(Number(heightFeet || 0), Number(heightInches || 0), Number(heightValue || 0), heightUnit);
   const weightKg = weightToKg(Number(weightStones || 0), Number(weightValue || 0), Number(weightValue || 0), weightUnit);
@@ -283,7 +286,7 @@ export default function SetupScreen() {
                     key={i}
                     style={[
                       styles.progressSegment,
-                      { backgroundColor: i <= step ? Brand.primary : theme.lineStrong },
+                      { backgroundColor: i <= step ? accent : theme.lineStrong },
                     ]}
                   />
                 ))}

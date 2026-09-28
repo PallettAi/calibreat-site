@@ -8,6 +8,7 @@ import {
   searchCofid,
   searchFoods,
 } from '../src/lib/food-search.ts';
+import { parseSearchPayload } from '../src/lib/barcode.ts';
 import { parseUsdaSearchPayload } from '../src/lib/usda.ts';
 
 let fails = 0;
@@ -133,6 +134,39 @@ eq(
   (await searchFoods('zzzzzz', { catalog, lookup: async () => null })).packsFailed,
   true,
 );
+
+// The case that made an empty list lie. OFF answered — with nothing — and
+// then the USDA fallback went dark, so "no hits" stopped meaning "no such
+// food" and started meaning "we did not finish asking".
+const offQuietUsdaDark = await searchFoods('zzzzzz', {
+  catalog,
+  lookup: async () => ({ products: [] }),
+  parseRemote: (payload) => parseSearchPayload(payload),
+  usdaLookup: async () => null,
+  parseUsda: parseUsdaSearchPayload,
+});
+eq('OFF answering with nothing is not a pack failure', offQuietUsdaDark.packsFailed, false);
+eq('a dark USDA is reported separately', offQuietUsdaDark.usdaFailed, true);
+eq('so an empty list is never presented as a real miss', offQuietUsdaDark.hits.length, 0);
+
+const usdaQuiet = await searchFoods('zzzzzz', {
+  catalog,
+  lookup: async () => ({ products: [] }),
+  parseRemote: (payload) => parseSearchPayload(payload),
+  usdaLookup: async () => ({ foods: [] }),
+  parseUsda: parseUsdaSearchPayload,
+});
+eq('a USDA that answered with nothing is not a failure', usdaQuiet.usdaFailed, false);
+
+const offHasHits = await searchFoods('zzzzzz', {
+  catalog,
+  lookup: async () => ({ products: [] }),
+  parseRemote: () => [{ barcode: 'x', name: 'A pack', kcal: 1, source: 'off' }],
+  usdaLookup: async () => null,
+  parseUsda: parseUsdaSearchPayload,
+});
+eq('USDA is not consulted when OFF already answered', offHasHits.usdaFailed, false);
+eq('a plain merge reports no USDA failure', mergeFoodSearch(catalog, remote).usdaFailed, false);
 
 console.log(fails === 0 ? '\nALL CHECKS PASSED' : `\n${fails} CHECK(S) FAILED`);
 process.exit(fails === 0 ? 0 : 1);

@@ -1,4 +1,4 @@
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, TextInput, View, type DimensionValue } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Brand } from '@/constants/app';
@@ -54,6 +54,16 @@ export function WaterSheet({
   mutedColor: string;
   cardBg: string;
 }) {
+  // Water is deliberately not the app's green — it is a different quantity, and
+  // borrowing the calorie accent would imply it is spent rather than filled.
+  const tint = isDark ? '#38BDF8' : '#0284C7';
+  const tintSoft = isDark ? 'rgba(56,189,248,0.16)' : 'rgba(2,132,199,0.12)';
+  // Home shows water as a fill tube; this is the screen where it is set, and it
+  // had the total and the goal as two numbers with nothing drawn between them.
+  // Clamped, and a goal of 0 is treated as "no target" rather than dividing.
+  const fill = waterGoal > 0 ? Math.max(0, Math.min(1, waterMl / waterGoal)) : 0;
+  const fillPct: DimensionValue = `${Math.round(fill * 1000) / 10}%`;
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
@@ -63,10 +73,13 @@ export function WaterSheet({
             <ThemedText type="smallBold" style={[styles.kicker, { color: mutedColor }]}>
               WATER · {dayLabel}
             </ThemedText>
-            <Text style={[styles.total, { color: isDark ? '#38BDF8' : '#0284C7' }]}>{formatWaterMl(waterMl, waterUnit)}</Text>
+            <Text style={[styles.total, { color: tint }]}>{formatWaterMl(waterMl, waterUnit)}</Text>
             <ThemedText type="small" themeColor="textSecondary">
               of {formatWaterMl(waterGoal, waterUnit)}
             </ThemedText>
+            <View style={[styles.tube, { backgroundColor: tintSoft }]}>
+              <View style={[styles.tubeFill, { width: fillPct, backgroundColor: tint }]} />
+            </View>
             <View style={styles.row}>
               <TextInput
                 value={waterInput}
@@ -91,7 +104,7 @@ export function WaterSheet({
                 disabled={adding || waterInput.trim().length === 0}
                 style={({ pressed }) => [
                   styles.addBtn,
-                  { backgroundColor: '#3B82F6' },
+                  { backgroundColor: tint },
                   (adding || waterInput.trim().length === 0) && styles.dimmed,
                   pressed && styles.pressed,
                 ]}
@@ -175,6 +188,8 @@ const styles = StyleSheet.create({
   handle: { width: 36, height: 4, borderRadius: 99, alignSelf: 'center', opacity: 0.22 },
   kicker: { fontSize: 11, letterSpacing: 1.2 },
   total: { fontSize: 32, fontWeight: '800', letterSpacing: -0.8 },
+  tube: { height: 10, borderRadius: 5, overflow: 'hidden' },
+  tubeFill: { height: 10, borderRadius: 5 },
   row: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   input: { flex: 1, minHeight: 48, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 14, fontSize: 17, fontWeight: '700' },
   addBtn: { minHeight: 48, minWidth: 64, borderRadius: 12, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },

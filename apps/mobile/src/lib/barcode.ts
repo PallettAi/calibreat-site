@@ -3,9 +3,13 @@
  *
  * Parse is pure (checked by scripts/check-barcode.mjs). Network lives in
  * lookupBarcode — UK endpoint first, world fallback. Successful hits are
- * cached for the session; misses are negatively cached for five minutes so a
- * quick re-scan of the same pack doesn't re-pay the full lookup wait, while a
- * genuinely new product added to OFF in the meantime can still be found.
+ * cached for the session; a genuine miss is negatively cached for five
+ * minutes so a quick re-scan of the same pack doesn't re-pay the full lookup
+ * wait, while a product newly added to OFF can still be found.
+ *
+ * "A genuine miss" is the operative phrase. A lookup that never reached OFF
+ * is reported as `unreachable` and cached nowhere, because being offline is
+ * not a fact about the pack in your hand.
  */
 
 export type OffPortion = 'serving' | '100g';
@@ -216,11 +220,6 @@ export function normaliseBarcode(raw: string): string {
   return raw.replace(/\D/g, '');
 }
 
-/** Hits stay in the session cache; misses must not, so a later retry can succeed. */
-export function shouldRememberLookup(food: OffFood | null): boolean {
-  return food != null;
-}
-
 const OFF_UA = 'calibrEAT/0.0.4 (https://calibreat.app)';
 const LOOKUP_TIMEOUT_MS = 8000;
 const NEG_TTL_MS = 5 * 60 * 1000;
@@ -237,7 +236,22 @@ function offHeaders(): Record<string, string> {
   return { 'User-Agent': OFF_UA, Accept: 'application/json' };
 }
 
-export async function fetchOpenFoodFacts(url: string): Promise<unknown | null> {
+export type OffFetch =
+  | { ok: true; payload: unknown; reachable: true }
+  | { ok: false; reachable: true; status: number }
+  | { ok: false; reachable: false };
+
+/**
+ * Fetch from Open Food Facts, reporting *how* it failed.
+ *
+ * The difference is the whole point. `null` used to mean both "OFF answered
+ * and has no such product" and "the device never got there", and the two
+ * deserve opposite behaviour: one is a fact about the pack, the other is a
+ * fact about the train the app is on. A timeout, a dead DNS name and a 4xx
+ * all collapsed into the same answer, so being offline looked exactly like
+ * scanning something unlabelled.
+ */
+export async function fetchOff(url: string): Promise<OffFetch> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), LOOKUP_TIMEOUT_MS);
   try {
@@ -245,42 +259,78 @@ export async function fetchOpenFoodFacts(url: string): Promise<unknown | null> {
       headers: offHeaders(),
       signal: controller.signal,
     });
-    if (!res.ok) return null;
-    return await res.json();
+    if (!res.ok) return { ok: false, reachable: true, status: res.status };
+    try {
+      return { ok: true, payload: await res.json(), reachable: true };
+    } catch {
+      // The server answered with something that is not JSON — an OFF proxy
+      // error page, typically. Reached, but not usable, so it counts as
+      // answered rather than as a connection failure.
+      return { ok: false, reachable: true, status: res.status };
+    }
   } catch {
-    return null;
+    // fetch itself threw: offline, DNS failure, or our own 8s abort.
+    return { ok: false, reachable: false };
   } finally {
     clearTimeout(timer);
   }
 }
 
-async function fetchOff(url: string): Promise<unknown | null> {
-  return fetchOpenFoodFacts(url);
+/**
+ * The `lookup` shape `searchFoods` expects, which only ever needs ok-or-null.
+ * Its offline reporting comes from that caller's own `packsFailed` and
+ * `usdaFailed` flags, which stay separate so neither source can hide behind
+ * the other's silence.
+ */
+export async function fetchOpenFoodFacts(url: string): Promise<unknown | null> {
+  const res = await fetchOff(url);
+  return res.ok ? res.payload : null;
 }
 
-/** Look up a barcode. Hits are cached for the session; misses for 5 minutes. */
-export async function lookupBarcode(raw: string): Promise<OffFood | null> {
+export type BarcodeLookup =
+  | { status: 'found'; food: OffFood }
+  | { status: 'not-found' }
+  | { status: 'unreachable' };
+
+/**
+ * Look up a barcode. Hits are cached for the session; genuine misses for 5
+ * minutes.
+ *
+ * A connection failure is neither: it is not cached at all, so the pack does
+ * not stay unscannable for five minutes just because the app was in a tunnel
+ * when it was first scanned.
+ */
+export async function lookupBarcode(raw: string): Promise<BarcodeLookup> {
   const code = normaliseBarcode(raw);
-  if (code.length < 8) return null;
-  if (cache.has(code)) return cache.get(code) ?? null;
+  if (code.length < 8) return { status: 'not-found' };
+  const hit = cache.get(code);
+  if (hit) return { status: 'found', food: hit };
   const negAt = negCache.get(code);
   if (negAt != null) {
-    if (Date.now() - negAt < NEG_TTL_MS) return null;
+    if (Date.now() - negAt < NEG_TTL_MS) return { status: 'not-found' };
     negCache.delete(code);
   }
-  const uk = await fetchOff(`https://uk.openfoodfacts.org/api/v2/product/${code}.json`);
-  let parsed = uk ? parseOffProduct(uk as OffResponse, code) : null;
-  if (!parsed) {
-    const world = await fetchOff(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
-    parsed = world ? parseOffProduct(world as OffResponse, code) : null;
+  // Both mirrors are worth asking even when the first one drops: they are
+  // separate deployments and one being down says nothing about the other.
+  const urls = [
+    `https://uk.openfoodfacts.org/api/v2/product/${code}.json`,
+    `https://world.openfoodfacts.org/api/v2/product/${code}.json`,
+  ];
+  let answered = false;
+  for (const url of urls) {
+    const res = await fetchOff(url);
+    if (!res.reachable) continue;
+    answered = true;
+    const parsed = res.ok ? parseOffProduct(res.payload as OffResponse, code) : null;
+    if (parsed) {
+      cache.set(code, parsed);
+      negCache.delete(code);
+      return { status: 'found', food: parsed };
+    }
   }
-  if (parsed) {
-    cache.set(code, parsed);
-    negCache.delete(code);
-  } else {
-    negCache.set(code, Date.now());
-  }
-  return parsed;
+  // Only a server that actually answered may poison the cache.
+  if (answered) negCache.set(code, Date.now());
+  return { status: answered ? 'not-found' : 'unreachable' };
 }
 
 export type OffSearchHit = OffProduct & { code?: string; _id?: string };

@@ -5,11 +5,13 @@
  * against independently computed expected values — Mifflin-St Jeor BMR/TDEE,
  * goal adjustments, macro split, unit conversions and the healthy-weight range.
  */
-import { computeGoals, bmr, tdee, healthyWeightRange, adaptiveTdee, bodyMassIndex, bmiBand, resolveBmiWeight, calorieBudget, caloriesRemaining } from '../src/lib/nutrition.ts';
+import { computeGoals, bmr, tdee, healthyWeightRange, adaptiveTdee, bodyMassIndex, bmiBand, resolveBmiWeight, calorieBudget, caloriesRemaining, recheckTargets, latestWeighInKg, RECHECK_TARGET_DELTA_KCAL } from '../src/lib/nutrition.ts';
 import {
   CUP_ML,
   heightFromCm,
   heightToCm,
+  normalizeDecimalNumber,
+  parseWeightInput,
   waterToMl,
   weightFromKg,
   weightToKg,
@@ -55,6 +57,59 @@ eq('59.9kg -> st', w.stones, 9);
 eq('59.9kg -> lb part', w.pounds, 6);
 eq('132lb -> kg', weightToKg(0, 0, 132, 'lb'), 59.9);
 eq('59.9kg -> lb', weightFromKg(59.9, 'lb').value, 132);
+
+// Stone remainders that round up to a full 14 lb must carry into the next
+// stone. 63.5 kg is exactly 10 st, but 63.5 x 2.2046 = 139.993 lb, which
+// floors to "9 st 14 lb" — an impossible weight. setup.tsx prefills from
+// weightFromKg while validateStep rejects lb > 13, so the wizard was refusing
+// its own prefill and deadlocking on those users.
+const exactStone = weightFromKg(63.5, 'st');
+eq('63.5kg is exactly 10 st', exactStone.stones, 10);
+eq('63.5kg carries the 14 lb remainder', exactStone.pounds, 0);
+eq('63.5kg -> kg round-trips', weightToKg(exactStone.stones, exactStone.pounds, 0, 'st'), 63.5);
+// And an ordinary weight must NOT gain a stone.
+const ordinary = weightFromKg(59.9, 'st');
+eq('59.9kg stays 9 st', ordinary.stones, 9);
+eq('59.9kg stays 6 lb', ordinary.pounds, 6);
+// No weight in the adult range may produce an out-of-range pound remainder.
+let invalidStones = 0;
+for (let kg = 30; kg <= 250; kg += 0.05) {
+  const s = weightFromKg(kg, 'st');
+  if (s.pounds < 0 || s.pounds > 13) invalidStones += 1;
+}
+eq('no adult weight yields an invalid lb remainder', invalidStones, 0);
+
+// Typed weight input. The input filter used to delete "," before the parser
+// saw the string, so "70,5" was read as 705 kg and then dropped by the 20-400
+// kg guard with no message — the button silently did nothing. parseFloat
+// cannot disambiguate a decimal comma from a thousands separator, so the rules
+// are explicit: a dot anywhere means commas group thousands, else a comma
+// followed by exactly three digits does, else the comma is a decimal point.
+eq('decimal comma kg', parseWeightInput('70,5', 'kg'), 70.5);
+eq('decimal point kg', parseWeightInput('70.5', 'kg'), 70.5);
+eq('thousands comma kg', parseWeightInput('1,000', 'kg'), 1000);
+eq('thousands with decimal kg', parseWeightInput('1,200.5', 'kg'), 1200.5);
+eq('grouped thousands kg', parseWeightInput('1,200,300', 'kg'), 1200300);
+eq('decimal comma lb', parseWeightInput('160,5', 'lb'), 72.8);
+eq('blank weight is null', parseWeightInput('', 'kg'), null);
+eq('junk weight is null', parseWeightInput('abc', 'kg'), null);
+
+// Stones take two fields, so a comma is a separator, never a decimal point.
+eq('stone two fields space', parseWeightInput('9 6', 'st'), 59.9);
+eq('stone two fields comma', parseWeightInput('9,6', 'st'), 59.9);
+eq('stone single value', parseWeightInput('9.6', 'st'), weightToKg(9, 8, 0, 'st'));
+
+// A stone is exactly 14 lb, so the pounds half is 0-13. These used to convert
+// straight through and record a weight nobody entered — "10 500" is 290 kg and
+// passes any plausibility check, and "9.99" rounds its remainder to a full 14.
+eq('stone rejects 500 lb', parseWeightInput('10 500', 'st'), null);
+eq('stone rejects 14 lb remainder', parseWeightInput('9.99', 'st'), null);
+eq('stone accepts 13 lb', parseWeightInput('9 13', 'st'), weightToKg(9, 13, 0, 'st'));
+
+eq('decimal normaliser keeps blank', normalizeDecimalNumber('  '), '');
+eq('decimal normaliser splits thousands', normalizeDecimalNumber('1,200,300'), '1200300');
+eq('decimal normaliser prefers dot', normalizeDecimalNumber('1,200.5'), '1200.5');
+eq('decimal normaliser reads decimal comma', normalizeDecimalNumber('2,5'), '2.5');
 
 // Water
 eq('2 cups -> ml', waterToMl(2, 'cups'), 480);
@@ -191,6 +246,76 @@ eq('remaining food only', caloriesRemaining({ target: 2209, foodKcal: 1800, work
 eq('remaining grows after a workout', caloriesRemaining({ target: 2209, foodKcal: 1800, workoutKcal: 34 }), 443);
 eq('workout can still leave you over', caloriesRemaining({ target: 2200, foodKcal: 2300, workoutKcal: 34 }), -66);
 eq('junk workout kcal is ignored', calorieBudget(2200, Number.NaN), 2200);
+
+// Target re-derivation: goals should track body weight, not freeze at setup.
+const cut = { sex: 'male', ageYears: 30, heightCm: 180, weightKg: 80, activityLevel: 'moderate', goal: 'lose', ratePerWeek: 0.5 };
+const storedCut = computeGoals(cut);
+eq('setup target is the baseline', storedCut.calorieTarget, 2209);
+
+eq('no weigh-ins falls back to setup weight', latestWeighInKg([], 80), 80);
+eq('unusable weigh-ins fall back', latestWeighInKg([{ kg: 0, at: '2026-02-01' }], 80), 80);
+eq('latest weigh-in wins even unordered', latestWeighInKg(
+  [{ kg: 74, at: '2026-03-20' }, { kg: 76, at: '2026-03-01' }], 80,
+), 74);
+
+// 4 kg off setup moves the target by 62 kcal (2209 -> 2147): stale.
+const lost4 = recheckTargets({
+  stored: storedCut,
+  profile: cut,
+  weighIns: [{ kg: 76, at: '2026-03-01' }],
+});
+eq('4 kg off setup is stale', lost4.stale ? 1 : 0, 1);
+eq('re-derived target', lost4.next.calorieTarget, 2147);
+eq('target delta', lost4.deltaKcal, -62);
+eq('weight basis is the weigh-in', lost4.weightBasisKg, 76);
+eq('protein follows weight too', lost4.next.proteinG, 137);
+eq('carbs are the remainder', lost4.next.carbsG, 265);
+eq('reason names the weight', /3\.9? kg lighter|4 kg lighter/.test(lost4.reason) ? 1 : 0, 1);
+
+// 1 kg off setup moves the target by 15 kcal: inside the threshold.
+const lost1 = recheckTargets({
+  stored: storedCut,
+  profile: cut,
+  weighIns: [{ kg: 79, at: '2026-03-01' }],
+});
+eq('1 kg off setup is not stale', lost1.stale ? 1 : 0, 0);
+eq('small-change target', lost1.next.calorieTarget, 2194);
+eq('small-change delta', lost1.deltaKcal, -15);
+eq('small-change reason is honest', /threshold/.test(lost1.reason) ? 1 : 0, 1);
+
+// Gaining moves the target the other way (surplus goal).
+const bulk = { ...cut, goal: 'gain', weightKg: 60 };
+const storedBulk = computeGoals(bulk);
+const gained = recheckTargets({ stored: storedBulk, profile: bulk, weighIns: [{ kg: 64, at: '2026-03-01' }] });
+eq('gaining is stale', gained.stale ? 1 : 0, 1);
+eq('gain target rises', gained.next.calorieTarget, storedBulk.calorieTarget + 62);
+
+// A 'monitor' goal derives straight from TDEE, which is weight-dependent too.
+const watch = { ...cut, goal: 'monitor' };
+const storedWatch = computeGoals(watch);
+eq('monitor target equals TDEE', storedWatch.calorieTarget, storedWatch.tdee);
+const watched = recheckTargets({ stored: storedWatch, profile: watch, weighIns: [{ kg: 76, at: '2026-03-01' }] });
+eq('monitor target tracks weight', watched.next.calorieTarget, 2697);
+eq('monitor delta', watched.deltaKcal, -62);
+
+// Threshold boundary: exactly 50 kcal is stale, 49 is not.
+const boundary = computeGoals({ ...cut, weightKg: 76 });
+eq('boundary at 50 kcal is stale', recheckTargets({
+  stored: { ...boundary, calorieTarget: boundary.calorieTarget + 50 },
+  profile: cut,
+  weighIns: [{ kg: 76, at: '2026-03-01' }],
+}).stale ? 1 : 0, 1);
+eq('boundary at 49 kcal is not stale', recheckTargets({
+  stored: { ...boundary, calorieTarget: boundary.calorieTarget + 49 },
+  profile: cut,
+  weighIns: [{ kg: 76, at: '2026-03-01' }],
+}).stale ? 1 : 0, 0);
+
+// With no weigh-ins the target is unchanged and the reason says so.
+const noWeighIns = recheckTargets({ stored: storedCut, profile: cut, weighIns: [] });
+eq('no weigh-ins is not stale', noWeighIns.stale ? 1 : 0, 0);
+eq('no weigh-ins delta is zero', noWeighIns.deltaKcal, 0);
+eq('no weigh-ins reason', /No weigh-ins/.test(noWeighIns.reason) ? 1 : 0, 1);
 
 console.log(fails === 0 ? '\nALL CHECKS PASSED' : `\n${fails} CHECK(S) FAILED`);
 process.exit(fails === 0 ? 0 : 1);

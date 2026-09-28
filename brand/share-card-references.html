@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>calibrEAT — share card references</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 44px 28px 80px;
+    background: #05080D; color: #EEF2F5;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  header, main, footer { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 24px; letter-spacing: -0.4px; margin: 0 0 10px; }
+  h1 span { color: #B7E93C; }
+  .lede { color: #A7B2BC; font-size: 14px; line-height: 1.6; max-width: 760px; margin: 0; }
+  .takeaways {
+    margin: 28px 0 44px; padding: 20px 24px;
+    background: #0A1019; border: 1px solid rgba(255,255,255,.09); border-radius: 16px;
+  }
+  .takeaways h2 { font-size: 12px; letter-spacing: 2px; color: #B7E93C; margin: 0 0 14px; font-weight: 800; }
+  .takeaways ol { margin: 0; padding-left: 20px; color: #CBD5DC; font-size: 14px; line-height: 1.75; }
+  .takeaways b { color: #EEF2F5; }
+  main { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 26px; }
+  @media (max-width: 500px) { main { grid-template-columns: 1fr; } }
+  .ref {
+    background: #0A1019; border: 1px solid rgba(255,255,255,.09); border-radius: 18px;
+    padding: 22px 22px 18px; display: flex; flex-direction: column; gap: 14px;
+  }
+  .ref-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .ref h3 { margin: 0; font-size: 17px; letter-spacing: -0.2px; }
+  .tag { font-size: 10px; font-weight: 800; letter-spacing: 1.4px; color: #0A1019; background: #B7E93C; padding: 4px 9px; border-radius: 99px; white-space: nowrap; }
+  .tag.warm { background: #F4A960; }
+  .swatch { border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,.08); }
+  .swatch svg { display: block; width: 100%; height: auto; }
+  .what { margin: 0; color: #A7B2BC; font-size: 13.5px; line-height: 1.6; }
+  .steal { margin: 0; padding-left: 18px; color: #CBD5DC; font-size: 13.5px; line-height: 1.65; }
+  .steal b { color: #B7E93C; font-weight: 700; }
+  .links { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; }
+  .links a {
+    font-size: 12px; color: #8DDC6A; text-decoration: none; border: 1px solid rgba(141,220,106,.3);
+    padding: 5px 10px; border-radius: 99px;
+  }
+  .links a:hover { background: rgba(141,220,106,.1); }
+  footer { margin-top: 44px; color: #7D8A96; font-size: 12.5px; line-height: 1.7; max-width: 780px; }
+  footer b { color: #A7B2BC; }
+</style>
+</head>
+<body>
+<header>
+  <h1>calibr<span>EAT</span> — share-card references</h1>
+  <p class="lede">Six share-image systems worth stealing from, researched from design-team write-ups and design press.
+  The little visual under each name is a hand-drawn hint at its style, not a mockup. For whoever picks up the redesign.</p>
+  <div class="takeaways">
+    <h2>THE FIVE LESSONS THAT KEEP REPEATING</h2>
+    <ol>
+      <li><b>One iconic object, not a screenshot.</b> Apple's rings, Strava's route line — the image is a <em>logo of the behavior</em>, consistent colors every single time.</li>
+      <li><b>Data is the hero; decoration is primitive.</b> Strava's YIS system is built from "lines, dots, colour strips, circles, and typography" — nothing else.</li>
+      <li><b>Story-format native, one stat per beat.</b> Wrapped wins because it looks like a story, not a spreadsheet — superlatives ("top 0.5%") create status.</li>
+      <li><b>Milestones are share moments.</b> Duolingo fires the share card at 7 / 30 / 100 / 365 with milestone art — a reason to share that isn't "look at my dashboard".</li>
+      <li><b>Pick a tone lane.</b> Whoop is clinical black-data; Oura and Gentler Streak are warm and kind. Both win; the middle loses.</li>
+    </ol>
+  </div>
+</header>
+<main>
+
+  <article class="ref">
+    <div class="ref-head"><h3>Strava — activity share card</h3><span class="tag">CATEGORY BENCHMARK</span></div>
+    <div class="swatch"><svg viewBox="0 0 400 150">
+      <rect width="400" height="150" fill="#111722"/>
+      <path d="M30 95 C 70 30, 120 130, 170 80 S 260 20, 310 70 S 360 110, 375 60" fill="none" stroke="#FC5200" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="30" cy="95" r="6" fill="#fff"/><circle cx="375" cy="60" r="6" fill="none" stroke="#fff" stroke-width="3"/>
+      <text x="30" y="132" fill="#8b95a3" font-size="11" font-family="ui-monospace, monospace" letter-spacing="2">DISTANCE · TIME · PACE</text>
+    </svg></div>
+    <p class="what">Post-workout image: the route map is the hero, three stats underneath, brand orange on dark. People redesign it voluntarily because the original "looks like a screenshot".</p>
+    <ul class="steal">
+      <li><b>The hero graphic is the app's fingerprint</b> — our equivalent is the dial or the True Burn sparkline vs. formula line.</li>
+      <li><b>Share lives one tap from the moment</b> (inside the activity), not buried in settings.</li>
+      <li>Third parties flourish making it "clean and minimalist" — that's the polish bar users already expect.</li>
+    </ul>
+    <div class="links">
+      <a href="https://support.strava.com/en-us/articles/15401840-sharing-your-strava-activities">How sharing works</a>
+    </div>
+  </article>
+
+  <article class="ref">
+    <div class="ref-head"><h3>Strava — Year in Sport</h3><span class="tag">DESIGN-SYSTEM GOLD</span></div>
+    <div class="swatch"><svg viewBox="0 0 400 150">
+      <rect width="400" height="150" fill="#151B2B"/>
+      <rect x="30" y="60" width="14" height="70" fill="#FC5200"/><rect x="52" y="35" width="14" height="95" fill="#F4A960"/>
+      <rect x="74" y="80" width="14" height="50" fill="#5B6B57"/><rect x="96" y="20" width="14" height="110" fill="#FC5200"/>
+      <rect x="118" y="50" width="14" height="80" fill="#8b95a3"/><rect x="140" y="68" width="14" height="62" fill="#F4A960"/>
+      <text x="30" y="40" fill="#EEF2F5" font-size="16" font-weight="700" font-family="system-ui">Your year in movement</text>
+      <text x="30" y="142" fill="#8b95a3" font-size="10" font-family="ui-monospace, monospace" letter-spacing="2">ATHLETES DON'T QUIT</text>
+    </svg></div>
+    <p class="what">The annual recap, designed by consultancy Manual: a chaptered narrative (big picture → hard-won middle → triumph), data elevated as hero, palette lifted from race bibs and apparel then "toned down with navy and olive".</p>
+    <ul class="steal">
+      <li><b>"Lines, dots, colour strips, circles, and typography"</b> — the whole system is primitives, which is why it animates and scales.</li>
+      <li><b>Works for both extremes</b>: celebratory for the 366-activity year and dignified for the 3-activity year. Our card must not humiliate a 2-day streak.</li>
+      <li>A campaign tagline gives shares a voice: "Athletes don't quit" → ours could be "measured, not guessed".</li>
+    </ul>
+    <div class="links">
+      <a href="https://www.itsnicethat.com/articles/manual-strava-year-in-sport-graphic-design-150321">It's Nice That teardown</a>
+    </div>
+  </article>
+
+  <article class="ref">
+    <div class="ref-head"><h3>Spotify Wrapped</h3><span class="tag warm">THE VIRAL MECHANIC</span></div>
+    <div class="swatch"><svg viewBox="0 0 400 150">
+      <rect width="400" height="150" fill="#1E1E3F"/>
+      <rect x="0" y="0" width="130" height="70" fill="#FF6B6B" transform="rotate(-4 65 35)"/>
+      <rect x="270" y="80" width="150" height="80" fill="#4FC3F7" transform="rotate(5 345 120)"/>
+      <rect x="180" y="10" width="90" height="50" fill="#FFD93D" transform="rotate(8 225 35)"/>
+      <text x="40" y="120" fill="#fff" font-size="15" font-weight="800" font-family="system-ui">You were in the</text>
+      <text x="40" y="138" fill="#FFD93D" font-size="15" font-weight="800" font-family="system-ui">top 0.5% of listeners</text>
+    </svg></div>
+    <p class="what">"Looks like an Instagram story, not a spreadsheet": bold color blocks, one personal stat per slide, motion, and superlative framing that turns data into identity.</p>
+    <ul class="steal">
+      <li><b>Superlatives create status</b> — "6/7 weeks at 90%+ logging" beats "6/7 days logged".</li>
+      <li><b>Sequence, not single frame</b>: a 3-slide story (streak → burn drift → the equation) shares better than one dense card.</li>
+      <li>Natively composed for 9:16 — never a cropped dashboard.</li>
+    </ul>
+    <div class="links">
+      <a href="https://medium.com/design-bootcamp/the-tech-behind-the-feels-why-spotify-wrapped-is-a-masterclass-in-data-storytelling-0337e0aa6481">Data-storytelling breakdown</a>
+      <a href="https://uxdesign.cc/why-is-spotify-wrapped-so-popular-5c503e79a3ee">Why it's so popular (UX Collective)</a>
+    </div>
+  </article>
+
+  <article class="ref">
+    <div class="ref-head"><h3>Apple Fitness — Activity rings</h3><span class="tag">MOST RECOGNIZABLE OBJECT</span></div>
+    <div class="swatch"><svg viewBox="0 0 400 150">
+      <rect width="400" height="150" fill="#000"/>
+      <circle cx="110" cy="75" r="52" fill="none" stroke="#3A2B4F" stroke-width="14"/>
+      <circle cx="110" cy="75" r="38" fill="none" stroke="#3E2E4F" stroke-width="14"/>
+      <circle cx="110" cy="75" r="24" fill="none" stroke="#2E3A4F" stroke-width="14"/>
+      <circle cx="110" cy="75" r="52" fill="none" stroke="#FA114F" stroke-width="14" stroke-dasharray="245 82" stroke-linecap="round" transform="rotate(-90 110 75)"/>
+      <circle cx="110" cy="75" r="38" fill="none" stroke="#A6FF00" stroke-width="14" stroke-dasharray="200 39" stroke-linecap="round" transform="rotate(-90 110 75)"/>
+      <circle cx="110" cy="75" r="24" fill="none" stroke="#00E5FF" stroke-width="14" stroke-dasharray="120 31" stroke-linecap="round" transform="rotate(-90 110 75)"/>
+      <text x="200" y="68" fill="#fff" font-size="14" font-weight="700" font-family="system-ui">Three arcs, three fixed</text>
+      <text x="200" y="86" fill="#fff" font-size="14" font-weight="700" font-family="system-ui">colors, one object —</text>
+      <text x="200" y="104" fill="#8b95a3" font-size="12" font-family="system-ui">unchanged since 2015.</text>
+    </svg></div>
+    <p class="what">The rings are so consistent that the shape alone signals Apple Fitness — people recognize the share image from across a room, and some tattoo it.</p>
+    <ul class="steal">
+      <li><b>Fixed colors + fixed geometry = brand memory.</b> Our dial should never change palette between templates.</li>
+      <li><b>The object can carry a card alone</b> — rings huge, text minimal. A dial-only "today" card is one build away.</li>
+      <li>Awards and limited-edition badges give the object narrative without comparing users.</li>
+    </ul>
+    <div class="links">
+      <a href="https://www.apple.com/watch/close-your-rings/">Close Your Rings</a>
+    </div>
+  </article>
+
+  <article class="ref">
+    <div class="ref-head"><h3>Gentler Streak</h3><span class="tag warm">THE KIND ALTERNATIVE</span></div>
+    <div class="swatch"><svg viewBox="0 0 400 150">
+      <defs><linearGradient id="gs" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#FBE8D3"/><stop offset="1" stop-color="#F6C6A8"/></linearGradient></defs>
+      <rect width="400" height="150" fill="#FDF6EE"/>
+      <path d="M205 35 c 22 -18 50 2 44 26 c 20 4 22 34 0 40 c 4 22 -26 34 -42 20 c -16 14 -46 2 -42 -20 c -22 -6 -20 -36 0 -40 c -6 -24 22 -44 40 -26 z" fill="url(#gs)" stroke="#E8A87C" stroke-width="2"/>
+      <circle cx="192" cy="62" r="3.5" fill="#5B4636"/><circle cx="218" cy="62" r="3.5" fill="#5B4636"/>
+      <path d="M196 76 q 9 7 18 0" stroke="#5B4636" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <text x="270" y="62" fill="#5B4636" font-size="13" font-family="Georgia, serif" font-style="italic">"A good, steady</text>
+      <text x="270" y="80" fill="#5B4636" font-size="13" font-family="Georgia, serif" font-style="italic">week — well met."</text>
+      <text x="30" y="130" fill="#B08968" font-size="11" font-family="ui-monospace, monospace" letter-spacing="2">ILLUSTRATED · WARM · NO JUDGMENT</text>
+    </svg></div>
+    <p class="what">Apple Design Award winner built on the opposite of push: painterly illustration, a mascot ("your heart would be telling you"), and stats reframed as feelings — "needs met perfectly".</p>
+    <ul class="steal">
+      <li><b>Interpretation over numbers</b>: "Statistics are just numbers. Without knowing how to interpret them, they are meaningless."</li>
+      <li><b>Progress vs. your own history</b>, never vs. other people — matches our no-leaderboard stance exactly.</li>
+      <li>Their share sheet offers light / dark / transparent backgrounds — user choice, same object. Validates a small template set.</li>
+    </ul>
+    <div class="links">
+      <a href="https://developer.apple.com/news/?id=3m0ht22s">Apple Behind the Design</a>
+      <a href="https://www.sketch.com/blog/gentler-streak/">Sketch interview</a>
+    </div>
+  </article>
+
+  <article class="ref">
+    <div class="ref-head"><h3>Whoop / Oura — the two dark lanes</h3><span class="tag">TONE CALIBRATION</span></div>
+    <div class="swatch"><svg viewBox="0 0 400 150">
+      <rect width="200" height="150" fill="#000"/>
+      <text x="20" y="55" fill="#fff" font-size="26" font-family="ui-monospace, monospace" font-weight="700">98%</text>
+      <text x="20" y="75" fill="#666" font-size="9" font-family="ui-monospace, monospace" letter-spacing="2">RECOVERY</text>
+      <rect x="20" y="92" width="160" height="6" rx="3" fill="#222"/><rect x="20" y="92" width="150" height="6" rx="3" fill="#00E0A1"/>
+      <rect x="200" width="200" height="150" fill="#0E0D1A"/>
+      <circle cx="300" cy="70" r="34" fill="none" stroke="#F4A960" stroke-width="3"/>
+      <circle cx="300" cy="70" r="26" fill="none" stroke="#C97FD6" stroke-width="3" stroke-dasharray="120 44"/>
+      <text x="272" y="122" fill="#B8B3C9" font-size="10" font-family="system-ui">Readiness 87 · gentle framing</text>
+    </svg></div>
+    <p class="what">The two poles of dark-UI health sharing: Whoop is intense, monospace, clinical; Oura is warm gradients, circles, encouraging words. A widely-cited comparison puts it simply: "Whoop is intense… Oura is gentle."</p>
+    <ul class="steal">
+      <li><b>Both work; the middle is mush.</b> Our Instrument/Terminal templates lean Whoop; nothing yet leans Oura.</li>
+      <li>Whoop shows <b>one number + one meter</b> — maximum confidence through restraint.</li>
+      <li>Oura frames the week as a <b>"health story"</b> — narrative titles ("A steadier week") over raw stats.</li>
+    </ul>
+    <div class="links">
+      <a href="https://ouraring.com/blog/new-app-design/">Oura's redesign rationale</a>
+    </div>
+  </article>
+
+  <article class="ref">
+    <div class="ref-head"><h3>Duolingo — streak milestones</h3><span class="tag">SHARE = RITUAL</span></div>
+    <div class="swatch"><svg viewBox="0 0 400 150">
+      <rect width="400" height="150" fill="#58CC02"/>
+      <path d="M200 25 c 10 18 26 22 26 42 c 0 20 -14 34 -26 34 c -12 0 -26 -14 -26 -34 c 0 -20 16 -24 26 -42 z" fill="#FFC800"/>
+      <path d="M200 55 c 5 9 13 11 13 21 c 0 10 -7 17 -13 17 c -6 0 -13 -7 -13 -17 c 0 -10 8 -12 13 -21 z" fill="#FF9600"/>
+      <text x="150" y="128" fill="#fff" font-size="15" font-weight="800" font-family="system-ui">30 DAY STREAK! 🔥</text>
+    </svg></div>
+    <p class="what">The design team's own write-up: milestone art (the phoenix "Fire Duo") exists to make milestones celebratory and — explicitly — <em>shareable</em>, with a card "that allows you to easily save, post, or #humblebrag". They even redesigned the flame after finding it wasn't universally understood.</p>
+    <ul class="steal">
+      <li><b>Fire the share card at milestones</b> — 7 / 30 / 100 days is the moment people want to brag, and it's free motivation.</li>
+      <li><b>Test the metaphor</b>: "on fire" isn't universal. Language on our cards should be plain ("12-day logging streak", not jargon).</li>
+      <li>The card is one piece of a system (animation, widget, reminder) — a share asset that only exists in settings gets shared never.</li>
+    </ul>
+    <div class="links">
+      <a href="https://blog.duolingo.com/streak-milestone-design-animation/">Duolingo design post</a>
+      <a href="https://blog.duolingo.com/how-duolingo-streak-builds-habit/">Habit research</a>
+    </div>
+  </article>
+
+</main>
+<footer>
+  <b>How to read this against our current four templates:</b> Instrument and Terminal already sit in the
+  Strava/Whoop lane (dark, data-hero) and follow lesson 2 well. The gaps the research points at are
+  <b>lesson 1</b> (no single iconic object yet — the dial could be it), <b>lesson 3</b> (no story-format
+  sequence or superlative framing), <b>lesson 4</b> (milestone variants), and a warm lane option
+  (Gentler/Oura) that would widen the audience beyond data people. Copy rules stay fixed either way:
+  behavior, never bodies.
+</footer>
+</body>
+</html>

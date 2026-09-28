@@ -19,6 +19,7 @@ import {
   type SavedMealItem,
 } from '@/lib/saved-meals';
 import { localCutoffDayKey, localDayKey } from '@/lib/dates';
+import type { RestorePlan } from '@/lib/restore';
 import { computeGoals, type ActivityLevel, type GoalDirection, type Sex } from '@/lib/nutrition';
 import type { HeightUnit, WaterUnit, WeightUnit } from '@/lib/units';
 
@@ -80,6 +81,12 @@ export type WorkoutSession = {
   sets: number;
   reps: number;
   kcal: number;
+  /** Load used for this session (0 = bodyweight / machine); added in v0.0.4. */
+  weightKg: number;
+  /** Cached sets×reps×weightKg; 0 when weightKg 0. */
+  volumeKg: number;
+  /** Epley 1RM for (weightKg,reps); 0 when weightKg 0. */
+  e1RMKg: number;
   loggedAt: string;
 };
 
@@ -92,7 +99,11 @@ export type IntakeEntry = {
 
 let dbPromise: Promise<SQLiteDatabase> | null = null;
 
-export function getDb(): Promise<SQLiteDatabase> {
+// Module-private on purpose: the web twin has no SQLite handle to hand back,
+// so exporting it made the two data layers disagree on their public API for a
+// function nothing outside this file ever calls. scripts/check-db.mjs enforces
+// the parity that keeps that from drifting back.
+function getDb(): Promise<SQLiteDatabase> {
   if (!dbPromise) {
     dbPromise = openDatabaseAsync(DB_NAME).then(async (db) => {
       await db.execAsync(`
@@ -163,6 +174,9 @@ export function getDb(): Promise<SQLiteDatabase> {
           sets        INTEGER NOT NULL,
           reps        INTEGER NOT NULL,
           kcal        INTEGER NOT NULL,
+          weight_kg   REAL NOT NULL DEFAULT 0,
+          volume_kg   REAL NOT NULL DEFAULT 0,
+          e1rm_kg     REAL NOT NULL DEFAULT 0,
           logged_at   TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_workout_day ON workout_sessions (day_key);
@@ -178,6 +192,21 @@ export function getDb(): Promise<SQLiteDatabase> {
           value TEXT NOT NULL
         );
       `);
+      // Columns and tables added after a database was first created. The big
+      // CREATE above runs first and is `IF NOT EXISTS` throughout, so it already
+      // covers installs from any earlier version — these ALTERs are only for
+      // databases whose table exists but predates the column.
+      for (const column of [
+        'ALTER TABLE workout_sessions ADD COLUMN weight_kg REAL NOT NULL DEFAULT 0',
+        'ALTER TABLE workout_sessions ADD COLUMN volume_kg REAL NOT NULL DEFAULT 0',
+        'ALTER TABLE workout_sessions ADD COLUMN e1rm_kg REAL NOT NULL DEFAULT 0',
+      ]) {
+        try {
+          await db.execAsync(column);
+        } catch {
+          // column already exists
+        }
+      }
       // Migration for installs created before the supplements / new tables existed.
       try {
         await db.execAsync('ALTER TABLE profile ADD COLUMN supplements TEXT');
@@ -196,63 +225,18 @@ export function getDb(): Promise<SQLiteDatabase> {
           // column already exists
         }
       }
-      // Ensure tables added after the original schema exist in older databases
-      // (weigh_ins / intake_entries in v0.0.3, saved_meals afterwards)
-      await db.execAsync(`
-        CREATE TABLE IF NOT EXISTS weigh_ins (
-          id          INTEGER PRIMARY KEY AUTOINCREMENT,
-          kg          REAL NOT NULL,
-          measured_at TEXT NOT NULL,
-          day_key     TEXT NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS idx_weigh_ins_day ON weigh_ins (day_key);
-        CREATE TABLE IF NOT EXISTS intake_entries (
-          id        INTEGER PRIMARY KEY AUTOINCREMENT,
-          day_key   TEXT NOT NULL,
-          kcal      INTEGER NOT NULL,
-          logged_at TEXT NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS idx_intake_day ON intake_entries (day_key);
-        CREATE TABLE IF NOT EXISTS log_entries (
-          id         INTEGER PRIMARY KEY AUTOINCREMENT,
-          day_key    TEXT NOT NULL,
-          meal       TEXT NOT NULL,
-          name       TEXT,
-          kcal       INTEGER NOT NULL,
-          protein_g  INTEGER,
-          carbs_g    INTEGER,
-          fat_g      INTEGER,
-          fiber_g    INTEGER,
-          sugar_g    INTEGER,
-          sat_fat_g  INTEGER,
-          sodium_mg  INTEGER,
-          logged_at  TEXT NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS idx_log_day ON log_entries (day_key);
-        CREATE TABLE IF NOT EXISTS workout_sessions (
-          id          INTEGER PRIMARY KEY AUTOINCREMENT,
-          day_key     TEXT NOT NULL,
-          exercise_id TEXT NOT NULL,
-          sets        INTEGER NOT NULL,
-          reps        INTEGER NOT NULL,
-          kcal        INTEGER NOT NULL,
-          logged_at   TEXT NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS idx_workout_day ON workout_sessions (day_key);
-        CREATE TABLE IF NOT EXISTS saved_meals (
-          id         INTEGER PRIMARY KEY AUTOINCREMENT,
-          name       TEXT NOT NULL,
-          meal       TEXT NOT NULL,
-          items      TEXT NOT NULL,
-          created_at TEXT NOT NULL
-        );
-        CREATE TABLE IF NOT EXISTS schema_meta (
-          key   TEXT PRIMARY KEY,
-          value TEXT NOT NULL
-        );
-      `);
       await migrateIntakeEntries(db);
       return db;
+    });
+    // A failed open must not be sticky. Every screen calls getDb(), and if the
+    // first call rejected — a locked file, a WAL left behind by a killed
+    // process, a full disk — the cached rejected promise made *every* screen
+    // fail for the rest of the session with no way back except a force-quit.
+    // Dropping the cache lets the next call try again; if the cause was
+    // transient, the app heals itself on the next tap.
+    dbPromise = dbPromise.catch((error) => {
+      dbPromise = null;
+      throw error;
     });
   }
   return dbPromise;
@@ -398,59 +382,77 @@ export async function getGoals(): Promise<Goals | null> {
   };
 }
 
+/**
+ * Writes the profile and its computed targets as two upserts.
+ *
+ * Split out of saveProfile so applyRestore can run it *inside* the restore
+ * transaction. It used to call saveProfile after committing, which meant a
+ * throw there left the rows written while the UI reported that nothing had
+ * changed — a half-finished restore wearing a confident message. Sharing the
+ * statement keeps one definition of "write a profile" and makes the whole
+ * restore genuinely all-or-nothing.
+ *
+ * Targets are recomputed by the app's own formula rather than taken from the
+ * file, so a backup written by an older version lands on numbers this version
+ * would have calculated.
+ */
+async function writeProfileAndGoals(db: SQLiteDatabase, profile: Profile, goals: Goals, now: string): Promise<void> {
+  const supplementsJson = profile.supplements?.length ? JSON.stringify(profile.supplements) : null;
+  await db.runAsync(
+    `INSERT INTO profile (id, sex, age_years, height_cm, weight_kg, activity_level, goal, rate_per_week, supplements, updated_at)
+     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT (id) DO UPDATE SET
+       sex = excluded.sex,
+       age_years = excluded.age_years,
+       height_cm = excluded.height_cm,
+       weight_kg = excluded.weight_kg,
+       activity_level = excluded.activity_level,
+       goal = excluded.goal,
+       rate_per_week = excluded.rate_per_week,
+       supplements = excluded.supplements,
+       updated_at = excluded.updated_at`,
+    [
+      profile.sex,
+      profile.ageYears,
+      profile.heightCm,
+      profile.weightKg,
+      profile.activityLevel,
+      profile.goal,
+      profile.ratePerWeek,
+      supplementsJson,
+      now,
+    ],
+  );
+  await db.runAsync(
+    `INSERT INTO goals (id, bmr, tdee, calorie_target, protein_g, carbs_g, fat_g, updated_at)
+     VALUES (1, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT (id) DO UPDATE SET
+       bmr = excluded.bmr,
+       tdee = excluded.tdee,
+       calorie_target = excluded.calorie_target,
+       protein_g = excluded.protein_g,
+       carbs_g = excluded.carbs_g,
+       fat_g = excluded.fat_g,
+       updated_at = excluded.updated_at`,
+    [
+      goals.bmr,
+      goals.tdee,
+      goals.calorieTarget,
+      goals.proteinG,
+      goals.carbsG,
+      goals.fatG,
+      now,
+    ],
+  );
+}
+
 /** Upserts the profile row and the computed goals row in one transaction. */
 export async function saveProfile(profile: Profile): Promise<Goals> {
   const goals = computeGoals(profile);
   const db = await getDb();
   const now = new Date().toISOString();
-  const supplementsJson = profile.supplements?.length ? JSON.stringify(profile.supplements) : null;
   await db.withTransactionAsync(async () => {
-    await db.runAsync(
-      `INSERT INTO profile (id, sex, age_years, height_cm, weight_kg, activity_level, goal, rate_per_week, supplements, updated_at)
-       VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT (id) DO UPDATE SET
-         sex = excluded.sex,
-         age_years = excluded.age_years,
-         height_cm = excluded.height_cm,
-         weight_kg = excluded.weight_kg,
-         activity_level = excluded.activity_level,
-         goal = excluded.goal,
-         rate_per_week = excluded.rate_per_week,
-         supplements = excluded.supplements,
-         updated_at = excluded.updated_at`,
-      [
-        profile.sex,
-        profile.ageYears,
-        profile.heightCm,
-        profile.weightKg,
-        profile.activityLevel,
-        profile.goal,
-        profile.ratePerWeek,
-        supplementsJson,
-        now,
-      ],
-    );
-    await db.runAsync(
-      `INSERT INTO goals (id, bmr, tdee, calorie_target, protein_g, carbs_g, fat_g, updated_at)
-       VALUES (1, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT (id) DO UPDATE SET
-         bmr = excluded.bmr,
-         tdee = excluded.tdee,
-         calorie_target = excluded.calorie_target,
-         protein_g = excluded.protein_g,
-         carbs_g = excluded.carbs_g,
-         fat_g = excluded.fat_g,
-         updated_at = excluded.updated_at`,
-      [
-        goals.bmr,
-        goals.tdee,
-        goals.calorieTarget,
-        goals.proteinG,
-        goals.carbsG,
-        goals.fatG,
-        now,
-      ],
-    );
+    await writeProfileAndGoals(db, profile, goals, now);
   });
   return goals;
 }
@@ -546,21 +548,54 @@ export async function addWeighIn(kg: number, measuredAt: Date = new Date()): Pro
   await db.runAsync('INSERT INTO weigh_ins (kg, measured_at, day_key) VALUES (?, ?, ?)', [rounded, iso, dk]);
 }
 
+type WeighInRow = { id: number; kg: number; measured_at: string; day_key: string };
+
+const toWeighIn = (r: WeighInRow): WeighIn => ({
+  id: r.id,
+  kg: r.kg,
+  measuredAt: r.measured_at,
+  dayKey: r.day_key,
+});
+
+/**
+ * One end of the weigh-in series. This exists because a limited page cannot
+ * answer "which was first" — see getWeighIns. Callers that want an extremum
+ * ask for the row directly rather than reading the tail of a truncated list.
+ */
+async function weighInExtremum(db: SQLiteDatabase, dir: 'ASC' | 'DESC'): Promise<WeighIn | null> {
+  const row = await db.getFirstAsync<WeighInRow>(
+    `SELECT id, kg, measured_at, day_key FROM weigh_ins ORDER BY measured_at ${dir} LIMIT 1`,
+  );
+  return row ? toWeighIn(row) : null;
+}
+
+/**
+ * The most recent `limit` weigh-ins, oldest first.
+ *
+ * The query takes the newest rows and then reverses them. `ORDER BY ... ASC
+ * LIMIT ?` would return the OLDEST 60 instead, which looks fine until someone
+ * passes 60 entries: the APK then stops showing recent data at all, while the
+ * web twin (slice(-limit)) keeps working, so the two platforms disagree. That
+ * fed True Burn, the BMI index and the home trend — the window was the *wrong*
+ * 60, not merely misordered, and no amount of re-sorting the result can
+ * recover a row the query never fetched.
+ */
 export async function getWeighIns(limit: number = 60): Promise<WeighIn[]> {
   const db = await getDb();
-  const rows = await db.getAllAsync<{ id: number; kg: number; measured_at: string; day_key: string }>(
-    'SELECT id, kg, measured_at, day_key FROM weigh_ins ORDER BY measured_at ASC LIMIT ?',
+  const rows = await db.getAllAsync<WeighInRow>(
+    'SELECT id, kg, measured_at, day_key FROM weigh_ins ORDER BY measured_at DESC LIMIT ?',
     [limit],
   );
-  return rows.map((r) => ({ id: r.id, kg: r.kg, measuredAt: r.measured_at, dayKey: r.day_key }));
+  return rows.map(toWeighIn).reverse();
 }
 
 export async function getLatestWeighIn(): Promise<WeighIn | null> {
-  const db = await getDb();
-  const row = await db.getFirstAsync<{ id: number; kg: number; measured_at: string; day_key: string }>(
-    'SELECT id, kg, measured_at, day_key FROM weigh_ins ORDER BY measured_at DESC LIMIT 1',
-  );
-  return row ? { id: row.id, kg: row.kg, measuredAt: row.measured_at, dayKey: row.day_key } : null;
+  return weighInExtremum(await getDb(), 'DESC');
+}
+
+/** The very first weigh-in ever recorded, which getWeighIns cannot report. */
+export async function getFirstWeighIn(): Promise<WeighIn | null> {
+  return weighInExtremum(await getDb(), 'ASC');
 }
 
 /* ── Meal log (kcal + optional macros; True Burn sums kcal) ───── */
@@ -693,21 +728,33 @@ export async function addWorkoutSession(input: {
   sets: number;
   reps: number;
   kcal: number;
+  weightKg?: number;
+  volumeKg?: number;
+  e1RMKg?: number;
 }): Promise<WorkoutSession> {
   const db = await getDb();
   const kcal = Math.max(0, Math.round(input.kcal));
+  const weightKg = Math.max(0, Math.round((input.weightKg ?? 0) * 10) / 10);
+  const reps = Math.max(0, Math.round(input.reps));
+  const sets = Math.max(0, Math.round(input.sets));
+  // Derive cached volume/e1RM if caller didn't pre-compute — keeps the DB as truth even for old callers.
+  const volumeKg = input.volumeKg != null ? Math.max(0, Math.round(input.volumeKg * 10) / 10) : weightKg > 0 && sets > 0 && reps > 0 ? Math.round(sets * reps * weightKg * 10) / 10 : 0;
+  const e1RMKg = input.e1RMKg != null ? Math.max(0, Math.round(input.e1RMKg * 10) / 10) : weightKg > 0 && reps > 0 ? Math.round(weightKg * (1 + reps / 30) * 10) / 10 : 0;
   const loggedAt = new Date().toISOString();
   const result = await db.runAsync(
-    'INSERT INTO workout_sessions (day_key, exercise_id, sets, reps, kcal, logged_at) VALUES (?, ?, ?, ?, ?, ?)',
-    [input.dayKey, input.exerciseId, input.sets, input.reps, kcal, loggedAt],
+    'INSERT INTO workout_sessions (day_key, exercise_id, sets, reps, kcal, weight_kg, volume_kg, e1rm_kg, logged_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [input.dayKey, input.exerciseId, sets, reps, kcal, weightKg, volumeKg, e1RMKg, loggedAt],
   );
   return {
     id: Number(result.lastInsertRowId),
     dayKey: input.dayKey,
     exerciseId: input.exerciseId,
-    sets: input.sets,
-    reps: input.reps,
+    sets,
+    reps,
     kcal,
+    weightKg,
+    volumeKg,
+    e1RMKg,
     loggedAt,
   };
 }
@@ -721,9 +768,12 @@ export async function getWorkoutSessionsForDay(dayKeyValue: string): Promise<Wor
     sets: number;
     reps: number;
     kcal: number;
+    weight_kg: number | null;
+    volume_kg: number | null;
+    e1rm_kg: number | null;
     logged_at: string;
   }>(
-    'SELECT id, day_key, exercise_id, sets, reps, kcal, logged_at FROM workout_sessions WHERE day_key = ? ORDER BY logged_at ASC, id ASC',
+    'SELECT id, day_key, exercise_id, sets, reps, kcal, weight_kg, volume_kg, e1rm_kg, logged_at FROM workout_sessions WHERE day_key = ? ORDER BY logged_at ASC, id ASC',
     [dayKeyValue],
   );
   return rows.map((r) => ({
@@ -733,6 +783,9 @@ export async function getWorkoutSessionsForDay(dayKeyValue: string): Promise<Wor
     sets: r.sets,
     reps: r.reps,
     kcal: r.kcal,
+    weightKg: r.weight_kg ?? 0,
+    volumeKg: r.volume_kg ?? 0,
+    e1RMKg: r.e1rm_kg ?? 0,
     loggedAt: r.logged_at,
   }));
 }
@@ -914,9 +967,12 @@ export async function getAllWorkouts(): Promise<WorkoutSession[]> {
     sets: number;
     reps: number;
     kcal: number;
+    weight_kg: number | null;
+    volume_kg: number | null;
+    e1rm_kg: number | null;
     logged_at: string;
   }>(
-    'SELECT id, day_key, exercise_id, sets, reps, kcal, logged_at FROM workout_sessions ORDER BY logged_at ASC, id ASC',
+    'SELECT id, day_key, exercise_id, sets, reps, kcal, weight_kg, volume_kg, e1rm_kg, logged_at FROM workout_sessions ORDER BY logged_at ASC, id ASC',
   );
   return rows.map((r) => ({
     id: r.id,
@@ -925,6 +981,135 @@ export async function getAllWorkouts(): Promise<WorkoutSession[]> {
     sets: r.sets,
     reps: r.reps,
     kcal: r.kcal,
+    weightKg: r.weight_kg ?? 0,
+    volumeKg: r.volume_kg ?? 0,
+    e1RMKg: r.e1rm_kg ?? 0,
     loggedAt: r.logged_at,
   }));
+}
+
+/* ── Restore (see src/lib/restore.ts) ─────────────────────────── */
+
+/** Everything a replace-mode restore clears. Listed rather than deleted
+ *  table-by-table at the call site so a future table cannot be forgotten. */
+const RESTORE_CLEARED_TABLES = [
+  'log_entries',
+  'water',
+  'weigh_ins',
+  'intake_entries',
+  'workout_sessions',
+  'saved_meals',
+  'profile',
+  'goals',
+] as const;
+
+export type RestoreApplied = {
+  logEntries: number;
+  weighIns: number;
+  water: number;
+  workouts: number;
+  savedMeals: number;
+  profile: boolean;
+};
+
+/**
+ * Write a restore plan into the database.
+ *
+ * Every row goes in with the `day_key` and timestamp it was exported with,
+ * which is the whole reason this cannot go through `addLogEntry` — that stamps
+ * `logged_at` as now, and a restored year of meals would all land on today.
+ * Ids are left to autoincrement, because the plan dropped the old device's.
+ *
+ * The inserts share one transaction — including the profile write — so a
+ * failure anywhere leaves the database exactly as it was. A half-restored
+ * diary is worse than none, and it must never be reported as a clean failure
+ * while rows sit in the table.
+ */
+export async function applyRestore(plan: RestorePlan): Promise<RestoreApplied> {
+  const db = await getDb();
+  await db.withTransactionAsync(async () => {
+    if (plan.clears) {
+      for (const table of RESTORE_CLEARED_TABLES) {
+        await db.runAsync(`DELETE FROM ${table}`);
+      }
+    }
+
+    for (const entry of plan.logEntries) {
+      await db.runAsync(
+        `INSERT INTO log_entries (day_key, meal, name, kcal, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sat_fat_g, sodium_mg, logged_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          entry.dayKey,
+          entry.meal,
+          cleanName(entry.name),
+          entry.kcal,
+          entry.proteinG,
+          entry.carbsG,
+          entry.fatG,
+          entry.fiberG,
+          entry.sugarG,
+          entry.satFatG,
+          entry.sodiumMg,
+          entry.loggedAt,
+        ],
+      );
+    }
+
+    for (const entry of plan.weighIns) {
+      await db.runAsync('INSERT INTO weigh_ins (kg, measured_at, day_key) VALUES (?, ?, ?)', [
+        entry.kg,
+        entry.measuredAt,
+        entry.dayKey,
+      ]);
+    }
+
+    for (const entry of plan.water) {
+      await db.runAsync('INSERT INTO water (day_key, ml, logged_at) VALUES (?, ?, ?)', [
+        entry.dayKey,
+        entry.ml,
+        entry.loggedAt,
+      ]);
+    }
+
+    for (const entry of plan.workouts) {
+      await db.runAsync(
+        `INSERT INTO workout_sessions (day_key, exercise_id, sets, reps, kcal, weight_kg, volume_kg, e1rm_kg, logged_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          entry.dayKey,
+          entry.exerciseId,
+          entry.sets,
+          entry.reps,
+          entry.kcal,
+          entry.weightKg,
+          entry.volumeKg,
+          entry.e1RMKg,
+          entry.loggedAt,
+        ],
+      );
+    }
+
+    for (const meal of plan.savedMeals) {
+      await db.runAsync('INSERT INTO saved_meals (name, meal, items, created_at) VALUES (?, ?, ?, ?)', [
+        cleanName(meal.name),
+        meal.meal,
+        JSON.stringify(meal.items),
+        meal.createdAt,
+      ]);
+    }
+
+    if (plan.profile) {
+      const profile = plan.profile as Profile;
+      await writeProfileAndGoals(db, profile, computeGoals(profile), new Date().toISOString());
+    }
+  });
+
+  return {
+    logEntries: plan.logEntries.length,
+    weighIns: plan.weighIns.length,
+    water: plan.water.length,
+    workouts: plan.workouts.length,
+    savedMeals: plan.savedMeals.length,
+    profile: Boolean(plan.profile),
+  };
 }

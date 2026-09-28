@@ -21,7 +21,7 @@ import { EatTrainSwitch } from '@/components/eat-train-switch';
 import { HeaderGlyphButton, StreakFireMark, WaterDropMark } from '@/components/header-glyphs';
 import { LicenseSheet } from '@/components/license-sheet';
 import { MealLogSheet } from '@/components/meal-log-sheet';
-import { StreakSheet, WeekPips } from '@/components/streak-sheet';
+import { StreakSheet, WeekPips, type ShareSelection } from '@/components/streak-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { WaterSheet } from '@/components/water-sheet';
@@ -34,6 +34,7 @@ import {
   addWaterForDay,
   addWeighIn,
   deleteLogEntry,
+  getFirstWeighIn,
   getGoals,
   getIntakeHistory,
   getLogsForDay,
@@ -53,8 +54,17 @@ import {
   type RecentMeal,
 } from '@/lib/db';
 import { groupLogsByMeal, logDisplayName, MEAL_SLOTS, sumDayMacros } from '@/lib/diary';
+import { buildShareCard, shareDateLabel } from '@/lib/share-card';
+import { buildDailyCard, recapDayKey, type DailyCard } from '@/lib/share-daily';
+import { loadRecapOfferedDayKey, saveRecapOfferedDayKey } from '@/lib/daily-recap-store';
+import { shareCardImage } from '@/lib/share-card-capture';
+import { DEFAULT_SHARE_FORMAT, DEFAULT_SHARE_TEMPLATE, type ShareFormatId } from '@/lib/share-templates';
+import { ShareCardPreview, ShareCardStage, type ShareCardProps } from '@/components/share-card';
+import { DailyShareCardPreview, DailyShareCardStage } from '@/components/daily-share-card';
+import { DailyRecapSheet } from '@/components/daily-recap-sheet';
 import { hapticLight, hapticSelect } from '@/lib/haptics';
 import { adaptiveHistory, adaptiveTdee, calorieBudget, caloriesRemaining, detectPlateau } from '@/lib/nutrition';
+import { burnTrend, loggingCoverage } from '@/lib/trends';
 import { getCalorieOverride, getTrueBurnState, saveTrueBurnState, setCalorieOverride, shouldShowAdoptPrompt, type TrueBurnState } from '@/lib/trueburn';
 import { useLicense } from '@/lib/license-context';
 import { getVerifiedEmail } from '@/lib/license';
@@ -62,7 +72,7 @@ import { claimStreak, emptyStreak, expireStreak, STREAK_CLAIM_MS, streakNeedsCla
 import { loadStreak, saveStreak } from '@/lib/streak-store';
 import { emptyFastState, fastElapsedMs, formatElapsed, isFasting, nextFastMilestone, startFast, stopFast, type FastState } from '@/lib/fasting';
 import { loadFastState, saveFastState } from '@/lib/fasting-store';
-import { CUP_ML, formatWeightKg, weightToKg, waterToMl, type WaterUnit, type WeightUnit } from '@/lib/units';
+import { CUP_ML, formatWeightKg, normalizeDecimalNumber, parseWeightInput, waterToMl, type WaterUnit, type WeightUnit } from '@/lib/units';
 
 function formatISO(date: Date): string {
   const y = date.getFullYear();
@@ -123,6 +133,9 @@ export default function HomeScreen() {
   const [weighInInput, setWeighInInput] = useState('');
   const [addingWeighIn, setAddingWeighIn] = useState(false);
   const [weighIns, setWeighIns] = useState<{ kg: number; measuredAt: string }[]>([]);
+  // The very first weigh-in ever, which the 60-row window cannot report once a
+  // user passes 60 entries. "Since the first" has to mean the first.
+  const [firstWeighInKg, setFirstWeighInKg] = useState<number | null>(null);
   const [intakeHistory, setIntakeHistory] = useState<{ dayKey: string; kcal: number }[]>([]);
   const [workoutKcal, setWorkoutKcal] = useState(0);
   const [trueBurnPersist, setTrueBurnPersist] = useState<TrueBurnState>({});
@@ -130,6 +143,17 @@ export default function HomeScreen() {
   const [trueBurnActionBusy, setTrueBurnActionBusy] = useState(false);
   const [fast, setFast] = useState<FastState>(emptyFastState);
   const [now, setNow] = useState(() => Date.now());
+  const [cardShare, setCardShare] = useState<'idle' | 'working' | 'error'>('idle');
+  const [cardShareSelection, setCardShareSelection] = useState<ShareSelection>({
+    format: DEFAULT_SHARE_FORMAT,
+    template: DEFAULT_SHARE_TEMPLATE,
+  });
+  const cardShareRef = useRef<View | null>(null);
+  const [dailyRecap, setDailyRecap] = useState<{ dayKey: string; card: DailyCard } | null>(null);
+  const [showRecap, setShowRecap] = useState(false);
+  const [recapShare, setRecapShare] = useState<'idle' | 'working' | 'error'>('idle');
+  const dailyCardRef = useRef<View | null>(null);
+  const [dailyFormat, setDailyFormat] = useState<ShareFormatId>('portrait');
 
   const waterPulse = useRef(new Animated.Value(0)).current;
 
@@ -202,14 +226,16 @@ export default function HomeScreen() {
         getLogsForDay(selectedKey),
         getRecents(8),
         getWeighIns(60),
+        getFirstWeighIn(),
         getIntakeHistory(60),
         getWorkoutKcalForDay(selectedKey),
-      ]).then(([w, dayLogs, recentMeals, wi, ih, burn]) => {
+      ]).then(([w, dayLogs, recentMeals, wi, first, ih, burn]) => {
         if (cancelled) return;
         setWaterMl(w);
         setLogs(dayLogs);
         setRecents(recentMeals);
         setWeighIns(wi.map((x) => ({ kg: x.kg, measuredAt: x.measuredAt })));
+        setFirstWeighInKg(first?.kg ?? null);
         setIntakeHistory(ih);
         setWorkoutKcal(burn);
       });
@@ -223,6 +249,56 @@ export default function HomeScreen() {
   useEffect(() => {
     if (showPicker) setPickerMonth(startOfMonth(selectedDate));
   }, [showPicker, selectedDate]);
+
+  // ── The daily recap moment ──────────────────────────────────────────
+  // Once per day, after load settles, offer yesterday's card: the day is
+  // closed, the numbers are final, and one clean prompt is the whole feature.
+  // The offered flag is recorded whether the user shares or taps "Not now" —
+  // a dismissed day never returns as a nag.
+  useEffect(() => {
+    if (!loaded || profile === null || !goals || dailyRecap) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [history, offered] = await Promise.all([getIntakeHistory(10), loadRecapOfferedDayKey()]);
+        if (cancelled) return;
+        const todayKey = formatISO(new Date());
+        const dayKey = recapDayKey(new Date(), todayKey, history.some((d) => d.kcal > 0));
+        if (!dayKey || offered === dayKey) return;
+        const [dayLogs, trainKcal, wi] = await Promise.all([getLogsForDay(dayKey), getWorkoutKcalForDay(dayKey), getWeighIns(60)]);
+        if (cancelled) return;
+        const measured = (() => {
+          if (!profile || !goals || wi.length < 2) return null;
+          const a = adaptiveTdee({
+            estimatedTdee: goals.tdee,
+            weighIns: wi.map((w) => ({ kg: w.kg, at: w.measuredAt })),
+            intakeByDay: history,
+            goal: profile.goal,
+            ratePerWeek: profile.ratePerWeek,
+          });
+          return a.ready ? a.measuredTdee ?? null : null;
+        })();
+        const target = overrideKcal ?? goals.calorieTarget ?? 0;
+        const decision = buildDailyCard({
+          targetKcal: target,
+          foodKcal: sumDayMacros(dayLogs).kcal,
+          workoutKcal: trainKcal,
+          measuredBurnKcal: measured,
+          usedMeasuredTarget: overrideKcal != null,
+        });
+        if (!decision.eligible) return;
+        await saveRecapOfferedDayKey(dayKey);
+        if (cancelled) return;
+        setDailyRecap({ dayKey, card: decision.card });
+        setShowRecap(true);
+      } catch {
+        // The recap is a delight, not a duty — any failure just skips it.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loaded, profile, goals, dailyRecap, overrideKcal]);
 
   // Keep the streak flame honest — but when fasting, show a live clock.
   // 1s while fasting so 14h 05m feels alive; 60s otherwise to spare renders.
@@ -395,27 +471,18 @@ export default function HomeScreen() {
     await refreshLogs();
   }
 
-  function parseWeighInKg(text: string, unit: WeightUnit): number | null {
-    const nums = text.match(/\d+(?:[.,]\d+)?/g)?.map((s) => parseFloat(s.replace(',', '.'))) ?? [];
-    if (!nums.length) return null;
-    if (unit === 'kg') return weightToKg(0, 0, nums[0]!, 'kg');
-    if (unit === 'lb') return weightToKg(0, 0, nums[0]!, 'lb');
-    if (nums.length >= 2) return weightToKg(Math.floor(nums[0]!), Math.round(nums[1]!), 0, 'st');
-    const v = nums[0]!;
-    const st = Math.floor(v);
-    const lb = Math.round((v - st) * 14);
-    return weightToKg(st, lb, 0, 'st');
-  }
-
   async function handleAddWeighIn() {
-    const kg = parseWeighInKg(weighInInput, weightUnit);
+    const kg = parseWeightInput(weighInInput, weightUnit);
     if (kg == null || !Number.isFinite(kg) || kg < 20 || kg > 400) return;
     hapticLight();
     setAddingWeighIn(true);
     try {
       await addWeighIn(kg, selectedDate);
-      const wi = await getWeighIns(60);
+      const [wi, first] = await Promise.all([getWeighIns(60), getFirstWeighIn()]);
       setWeighIns(wi.map((x) => ({ kg: x.kg, measuredAt: x.measuredAt })));
+      // Going from zero weigh-ins to one is the only add that changes which
+      // row is the first, so this has to move with the window.
+      setFirstWeighInKg(first?.kg ?? null);
       setWeighInInput('');
     } finally {
       setAddingWeighIn(false);
@@ -456,6 +523,53 @@ export default function HomeScreen() {
     const next = claimStreak(streak, Date.now());
     setStreak(next);
     void saveStreak(next);
+  }
+
+  /**
+   * Share from the streak sheet — the highest-frequency behavior moment in
+   * the app (the daily claim). The hidden card stage below is always
+   * mounted, so the capture is instant; iOS needs the share sheet to open
+   * inside the same JS task as the user's tap, so the capture awaits inside
+   * this handler rather than setting state and rendering afterwards.
+   */
+  async function handleStreakCardShare(selection: ShareSelection) {
+    if (cardShare === 'working' || !cardShareRef.current) return;
+    // Capture the card the user just previewed, not whatever is on screen next.
+    // The picker lives in the streak sheet but the capture stage lives here, so
+    // when the user changes style and immediately taps Share, the stage is still
+    // laid out as the *old* shape in this tick: the state update above has not
+    // been committed yet, and captureRef draws the view as it is now. Wait out
+    // the re-render (two frames, so the new layout has actually been applied)
+    // before handing anything to the OS.
+    const changed = selection.format !== cardShareSelection.format || selection.template !== cardShareSelection.template;
+    setCardShareSelection(selection);
+    if (changed) {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+    }
+    setCardShare('working');
+    const result = await shareCardImage(cardShareRef, selection);
+    setCardShare(result.ok ? 'idle' : 'error');
+  }
+
+  /**
+   * Share from the daily recap sheet — same capture path as the weekly card.
+   * The sheet hands over the format the user previewed; the hidden stage
+   * re-renders to that format, two frames wait out the layout, then capture.
+   */
+  async function handleRecapShare(format: ShareFormatId) {
+    if (recapShare === 'working' || !dailyCardRef.current) return;
+    const changed = format !== dailyFormat;
+    setDailyFormat(format);
+    if (changed) {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+    }
+    setRecapShare('working');
+    const result = await shareCardImage(dailyCardRef, { format, template: 'instrument' });
+    setRecapShare(result.ok ? 'idle' : 'error');
   }
 
   async function handleStartFast() {
@@ -543,17 +657,23 @@ export default function HomeScreen() {
   // Weight card: the trend is the only honest number we can show — there is no
   // goal weight in the data model, so anything resembling a progress bar would
   // be decoration pretending to be information.
-  const firstWeighIn: { kg: number; measuredAt: string } | null = weighIns.length ? weighIns[0]! : null;
   const latestWeighIn: { kg: number; measuredAt: string } | null = weighIns.length ? weighIns[weighIns.length - 1]! : null;
+  // weighIns[0] is the oldest row in the 60-entry window, NOT the first ever
+  // recorded — so "since the first" has to read the separately-fetched first,
+  // or it quietly becomes "since your 60th weigh-in" once someone passes 60.
+  // For the same reason the count is a floor, not a total, while the window is
+  // full: a user with 200 weigh-ins was being told they had 60.
+  const firstWeighIn = firstWeighInKg === null ? null : { kg: firstWeighInKg };
+  const weighInCount = weighIns.length >= 60 ? `${weighIns.length}+` : String(weighIns.length);
   const weightDeltaKg =
     weighIns.length > 1 && firstWeighIn && latestWeighIn ? latestWeighIn.kg - firstWeighIn.kg : null;
   const weightMeta = !weighIns.length
     ? 'Start weight from your setup.'
     : weightDeltaKg === null
-      ? `${weighIns.length} weigh-in — log again to see a trend.`
+      ? `${weighInCount} weigh-in — log again to see a trend.`
       : Math.abs(weightDeltaKg) < 0.1
-        ? `${weighIns.length} weigh-ins · steady since the first.`
-        : `${weighIns.length} weigh-ins · ${weightDeltaKg > 0 ? '+' : '−'}${Math.abs(weightDeltaKg).toFixed(1)} kg since the first.`;
+        ? `${weighInCount} weigh-ins · steady since the first.`
+        : `${weighInCount} weigh-ins · ${weightDeltaKg > 0 ? '+' : '−'}${Math.abs(weightDeltaKg).toFixed(1)} kg since the first.`;
   const latestWeighInLabel = latestWeighIn
     ? isToday(new Date(latestWeighIn.measuredAt))
       ? 'today'
@@ -587,9 +707,67 @@ export default function HomeScreen() {
     return out;
   })();
 
+  // ── Weekly share card (content only — capture stage renders below) ──
+  const coverage = loggingCoverage(intakeHistory);
+  const burn = burnTrend(burnHistory);
+  const streakShareCard = buildShareCard({ streak, coverage, burn });
+
+  /**
+   * Every field the card needs, assembled once.
+   *
+   * The off-screen stage and the sheet's preview must render from *identical*
+   * props or the image the user previews is not the image they post, and the
+   * achievement templates read more of the card (medal, stamp, run to beat,
+   * goal track, macro rings) than the editorial layouts did. One payload, two
+   * call sites.
+   */
+  const weeklyCardProps: Omit<ShareCardProps, 'format' | 'template'> | null = streakShareCard.eligible
+    ? {
+        copy: streakShareCard.copy,
+        hero: streakShareCard.hero,
+        rows: streakShareCard.rows,
+        eyebrow: streakShareCard.eyebrow,
+        achievement: streakShareCard.achievement,
+        status: streakShareCard.status,
+        best: streakShareCard.best,
+        progress: streakShareCard.progress,
+        dateLabel: shareDateLabel(selectedDate),
+        litDays: weekPips(streak.current),
+        // The Grid layout slices `loggedDays` 7 per row, but intakeHistory is a
+        // dense 60-day array, so this rendered a 9-row calendar and a "12/60
+        // LOGGED" header beside sibling layouts that assume a 7-day week.
+        // getIntakeHistory is oldest-first, so the trailing week is the last 7.
+        loggedDays: intakeHistory.slice(-7).map((point) => point.kcal > 0),
+        burnPoints: burnHistory.map((p) => p.measuredTdee),
+        burnEst: adaptive?.estimatedTdee,
+        // Today's macros against their targets, for the Goal card's rings.
+        macros: goals
+          ? [
+              { label: 'protein', value: Math.round(dayMacros.proteinG), target: Math.round(goals.proteinG) },
+              { label: 'carbs', value: Math.round(dayMacros.carbsG), target: Math.round(goals.carbsG) },
+              { label: 'fat', value: Math.round(dayMacros.fatG), target: Math.round(goals.fatG) },
+            ]
+          : undefined,
+      }
+    : null;
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
+        {/*
+         * Off-screen capture stage for the streak-sheet share card. Always
+         * mounted once data exists so the share is instant; transparent and
+         * hidden from accessibility.
+         */}
+        {weeklyCardProps ? (
+          <ShareCardStage
+            cardRef={cardShareRef}
+            format={cardShareSelection.format}
+            template={cardShareSelection.template}
+            {...weeklyCardProps}
+          />
+        ) : null}
+        {dailyRecap ? <DailyShareCardStage cardRef={dailyCardRef} card={dailyRecap.card} format={dailyFormat} /> : null}
         <ScrollView
           style={styles.flex}
           contentContainerStyle={styles.scrollContent}
@@ -807,7 +985,7 @@ export default function HomeScreen() {
                 accessibilityLabel="Log a meal"
                 style={({ pressed }) => [styles.dialAdd, { borderColor: accentText, backgroundColor: accentSoft }, pressed && styles.pressed]}
               >
-                <View style={styles.plusMark} pointerEvents="none">
+                <View style={[styles.plusMark, { pointerEvents: 'none' }]}>
                   <View style={[styles.plusBarH, { backgroundColor: accentText }]} />
                   <View style={[styles.plusBarV, { backgroundColor: accentText }]} />
                 </View>
@@ -1066,7 +1244,7 @@ export default function HomeScreen() {
             <View style={[styles.waterInputRowFull, { marginTop: 8 }]}>
               <TextInput
                 value={weighInInput}
-                onChangeText={(t) => setWeighInInput(t.replace(weightUnit === 'st' ? /[^0-9.\s]/g : /[^0-9.]/g, ''))}
+                onChangeText={(t) => setWeighInInput(t.replace(/[^0-9.,\s]/g, ''))}
                 placeholder={weightUnit === 'kg' ? 'kg' : weightUnit === 'lb' ? 'lb' : 'st lb'}
                 placeholderTextColor={theme.muted}
                 keyboardType={weightUnit === 'st' ? 'default' : 'numeric'}
@@ -1098,7 +1276,7 @@ export default function HomeScreen() {
             waterGoal={waterGoal}
             waterUnit={waterUnit}
             waterInput={waterInput}
-            onWaterInput={(text) => setWaterInput(text.replace(/[^0-9.]/g, ''))}
+            onWaterInput={(text) => setWaterInput(normalizeDecimalNumber(text).replace(/[^0-9.]/g, ''))}
             onAdd={() => void handleAddWater()}
             adding={addingWater}
             onUnit={(unit) => {
@@ -1106,7 +1284,7 @@ export default function HomeScreen() {
               void getUnitPrefs().then((prefs) => saveUnitPrefs({ ...prefs, water: unit }));
             }}
             editValue={editWaterValue}
-            onEditValue={(t) => setEditWaterValue(t.replace(/[^0-9.]/g, ''))}
+            onEditValue={(t) => setEditWaterValue(normalizeDecimalNumber(t).replace(/[^0-9.]/g, ''))}
             onSaveTotal={() => void handleSaveWaterEdit()}
             onClear={() => {
               setEditWaterValue('');
@@ -1157,7 +1335,35 @@ export default function HomeScreen() {
             hairline={hairline}
             mutedColor={theme.muted}
             cardBg={isDark ? '#131F2E' : '#FFFFFF'}
+            onShare={streakShareCard.eligible ? handleStreakCardShare : undefined}
+            shareLabel={cardShare === 'working' ? 'Preparing…' : cardShare === 'error' ? 'Try again' : undefined}
+            sharePreview={
+              weeklyCardProps
+                ? (selection) => (
+                    <ShareCardPreview
+                      maxWidth={260}
+                      format={selection.format}
+                      template={selection.template}
+                      {...weeklyCardProps}
+                    />
+                  )
+                : undefined
+            }
           />
+
+          {dailyRecap ? (
+            <DailyRecapSheet
+              visible={showRecap}
+              onClose={() => setShowRecap(false)}
+              onShare={(format) => void handleRecapShare(format)}
+              shareLabel={recapShare === 'working' ? 'Preparing…' : recapShare === 'error' ? 'Try again' : undefined}
+              card={dailyRecap.card}
+              isDark={isDark}
+              accentText={accentText}
+              hairline={hairline}
+              cardBg={isDark ? '#131F2E' : '#FFFFFF'}
+            />
+          ) : null}
 
           {showLogSheet ? (
             <MealLogSheet
@@ -1332,7 +1538,7 @@ function CalibrationDial({
           />
         ))}
       </Svg>
-      <View style={styles.dialCenter} pointerEvents="none">
+      <View style={[styles.dialCenter, { pointerEvents: 'none' }]}>
         <ThemedText type="smallBold" style={styles.dialTarget}>
           {target.toLocaleString()} kcal
         </ThemedText>
@@ -1399,7 +1605,7 @@ function ArcGauge({
             transform={`rotate(-126 ${mid} ${mid})`}
           />
         </Svg>
-        <View style={styles.arcCenter} pointerEvents="none">
+        <View style={[styles.arcCenter, { pointerEvents: 'none' }]}>
           <ThemedText type="smallBold" style={styles.arcGrams}>
             {grams}
           </ThemedText>

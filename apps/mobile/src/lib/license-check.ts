@@ -1,9 +1,11 @@
 /**
  * Pure license re-attestation policy (no I/O).
  *
- * Fail-open means "keep the stored license" — used for missing config, 404s
- * from a wrong base URL, and other non-definitive HTTP errors. Fail-closed
- * only on an explicit 200 { valid: false } from the activation server.
+ * Fail-open means "keep the stored license" — used for missing config, 5xx, and
+ * other genuinely inconclusive responses. Fail-closed on anything the server
+ * actually answered: a 4xx refusal, or an explicit 200 { valid: false }. A 4xx
+ * is the server being reached and declining, not a network problem, so treating
+ * it as transient handed out the paid app for codes the server never issued.
  */
 
 export type LicenseCheckResult =
@@ -72,6 +74,20 @@ export function interpretValidateResponse(
   },
 ): LicenseCheckResult {
   if (status < 200 || status >= 300) {
+    // A 4xx here is the server reaching us and refusing: 400 malformed, 403
+    // bound to a different email, 404 "this code is not recognized". Treating
+    // those as transient meant `license-context` took the fail-open branch and
+    // granted the app for a code the server had never issued — write any object
+    // with a `code` into AsyncStorage, or simply block the API host, and every
+    // paid screen unlocked. Only 5xx is genuinely inconclusive.
+    if (status >= 400 && status < 500) {
+      return {
+        ok: true,
+        valid: false,
+        revoked: false,
+        reason: data.message ?? 'This license could not be verified. Please contact support.',
+      };
+    }
     return { ok: false, message: data.message ?? `Validation failed (${status}).` };
   }
   if (data.valid !== true) {

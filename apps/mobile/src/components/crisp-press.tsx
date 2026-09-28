@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useState } from 'react';
 import {
   Animated,
   Pressable,
@@ -32,7 +32,12 @@ export function CrispPress({
   onPressOut,
   ...rest
 }: Props) {
-  const scale = useRef(new Animated.Value(1)).current;
+  // Lazy on purpose: `useRef(new Animated.Value(1))` builds a fresh value on
+  // every render and throws all but the first away, and every pressable in the
+  // app renders at least once. useState's function initializer runs once and
+  // keeps the same Animated.Value for the life of the component, which is what
+  // the ref was being used for anyway.
+  const [scale] = useState(() => new Animated.Value(1));
 
   function handleIn(...args: Parameters<NonNullable<PressableProps['onPressIn']>>) {
     if (!disabled) {

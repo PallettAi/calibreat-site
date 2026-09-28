@@ -120,7 +120,10 @@ function amountIn(raw: unknown, opts: { energy?: boolean; toMg?: boolean } = {})
   if (!Number.isFinite(value)) return null;
   const unit = (m[2] ?? '').toLowerCase();
   if (opts.energy && (unit === 'kj' || unit === 'j')) value = value / KJ_PER_KCAL;
-  if (opts.toMg && unit !== 'mg') value = value * 1000; // "2 g sodium" → 2000 mg
+  // Only an explicit gram unit scales. schema.org sodiumContent is Text and is
+  // commonly published as a bare "230" meaning 230 mg, so `unit !== 'mg'`
+  // turned every such value into 230,000 mg.
+  if (opts.toMg && unit === 'g') value = value * 1000; // "2 g sodium" → 2000 mg
   return value;
 }
 

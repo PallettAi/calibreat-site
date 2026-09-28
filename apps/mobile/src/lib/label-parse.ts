@@ -141,8 +141,11 @@ function energyFrom(line: string): number | null {
     // kcal number is the other value on a dual-unit line.
     if (values.length > 1) return Math.round(values[values.length - 1]);
   }
-  // kJ-only line (or a bare number under an Energy heading).
-  if (deDigitized.includes('kj') || isEnergyLine(line)) {
+  // kJ-only line. A bare number under an Energy heading is kcal, NOT kJ: EU
+  // panels have been required to print kcal alongside kJ since 1990, so an
+  // unlabelled "Energy 251" is 251 kcal. Dividing it by 4.18 under-reported it
+  // as 60 kcal and the error was invisible — the card docked as a good read.
+  if (deDigitized.includes('kj') || /\d\s*k\s*j\b/.test(deDigitized)) {
     return Math.round(values[0] / KJ_PER_KCAL);
   }
   return Math.round(values[0]);
@@ -214,8 +217,14 @@ export function parseLabelText(raw: string | string[]): ParsedLabel {
       if (rule.key === 'sodiumMg') {
         // Salt lines give grams; sodium lines give mg (or, rarely, g).
         const isSaltRule = rule.match.source.includes('salt');
-        const lineIsMg = /mg/.test(deDigitize(line.toLowerCase())) && !isSaltRule;
-        const lineIsGrams = /\d\s*g\b/.test(deDigitize(line.toLowerCase()));
+        // The mg test needs deDigitize (OCR turns "mg" into things like "rn9"),
+        // but the grams test must run on the RAW line: deDigitize rewrites
+        // 0/1/5/8 to letters, so "Sodium 0.5 g" became "sodium o.s g", left no
+        // digit in front of the g, and fell through to the "assume mg" branch —
+        // recording 0.5 mg instead of 500.
+        const lowered = line.toLowerCase();
+        const lineIsMg = /mg/.test(deDigitize(lowered)) && !isSaltRule;
+        const lineIsGrams = /\d\s*g\b/.test(lowered);
         if (isSaltRule) {
           parsed.sodiumMg = roundGrams(value * SODIUM_MG_PER_GRAM_SALT);
         } else if (lineIsMg || !lineIsGrams) {

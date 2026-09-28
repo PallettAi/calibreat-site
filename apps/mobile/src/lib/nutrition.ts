@@ -1,8 +1,10 @@
 /**
  * calibrEAT nutrition math (M1).
  *
- * Goals are computed once at profile setup and stored in SQLite; the
- * dashboard reads the stored row rather than recomputing on every render.
+ * Goals are computed at profile setup and stored in SQLite; the dashboard
+ * reads the stored row rather than recomputing on every render. Because BMR
+ * moves with body weight, `recheckTargets` re-derives them against the latest
+ * weigh-in so the stored target does not silently go stale.
  * All formulas are the standard, explainable ones:
  *   BMR  — Mifflin-St Jeor
  *   TDEE — BMR × activity multiplier
@@ -50,7 +52,12 @@ export function bmr(profile: {
   weightKg: number;
 }): number {
   const base = 10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.ageYears;
-  return Math.round(profile.sex === 'male' ? base + 5 : base - 161);
+  // Normalise before comparing. `sex` is `TEXT NOT NULL` in the schema with no
+  // CHECK constraint, and a restored/imported profile can carry "Male" — which
+  // failed a bare `=== 'male'` and silently took the female offset, understating
+  // a male's BMR by 166 kcal/day and every target derived from it.
+  const sex = String(profile.sex ?? '').trim().toLowerCase();
+  return Math.round(sex === 'male' ? base + 5 : base - 161);
 }
 
 export function tdee(bmrValue: number, activityLevel: ActivityLevel): number {
@@ -69,7 +76,8 @@ export type ComputedGoals = {
   dailyAdjustment: number;
 };
 
-export function computeGoals(profile: {
+/** Everything `computeGoals` needs — the profile minus its id/timestamps. */
+export type GoalInputs = {
   sex: Sex;
   ageYears: number;
   heightCm: number;
@@ -77,7 +85,9 @@ export function computeGoals(profile: {
   activityLevel: ActivityLevel;
   goal: GoalDirection;
   ratePerWeek: number;
-}): ComputedGoals {
+};
+
+export function computeGoals(profile: GoalInputs): ComputedGoals {
   const b = bmr(profile);
   const t = tdee(b, profile.activityLevel);
 
@@ -91,7 +101,14 @@ export function computeGoals(profile: {
 
   // Protein at 1.8 g/kg of current body weight (common target for
   // weight management); fat at 25% of the calorie target; carbs = remainder.
-  const proteinG = Math.round(profile.weightKg * 1.8);
+  // Protein is capped at 40% of the calorie target: the target itself is
+  // clamped to 1200–4000, but weight was not, so a 250 kg profile produced a
+  // 450 g protein row (1800 kcal, 45% of calories) that no longer reconciled
+  // with the stated 25%-fat / remainder-carbs split.
+  const proteinG = Math.min(
+    Math.round(profile.weightKg * 1.8),
+    Math.round((calorieTarget * 0.4) / 4),
+  );
   const fatG = Math.round((calorieTarget * 0.25) / 9);
   const carbsG = Math.max(0, Math.round((calorieTarget - proteinG * 4 - fatG * 9) / 4));
 
@@ -365,4 +382,74 @@ function dayKeyForDate(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+/* ── Target re-derivation (goals that track body weight) ───────────────
+ *
+ * The stored `goals` row is a snapshot taken at setup. BMR is linear in
+ * body weight (Mifflin-St Jeor adds 10 kcal per kg), so the snapshot goes
+ * stale as weight moves: each 2 kg is ~20 kcal of base burn before the
+ * activity multiplier, ~31 kcal a day at x1.55 and ~38 at x1.9.
+ *
+ * These helpers re-derive the goals against the latest weigh-in and report
+ * whether the movement is big enough to be worth surfacing. They are pure:
+ * the caller decides whether to prompt, persist, or ignore, which keeps the
+ * existing adopt/keep consent path (trueburn.ts) as the only way a user's
+ * target ever changes.
+ */
+
+/** Daily-target change (kcal) worth interrupting someone for. */
+export const RECHECK_TARGET_DELTA_KCAL = 50;
+
+/**
+ * Weigh-ins beat the weight typed at setup once they exist. Picks the most
+ * recent usable weigh-in, falling back to the stored profile weight.
+ */
+export function latestWeighInKg(weighIns: WeighPoint[], fallbackKg: number): number {
+  const usable = weighIns.filter((w) => Number.isFinite(w.kg) && w.kg > 0);
+  if (usable.length === 0) return fallbackKg;
+  const sorted = usable.slice().sort((a, b) => a.at.localeCompare(b.at));
+  return sorted[sorted.length - 1]!.kg;
+}
+
+export type TargetRecheck = {
+  /** True when the stored target has drifted far enough to re-derive. */
+  stale: boolean;
+  /** Human-readable explanation, shown alongside the prompt. */
+  reason: string;
+  /** Weight the re-derivation used (latest weigh-in, else the profile weight). */
+  weightBasisKg: number;
+  /** Goals re-derived against `weightBasisKg`. */
+  next: ComputedGoals;
+  /** Change in the daily target, `next - stored`. */
+  deltaKcal: number;
+};
+
+export function recheckTargets(input: {
+  stored: ComputedGoals;
+  profile: GoalInputs;
+  weighIns: WeighPoint[];
+}): TargetRecheck {
+  const weightBasisKg = latestWeighInKg(input.weighIns, input.profile.weightKg);
+  const next = computeGoals({ ...input.profile, weightKg: weightBasisKg });
+  const deltaKcal = next.calorieTarget - input.stored.calorieTarget;
+  const weightDelta = weightBasisKg - input.profile.weightKg;
+  const stale = Math.abs(deltaKcal) >= RECHECK_TARGET_DELTA_KCAL;
+
+  let reason: string;
+  if (input.weighIns.length === 0) {
+    reason = 'No weigh-ins yet, so your target still uses your setup weight.';
+  } else if (stale) {
+    reason = `You are ${describeKg(weightDelta)}: your daily target moves ${Math.abs(deltaKcal)} kcal ${deltaKcal > 0 ? 'higher' : 'lower'}.`;
+  } else {
+    reason = `You are ${describeKg(weightDelta)}, which is inside the ${RECHECK_TARGET_DELTA_KCAL} kcal recheck threshold.`;
+  }
+
+  return { stale, reason, weightBasisKg, next, deltaKcal };
+}
+
+function describeKg(deltaKg: number): string {
+  const d = Math.round(Math.abs(deltaKg) * 10) / 10;
+  if (d === 0) return 'the same weight as setup';
+  return `${d} kg ${deltaKg < 0 ? 'lighter' : 'heavier'}`;
 }

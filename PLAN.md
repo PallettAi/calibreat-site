@@ -174,8 +174,8 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
 | **Profile setup** (`src/app/setup.tsx`) | Activated, no profile | 8-step wizard: sex, age, height, weight, activity, goal + pace, supplements, computed targets (Mifflin-St Jeor); saves profile + goals to the local DB. |
 | **Macros** (`src/app/macros.tsx`) | Activated | Full nutrient list for a day: protein/carbs/fat plus fibre, sugars, saturated fat and sodium wherever the pack lists them. |
 | **Train** (`src/app/train.tsx`) | Activated | Exercise picker with muscle map, sets/reps, kcal estimated from your BMR, sessions logged per day — the burn feeds the home dial's budget. |
-| **BMI** (`src/app/bmi.tsx`) | Activated | Body-mass index from height and latest weigh-in, band and healthy range, computed on device. |
-| **Settings** (`src/app/settings.tsx`) | Activated | Daily log nudge and weigh-in reminders (time + frequency), haptics, account and deactivate. |
+| **BMI** (`src/app/bmi.tsx`) | Activated | Body-mass index from height and latest weigh-in, computed on device, drawn as a banded arc dial on the same sweep as the Home gauges, with the healthy weight range shaded underneath in kilograms. |
+| **Settings** (`src/app/settings.tsx`) | Activated | Daily log nudge and weigh-in reminders (time + frequency), haptics, account and deactivate; "Your data" exports a JSON backup / diary CSV, restores a backup (add or replace, with a preview first), and imports a MyFitnessPal or Cronometer diary CSV. |
 | **Sheets** (`meal-log-sheet`, `water-sheet`, `streak-sheet`, `license-sheet`) | Activated | Meal entry with search/barcode, editable water total, streak claim calendar, licence details. |
 
 ---
@@ -229,8 +229,54 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
       weigh-ins, workouts, saved meals) or a spreadsheet-friendly diary CSV
       through the OS share sheet (web preview: clipboard + download).
       Pure logic in `src/lib/export.ts`, checked by `npm run check:export`.
-      (Import/migration back in is not built — the JSON is readable by
-      hand and by future tooling.)
+- [x] **Restore from a backup** — the other half of the above, and the one
+      that makes the export a promise rather than an escape hatch. Settings →
+      "Restore from a backup…" picks a file through the system document
+      picker, validates it, and shows *exactly* what it will do before
+      writing anything: **Add to my data** (the default) merges, skipping rows
+      already on the device so importing the same file twice is a no-op and
+      two phones' logs can be combined; **Replace everything** clears the
+      device first, which is the honest way to put a new phone back the way
+      the old one was.
+      Rows return with their original `day_key` and `logged_at` — which is
+      why it cannot reuse `addLogEntry` (that stamps "now", and would land a
+      year of meals on today) and why ids are dropped rather than reused.
+      Bad rows are dropped *and counted in the confirmation*, never silently;
+      a missing or impossible day is recovered from the timestamp; a backup
+      from a future schema version is refused outright rather than half-read.
+      Targets are recomputed from the restored profile by the current formula
+      rather than frozen from whichever version wrote the file.
+      Pure logic in `src/lib/restore.ts` (`npm run check:restore`, 61 checks,
+      including drift guards on the constants it mirrors); platform twins
+      `restore-file.ts` / `restore-file.web.ts`; inserts in `db.ts` /
+      `db.web.ts` run in one transaction so a failure changes nothing.
+- [x] **Diary import from MyFitnessPal / Cronometer** — a one-time-purchase
+      tracker is only worth buying if leaving the subscription one isn't a
+      punishment, and "start again from zero" is the single biggest reason
+      people never switch. Settings → "Import from another app…" reads the CSV
+      those apps export and **adds** those days to the diary you already have
+      (never replaces it — a CSV carries no weigh-ins or workouts to replace
+      yours with, and the option is hidden rather than left to misfire).
+      The file is previewed with the same add/replace panel a backup uses:
+      the imported rows are handed to `validateRestoreRows`, so an import is
+      held to exactly the rules a restore is, and de-duplication, the day/
+      timestamp fidelity and the single transaction are all inherited instead
+      of reimplemented.
+      Columns are matched by alias, not position, because neither app versions
+      its export. Quoted commas in food names ("Bread, white, 2 slices"), a
+      UTF-8 BOM, CRLF, and a semicolon-separated UK Excel file with comma
+      decimals are all handled. A blank numeric cell stays *unknown* rather
+      than becoming a confident 0 (`Number('') === 0`), and a comma is read
+      as a thousands separator or a decimal point by whichever the cell can
+      support.
+      D/M/Y vs M/D/Y is decided **across the whole file** (a single 03/04 is
+      ambiguous; a 25/12 in the same file settles it) and, when the file
+      genuinely cannot decide, the preview names the reading it used and
+      offers the other — because guessing wrong moves a year of meals onto
+      the wrong days, and that is not a thing to discover afterwards.
+      Pure logic in `src/lib/import-diary.ts` (`npm run check:import`,
+      111 checks, including the handoff into the backup validator and drift
+      guards on the limits it mirrors).
 
 ### M2 — Food database & barcode (UK-first, all free)
 - [x] **UK CoFID** (McCance & Widdowson, the official UK government composition dataset,

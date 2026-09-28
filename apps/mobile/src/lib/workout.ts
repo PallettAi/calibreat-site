@@ -54,6 +54,12 @@ export const WORKOUT_EFFORT: Record<string, WorkoutEffort> = {
 
 const MAX_SETS = 30;
 const MAX_REPS = 100;
+const MAX_WEIGHT_KG = 500;
+
+export function clampWeightKg(n: number): number {
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(MAX_WEIGHT_KG, Math.round(n * 10) / 10));
+}
 
 export function clampSets(n: number): number {
   if (!Number.isFinite(n)) return 0;
@@ -63,6 +69,23 @@ export function clampSets(n: number): number {
 export function clampReps(n: number): number {
   if (!Number.isFinite(n)) return 0;
   return Math.max(0, Math.min(MAX_REPS, Math.round(n)));
+}
+
+/** Volume = sets × reps × weightKg; bodyweight lifts count with weightKg 0 → 0. */
+export function sessionVolumeKg(input: { sets: number; reps: number; weightKg: number }): number {
+  const s = clampSets(input.sets);
+  const r = clampReps(input.reps);
+  const w = clampWeightKg(input.weightKg);
+  if (s <= 0 || r <= 0 || w <= 0) return 0;
+  return Math.round(s * r * w * 10) / 10;
+}
+
+/** Epley 1RM estimate: w × (1 + r/30), rounded to one decimal. */
+export function epleyE1RM(weightKg: number, reps: number): number {
+  const w = clampWeightKg(weightKg);
+  const r = clampReps(reps);
+  if (w <= 0 || r <= 0) return 0;
+  return Math.round(w * (1 + r / 30) * 10) / 10;
 }
 
 export function sessionDurationSec(exerciseId: string, sets: number, reps: number): number {
@@ -85,6 +108,10 @@ export function sessionKcal(input: {
   return Math.round((input.bmr * effort.met * duration) / 86400);
 }
 
+export function restSecFor(exerciseId: string): number {
+  return WORKOUT_EFFORT[exerciseId]?.restSec ?? 60;
+}
+
 export function formatDurationSec(sec: number): string {
   const n = Math.max(0, Math.round(sec));
   const m = Math.floor(n / 60);
@@ -92,4 +119,11 @@ export function formatDurationSec(sec: number): string {
   if (m <= 0) return `${s}s`;
   if (s === 0) return `${m} min`;
   return `${m} min ${s}s`;
+}
+
+export function formatRestCountdown(sec: number): string {
+  const n = Math.max(0, Math.ceil(sec));
+  const m = Math.floor(n / 60);
+  const s = String(n % 60).padStart(2, '0');
+  return `${m}:${s}`;
 }

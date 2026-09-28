@@ -29,7 +29,27 @@ import {
   type ExportInput,
 } from '@/lib/export';
 import { shareExport } from '@/lib/export-share';
+import { pickBackupText, pickDiaryText } from '@/lib/restore-file';
 import {
+  describeSource,
+  formatDayRange,
+  readDiaryCsv,
+  type DateOrder,
+} from '@/lib/import-diary';
+import {
+  describePlan,
+  describePlanNotes,
+  describeRestored,
+  formatExportedAt,
+  parseBackup,
+  planRestore,
+  validateRestoreRows,
+  type RestoreCurrent,
+  type RestoreMode,
+  type RestorePlan,
+} from '@/lib/restore';
+import {
+  applyRestore,
   getAllLogs,
   getAllWater,
   getAllWeighIns,
@@ -52,6 +72,24 @@ export default function SettingsScreen() {
   const [exportInput, setExportInput] = useState<ExportInput | null>(null);
   const [exportBusy, setExportBusy] = useState<'backup' | 'diary' | null>(null);
   const [exportNote, setExportNote] = useState<string | null>(null);
+  // Restore holds a parsed file and both plans until the user picks one.
+  // Nothing is written until they do. A backup and a diary import share this
+  // state and this preview, because they are the same decision — show me what
+  // this file would do to my diary — with only the title and the notes
+  // differing. `importText` is kept only for a diary whose dates could be read
+  // two ways, so the reading can be swapped without re-picking the file.
+  const [restore, setRestore] = useState<{
+    kind: 'backup' | 'import';
+    title: string;
+    notes: string[];
+    warnings: string[];
+    merge: RestorePlan;
+    replace: RestorePlan;
+    dateOrder?: DateOrder;
+    importText?: string;
+  } | null>(null);
+  const [restoreMode, setRestoreMode] = useState<RestoreMode>('merge');
+  const [restoreBusy, setRestoreBusy] = useState(false);
 
   const accent = isDark ? Brand.lime : Brand.primaryDeep;
   const cardBg = isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF';
@@ -114,6 +152,144 @@ export default function SettingsScreen() {
       setExportNote('Could not read your data to export it. Try again.');
     } finally {
       setExportBusy(null);
+    }
+  }
+
+  /** What is already on this device, in the shape de-duplication needs. The
+   *  export input already holds every one of these tables, so a restore costs
+   *  no extra reads. */
+  function currentForRestore(input: ExportInput | null): RestoreCurrent {
+    return {
+      logEntries: input?.logEntries ?? [],
+      weighIns: input?.weighIns ?? [],
+      water: input?.water ?? [],
+      workouts: input?.workouts ?? [],
+      savedMeals: input?.savedMeals ?? [],
+      hasProfile: Boolean(input?.profile),
+    };
+  }
+
+  /** Pick a file, read it, and show what restoring it would do. Writes
+   *  nothing — the plan waits on an explicit choice. */
+  async function runPickBackup() {
+    if (restoreBusy) return;
+    setRestoreBusy(true);
+    setRestore(null);
+    setExportNote(null);
+    try {
+      const picked = await pickBackupText();
+      if (!picked.ok) {
+        if (!picked.cancelled) setExportNote(picked.message ?? 'Could not open that file.');
+        return;
+      }
+      const parsed = parseBackup(picked.text);
+      if (!parsed.ok) {
+        setExportNote(parsed.message);
+        return;
+      }
+      const current = currentForRestore(exportInput ?? (await loadExportInput()));
+      setRestore({
+        kind: 'backup',
+        title: `Backup from ${formatExportedAt(parsed.bundle.exportedAt)}`,
+        notes: [],
+        warnings: parsed.warnings,
+        merge: planRestore(parsed.bundle, current, 'merge'),
+        replace: planRestore(parsed.bundle, current, 'replace'),
+      });
+      setRestoreMode('merge');
+    } catch {
+      setExportNote('Could not read that file. Try again.');
+    } finally {
+      setRestoreBusy(false);
+    }
+  }
+
+  /** Read a diary CSV and show what importing it would do. Writes nothing —
+   *  the imported rows are handed to the restore validator and planned
+   *  exactly as a backup is, so an import can never take a different route
+   *  into the diary than a restore does. */
+  async function showImportPreview(text: string, dateOrder?: DateOrder) {
+    const parsed = readDiaryCsv(text, dateOrder);
+    if (!parsed.ok) {
+      setRestore(null);
+      setExportNote(parsed.message);
+      return;
+    }
+    const scan = parsed.scan;
+    const validated = validateRestoreRows({ logEntries: scan.rows });
+    if (!validated.ok) {
+      setRestore(null);
+      setExportNote(validated.message);
+      return;
+    }
+    const current = currentForRestore(exportInput ?? (await loadExportInput()));
+    setRestore({
+      kind: 'import',
+      title: `${describeSource(scan.source)} · ${formatDayRange(scan.firstDay, scan.lastDay)}`,
+      notes: scan.notes,
+      warnings: validated.warnings,
+      merge: planRestore(validated.bundle, current, 'merge'),
+      replace: planRestore(validated.bundle, current, 'replace'),
+      // Only offer the swap when the file itself could not settle the reading.
+      dateOrder: scan.ambiguousDates ? scan.dateOrder : undefined,
+      importText: scan.ambiguousDates ? text : undefined,
+    });
+    setRestoreMode('merge');
+  }
+
+  async function runPickDiary() {
+    if (restoreBusy) return;
+    setRestoreBusy(true);
+    setRestore(null);
+    setExportNote(null);
+    try {
+      const picked = await pickDiaryText();
+      if (!picked.ok) {
+        if (!picked.cancelled) setExportNote(picked.message ?? 'Could not open that file.');
+        return;
+      }
+      await showImportPreview(picked.text);
+    } catch {
+      setExportNote('Could not read that file. Try again.');
+    } finally {
+      setRestoreBusy(false);
+    }
+  }
+
+  /** D/M/Y and M/D/Y are the same two numbers in a different order, so a file
+   *  where every date fits both could land a whole year of meals on the wrong
+   *  days. Rather than pick and hope, the preview says which reading was used
+   *  and lets it be flipped before anything is written. */
+  async function swapDateOrder() {
+    if (!restore?.importText || !restore.dateOrder || restoreBusy) return;
+    setRestoreBusy(true);
+    try {
+      await showImportPreview(restore.importText, restore.dateOrder === 'dmy' ? 'mdy' : 'dmy');
+    } finally {
+      setRestoreBusy(false);
+    }
+  }
+
+  async function confirmRestore() {
+    if (!restore || restoreBusy) return;
+    setRestoreBusy(true);
+    setExportNote(null);
+    const plan = restoreMode === 'replace' ? restore.replace : restore.merge;
+    // Both kinds of note are repeated after the write: what the file was read
+    // as, and what was left out. The user should not have to remember the
+    // preview to know which reading their diary landed on.
+    const warnings = [...restore.notes, ...restore.warnings];
+    try {
+      await applyRestore(plan);
+      // The cached export input is now a lie — every table just changed.
+      await loadExportInput();
+      const notes = describePlanNotes(plan, warnings);
+      setExportNote(notes ? `${describeRestored(plan)} ${notes}` : describeRestored(plan));
+      setRestore(null);
+    } catch {
+      setExportNote('That did not finish, so nothing was changed. Try again.');
+    } finally {
+      setRestoreBusy(false);
     }
   }
 
@@ -325,6 +501,137 @@ export default function SettingsScreen() {
                 Backup = everything (profile, diary, water, weigh-ins, workouts, saved meals). Diary = spreadsheet-friendly meal log.
               </ThemedText>
             )}
+
+            {!restore && (
+              <View style={styles.restoreButtons}>
+                <Pressable
+                  onPress={() => void runPickBackup()}
+                  disabled={exportBusy !== null || restoreBusy}
+                  accessibilityRole="button"
+                  accessibilityLabel="Restore from a backup file"
+                  style={({ pressed }) => [
+                    styles.restoreButton,
+                    { borderColor: hairline },
+                    pressed && styles.pressed,
+                    (exportBusy || restoreBusy) && styles.exportDisabled,
+                  ]}
+                >
+                  <Text style={[styles.exportButtonText, { color: accent }]}>
+                    {restoreBusy ? 'Looking for the file…' : 'Restore from a backup…'}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => void runPickDiary()}
+                  disabled={exportBusy !== null || restoreBusy}
+                  accessibilityRole="button"
+                  accessibilityLabel="Import a diary from another app"
+                  style={({ pressed }) => [
+                    styles.restoreButton,
+                    { borderColor: hairline },
+                    pressed && styles.pressed,
+                    (exportBusy || restoreBusy) && styles.exportDisabled,
+                  ]}
+                >
+                  <Text style={[styles.exportButtonText, { color: accent }]}>Import from another app…</Text>
+                </Pressable>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Brings your diary across from a MyFitnessPal or Cronometer CSV — worth doing before you
+                  stop paying for the old one.
+                </ThemedText>
+              </View>
+            )}
+
+            {restore && (
+              <View style={[styles.restorePreview, { borderColor: hairline }]}>
+                <ThemedText type="smallBold">{restore.title}</ThemedText>
+
+                {restore.dateOrder && (
+                  <Pressable
+                    onPress={() => void swapDateOrder()}
+                    disabled={restoreBusy}
+                    accessibilityRole="button"
+                    accessibilityLabel="Switch between day-first and month-first dates"
+                    style={({ pressed }) => [styles.restoreOption, pressed && styles.pressed]}
+                  >
+                    <Text style={[styles.restoreDot, { color: accent }]}>⇄</Text>
+                    <View style={styles.flex}>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        Dates read as {restore.dateOrder === 'mdy' ? 'M/D/Y' : 'D/M/Y'}. Tap to switch — check
+                        a day you remember logging on.
+                      </ThemedText>
+                    </View>
+                  </Pressable>
+                )}
+
+                {restore.kind === 'import' && (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    These days are added to the diary you already have, not swapped for it — a diary
+                    import has no weigh-ins or workouts to replace yours with.
+                  </ThemedText>
+                )}
+
+                {(restore.kind === 'import' ? (['merge'] as const) : (['merge', 'replace'] as const)).map((mode) => {
+                  const plan = mode === 'replace' ? restore.replace : restore.merge;
+                  const selected = restoreMode === mode;
+                  return (
+                    <Pressable
+                      key={mode}
+                      onPress={() => setRestoreMode(mode)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected }}
+                      accessibilityLabel={mode === 'merge' ? 'Add to my data' : 'Replace everything'}
+                      style={({ pressed }) => [styles.restoreOption, pressed && styles.pressed]}
+                    >
+                      <Text style={[styles.restoreDot, { color: selected ? accent : theme.textSecondary }]}>
+                        {selected ? '●' : '○'}
+                      </Text>
+                      <View style={styles.flex}>
+                        <ThemedText type="smallBold" style={selected ? { color: accent } : undefined}>
+                          {mode === 'merge' ? 'Add to my data' : 'Replace everything'}
+                        </ThemedText>
+                        <ThemedText type="small" themeColor="textSecondary">
+                          {describePlan(plan)}
+                        </ThemedText>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+
+                {(() => {
+                  const plan = restoreMode === 'replace' ? restore.replace : restore.merge;
+                  const notes = describePlanNotes(plan, [...restore.notes, ...restore.warnings]);
+                  return notes ? (
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {notes}
+                    </ThemedText>
+                  ) : null;
+                })()}
+
+                <View style={styles.exportRow}>
+                  <Pressable
+                    onPress={() => setRestore(null)}
+                    disabled={restoreBusy}
+                    accessibilityRole="button"
+                    accessibilityLabel="Cancel the restore"
+                    style={({ pressed }) => [styles.exportButton, { borderColor: hairline }, pressed && styles.pressed]}
+                  >
+                    <Text style={[styles.exportButtonText, { color: accent }]}>Cancel</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => void confirmRestore()}
+                    disabled={restoreBusy}
+                    accessibilityRole="button"
+                    accessibilityLabel={restoreMode === 'replace' ? 'Replace everything with this file' : 'Add this file'}
+                    style={({ pressed }) => [styles.exportButton, { borderColor: hairline }, pressed && styles.pressed]}
+                  >
+                    <Text style={[styles.exportButtonText, { color: accent }]}>
+                      {restoreBusy ? 'Working…' : restoreMode === 'replace' ? 'Replace everything' : 'Add to my data'}
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
           </View>
 
           <View style={[styles.card, { backgroundColor: cardBg, borderColor: hairline }]}>
@@ -450,6 +757,11 @@ const styles = StyleSheet.create({
   exportButton: { borderWidth: 1.5, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 16, flexGrow: 1 },
   exportButtonText: { fontSize: 13, fontWeight: '800' },
   exportDisabled: { opacity: 0.5 },
+  restoreButtons: { gap: 10 },
+  restoreButton: { borderWidth: 1.5, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 16, alignItems: 'center' },
+  restorePreview: { borderWidth: 1, borderRadius: 14, padding: 14, gap: 10 },
+  restoreOption: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  restoreDot: { fontSize: 16, lineHeight: 20 },
   accountRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   accountValue: { flexShrink: 1 },
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10 },
