@@ -1314,10 +1314,12 @@ function MedalCard({ kit }: { kit: Kit }) {
   );
 
   if (lay.railFooter) {
-    const [chromeH, medalRowH, stripH] = splitBudget(bareH, [17, 46, 37]);
+    // Only the first two bands are used here; the rail variant renders the
+    // identity strip inline, so its band (still weighed below, to keep the
+    // proportions) is not destructured.
+    const [chromeH, medalRowH] = splitBudget(bareH, [17, 46, 37]);
     const barH = Math.max(15, Math.min(Math.round(chromeH * 0.62), Math.round(lay.baseWidth * 0.075)));
     const medalSize = Math.max(36, Math.min(medalRowH - 6, lay.mainH * 0.62));
-    const monogram = Math.max(18, Math.min(stripH, Math.round(lay.baseWidth * 0.12)));
     const valueFont = Math.min(lay.hero * 1.1, fitLines(medalRowH - Math.round(lay.label * 1.6), 1, 0.98), fitWidth(lay.mainW * 0.3, data.hero.value.length, 0.62));
     return (
       <>
@@ -1493,11 +1495,11 @@ function GoalCard({ kit }: { kit: Kit }) {
   };
 
   if (lay.railFooter) {
-    const [chromeH, bodyH, stripH] = splitBudget(bareH, [16, 48, 36]);
+    // Rail variant: the strip rides inline, so only the first two bands are used.
+    const [chromeH, bodyH] = splitBudget(bareH, [16, 48, 36]);
     const barH = Math.max(15, Math.min(Math.round(chromeH * 0.62), Math.round(lay.baseWidth * 0.075)));
     const trackH = Math.max(6, Math.round(bodyH * 0.16));
     const valueFont = Math.min(lay.hero * 1.2, fitLines(bodyH - trackH - Math.round(lay.label * 1.4), 1, 0.98), fitWidth(lay.mainW * 0.34, data.hero.value.length, 0.62));
-    const monogram = Math.max(18, Math.min(stripH, Math.round(lay.baseWidth * 0.12)));
     const chips = macros.length ? rings(bodyH) : null;
     return (
       <>

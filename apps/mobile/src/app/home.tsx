@@ -60,7 +60,7 @@ import { loadRecapOfferedDayKey, saveRecapOfferedDayKey } from '@/lib/daily-reca
 import { shareCardImage } from '@/lib/share-card-capture';
 import { DEFAULT_SHARE_FORMAT, DEFAULT_SHARE_TEMPLATE, type ShareFormatId } from '@/lib/share-templates';
 import { ShareCardPreview, ShareCardStage, type ShareCardProps } from '@/components/share-card';
-import { DailyShareCardPreview, DailyShareCardStage } from '@/components/daily-share-card';
+import { DailyShareCardStage } from '@/components/daily-share-card';
 import { DailyRecapSheet } from '@/components/daily-recap-sheet';
 import { hapticLight, hapticSelect } from '@/lib/haptics';
 import { adaptiveHistory, adaptiveTdee, calorieBudget, caloriesRemaining, detectPlateau } from '@/lib/nutrition';

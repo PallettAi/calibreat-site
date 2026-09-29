@@ -41,8 +41,10 @@ export default function TrendsScreen() {
   const shareCardRef = useRef<View | null>(null);
   // Shape + look of the image. Same defaults as the streak sheet, so the card
   // a user gets from Trends is the card they get from Home.
-  const [shareFormat, setShareFormat] = useState<ShareFormatId>(DEFAULT_SHARE_FORMAT);
-  const [shareTemplate, setShareTemplate] = useState<ShareTemplateId>(DEFAULT_SHARE_TEMPLATE);
+  // There is no picker on this screen yet, so the selection is fixed at the
+  // same defaults the streak sheet opens with. (It was state with no setter.)
+  const shareFormat: ShareFormatId = DEFAULT_SHARE_FORMAT;
+  const shareTemplate: ShareTemplateId = DEFAULT_SHARE_TEMPLATE;
 
   useFocusEffect(
     useCallback(() => {

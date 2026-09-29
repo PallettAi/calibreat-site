@@ -833,12 +833,12 @@ export default function ShareLabScreen() {
         })}
         <Text style={[styles.hint, { color: theme.muted }]}>
           Overflow is base px; multiply by 3 for the loss in the captured PNG. The footer (QR + site
-          link) is the first thing off the card, and an ellipsized stat is how "2,140 kcal" becomes
-          "2,14…". FLAT means a background layer was stretched by the flex layout instead of covering
-          the card — the gradient stops halfway down and reads as "flat design" rather than as a bug.
+          link) is the first thing off the card, and an ellipsized stat is how “2,140 kcal” becomes
+          “2,14…”. FLAT means a background layer was stretched by the flex layout instead of covering
+          the card — the gradient stops halfway down and reads as “flat design” rather than as a bug.
           OVERLAP counts separate strings sharing pixels: each one fits its own box and the card still
           fits its frame, so nothing else here would catch it. It is the failure that reads as
-          "the spacing is wrong".
+          “the spacing is wrong”.
         </Text>
       </View>
     ) : fit.size ? (

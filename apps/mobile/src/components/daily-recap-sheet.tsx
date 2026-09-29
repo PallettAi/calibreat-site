@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -34,10 +34,10 @@ export function DailyRecapSheet({
   hairline: string;
   cardBg: string;
 }) {
+  // The sheet is mounted once per recap day and never reopened within a mount,
+  // so `portrait` is simply the starting shape — no reset-on-open effect, which
+  // would also be a setState-in-effect (react-hooks/set-state-in-effect).
   const [format, setFormat] = useState<ShareFormatId>('portrait');
-  useEffect(() => {
-    if (visible) setFormat('portrait');
-  }, [visible]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>

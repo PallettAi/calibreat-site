@@ -55,7 +55,11 @@ export async function shareCardImage(
     try {
       const target = new FileSystem.File(FileSystem.Paths.cache, shareFileName(options.format, options.template));
       if (target.exists) target.delete();
-      tmp.copy(target);
+      // AWAIT this: File.copy is async (Promise<void>), so without the await the
+      // share sheet could be handed a path whose bytes have not been written
+      // yet — the "shared image came out blank" report. copySync would also do,
+      // but the await keeps it off the JS thread's critical path.
+      await tmp.copy(target);
       named = target;
       shareUri = target.uri;
     } catch {

@@ -38,7 +38,7 @@ import {
   type MuscleSlug,
 } from '@/lib/muscles';
 import { bmr, resolveBmiWeight } from '@/lib/nutrition';
-import { formatWeightKg, type WeightUnit } from '@/lib/units';
+import { formatWeightKg, parseWeightInput, type WeightUnit } from '@/lib/units';
 import {
   clampReps,
   clampSets,
@@ -139,8 +139,10 @@ export default function TrainScreen() {
 
   const sets = clampSets(Number(setsText));
   const reps = clampReps(Number(repsText));
-  const weightRaw = weightText.trim() === '' ? 0 : Number(weightText.replace(',', '.'));
-  const weightKg = clampWeightKg(Number.isFinite(weightRaw) ? weightRaw : 0);
+  // The field is labelled in the user's chosen unit, so the typed number has to
+  // be converted from it — reading "88" under a "Weight (lb)" label as 88 kg
+  // logged 194 lb. parseWeightInput is the same reader the Home weigh-in uses.
+  const weightKg = clampWeightKg(parseWeightInput(weightText, weightUnit) ?? 0);
   const durationSec = picked ? sessionDurationSec(exerciseId, sets, reps) : 0;
   const restSec = picked ? restSecFor(exerciseId) : 60;
 
@@ -219,7 +221,7 @@ export default function TrainScreen() {
   }
 
   // Weight display respects user's unit pref; stored as kg.
-  const weightPlaceholder = weightUnit === 'st' ? 'kg' : weightUnit;
+  const weightPlaceholder = weightUnit;
   const displayWeightFor = (kg: number) => (kg === 0 ? '—' : formatWeightKg(kg, weightUnit));
 
   return (
@@ -414,7 +416,7 @@ export default function TrainScreen() {
                     <TextInput
                       value={weightText}
                       onChangeText={(text) => setWeightText(text.replace(/[^0-9.,]/g, ''))}
-                      placeholder={weightUnit === 'kg' ? 'e.g. 40' : 'e.g. 88'}
+                      placeholder={weightUnit === 'kg' ? 'e.g. 40' : weightUnit === 'lb' ? 'e.g. 88' : 'e.g. 9,6'}
                       placeholderTextColor={theme.muted}
                       keyboardType="decimal-pad"
                       inputMode="decimal"
