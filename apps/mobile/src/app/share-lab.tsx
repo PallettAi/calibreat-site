@@ -306,13 +306,13 @@ const DAILY_SCENARIOS: DailyScenario[] = [
   {
     id: 'goal-met',
     name: 'Closed the day under target',
-    note: 'The ordinary good day. The bar IS the equation: the track is goal + train, the fill is food.',
+    note: 'The ordinary good day. The bar IS the equation: the track is the goal, the fill is food.',
     stats: { targetKcal: 2100, foodKcal: 2040, workoutKcal: 0, measuredBurnKcal: 2100, usedMeasuredTarget: false },
   },
   {
     id: 'train-day',
-    name: 'Trained, so the budget grew',
-    note: 'A fourth equation row: Train raises what you can eat but never raises True Burn. Worth seeing that the row appears at all.',
+    name: 'Trained, and it shows',
+    note: 'A fourth row reporting the session, muted and unadded. The sum above it is unchanged: the target already assumes the user trains, so the session cannot buy extra room.',
     stats: { targetKcal: 2100, foodKcal: 2480, workoutKcal: 420, measuredBurnKcal: 2100, usedMeasuredTarget: false },
   },
   {
@@ -330,7 +330,7 @@ const DAILY_SCENARIOS: DailyScenario[] = [
   {
     id: 'trained-no-food',
     name: 'Trained, ate nothing logged',
-    note: 'A train session and no food logged at all. The budget grows and almost all of it is left — the one case where a signed zero could reach the card as "−0".',
+    note: 'A train session and no food logged at all. The whole goal is left, and the session is still reported — the one case where a signed zero could reach the card as "−0".',
     stats: { targetKcal: 2100, foodKcal: 0, workoutKcal: 420, measuredBurnKcal: 2100, usedMeasuredTarget: false },
   },
   {
@@ -348,7 +348,7 @@ const DAILY_SCENARIOS: DailyScenario[] = [
   {
     id: 'blowout',
     name: 'A big day, and a big session',
-    note: 'The widest the equation ever gets: four rows including train, two four-digit figures, and an overshoot past 1,000 kcal — stated, not scolded.',
+    note: 'The widest the equation ever gets: two four-digit figures, a session row, and an overshoot past 1,000 kcal — stated, not scolded.',
     stats: { targetKcal: 2410, foodKcal: 3820, workoutKcal: 620, measuredBurnKcal: 2410, usedMeasuredTarget: true },
   },
   {

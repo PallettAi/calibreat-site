@@ -153,21 +153,28 @@ export function resolveBmiWeight(
   return { kg: setupKg, source: 'setup', at: null };
 }
 
-/** Day's eat budget: food target plus logged Train kcal for that day. */
-export function calorieBudget(target: number, workoutKcal: number): number {
-  const t = Number.isFinite(target) ? target : 0;
-  const w = Number.isFinite(workoutKcal) && workoutKcal > 0 ? workoutKcal : 0;
-  return Math.round(t + w);
+/**
+ * The day's eat budget: the food target, and nothing else.
+ *
+ * It deliberately does NOT add logged Train kcal. `ACTIVITY_LEVELS` above
+ * defines its multipliers by exercise frequency — "moderate" means "Exercise
+ * 3–5 days a week" — so a session is already paid for inside the target, and
+ * adding it again counts the same training twice. It bites hardest once True
+ * Burn is adopted: a measured target is derived from actual intake against
+ * actual weight change, so it contains training by construction.
+ *
+ * Most tracking apps add the session on top, which quietly tells the user to
+ * eat kcal they did not burn. That is the thing this app is for not doing.
+ * Reintroducing the addition needs a reason that survives this paragraph.
+ */
+export function calorieBudget(target: number): number {
+  return Math.round(Number.isFinite(target) ? target : 0);
 }
 
-/** kcal left to eat. Workout raises remaining; True Burn is unchanged. */
-export function caloriesRemaining(input: {
-  target: number;
-  foodKcal: number;
-  workoutKcal: number;
-}): number {
+/** kcal left to eat. Training is inside the target already — see calorieBudget. */
+export function caloriesRemaining(input: { target: number; foodKcal: number }): number {
   const food = Number.isFinite(input.foodKcal) ? input.foodKcal : 0;
-  return Math.round(calorieBudget(input.target, input.workoutKcal) - food);
+  return Math.round(calorieBudget(input.target) - food);
 }
 
 function clamp(value: number, min: number, max: number): number {

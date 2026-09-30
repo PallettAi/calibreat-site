@@ -3,7 +3,7 @@
  * same way as the weekly card (off-screen at base size, PNG at 3×).
  *
  * The composition is the app's thesis drawn once: a budget bar that IS the
- * equation (goal + train = the whole track; food = the filled span), the
+ * equation (the goal is the whole track; food is the filled span), the
  * remaining figure as the display numeral, the equation spelled out in a
  * leader-dot table, and the same QR footer as the weekly card so the loop
  * works wherever the image lands.
@@ -113,9 +113,11 @@ function Kicker({ label, size, rule }: { label: string; size: number; rule?: boo
 }
 
 /**
- * The budget bar that IS the equation: the full track is goal + train (the
- * whole budget), the filled span is food, and the marker sits at the day's
- * edge. One glance answers "how full was the day".
+ * The budget bar that IS the equation: the full track is the goal, the filled
+ * span is food, and the marker sits at the day's edge. One glance answers "how
+ * full was the day". Training is deliberately not on this track — it is
+ * already inside the goal, so drawing it as extra track would overstate the
+ * day's room by exactly the size of the mistake this app doesn't make.
  */
 function BudgetBar({ fill, height }: { fill: number; height: number }) {
   return (
@@ -145,7 +147,7 @@ function EquationTable({ card, height, width, font }: { card: DailyCard; height:
           <Text numberOfLines={1} allowFontScaling={false} style={{ color: DAILY_PALETTE.hairline, fontFamily: Fonts.mono, fontSize: font, flex: 1, overflow: 'hidden', marginHorizontal: 4 }}>
             {dots}
           </Text>
-          <Text numberOfLines={1} allowFontScaling={false} style={{ color: row.signed ? DAILY_PALETTE.ink2 : DAILY_PALETTE.accent, fontFamily: Fonts.mono, fontSize: font * 1.05, fontWeight: '700' }}>
+          <Text numberOfLines={1} allowFontScaling={false} style={{ color: row.muted ? DAILY_PALETTE.muted : row.signed ? DAILY_PALETTE.ink2 : DAILY_PALETTE.accent, fontFamily: Fonts.mono, fontSize: font * 1.05, fontWeight: '700' }}>
             {row.value}
           </Text>
         </View>

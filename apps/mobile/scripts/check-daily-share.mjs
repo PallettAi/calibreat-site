@@ -24,7 +24,10 @@ const ok = (label, cond) => {
 eq('no food and no train is ineligible', buildDailyCard({ targetKcal: 2100, foodKcal: 0, workoutKcal: 0 }), { eligible: false, reason: 'empty' });
 eq('no target is ineligible', buildDailyCard({ targetKcal: 0, foodKcal: 1500, workoutKcal: 0 }), { eligible: false, reason: 'empty' });
 
-// ── The equation is exact: goal + train − food = left ───────────────────
+// ── The equation is exact: goal − food = left ───────────────────────────
+// Training is deliberately not a term. It is reported in its own muted row at
+// the end, but it must not move the budget: the target already assumes the
+// user trains, so adding the session pays for the same training twice.
 const under = buildDailyCard({ targetKcal: 2100, foodKcal: 1420, workoutKcal: 0 });
 eq('under-budget hero', under.eligible && under.card.hero, { value: '680', label: 'kcal left' });
 eq('equation rows (no train)', under.eligible && under.card.equation, [
@@ -34,23 +37,31 @@ eq('equation rows (no train)', under.eligible && under.card.equation, [
 ]);
 eq('fill is food / budget, clamped', under.eligible && under.card.fill, 1420 / 2100);
 
-// Train raises the budget, never the burn math: with train the day is 100
-// over (2,000 + 300 − 2,400 = −100); without it, 400 over.
+// The regression, asserted two ways. 300 kcal of training must leave the
+// overshoot at 400 and the budget at 2,000 — the same day as the untrained
+// case below — while still being reported on the card.
 const withTrain = buildDailyCard({ targetKcal: 2000, foodKcal: 2400, workoutKcal: 300 });
-eq('train row appears when logged', withTrain.eligible && withTrain.card.equation[1], { label: 'train', value: '+300' });
-eq('train shrinks the overshoot', withTrain.eligible && withTrain.card.hero, { value: '100', label: 'kcal over' });
+eq('training does not shrink the overshoot', withTrain.eligible && withTrain.card.hero, { value: '400', label: 'kcal over' });
+eq('fill ignores training', withTrain.eligible && withTrain.card.fill, 1);
 // over-budget day: remaining < 0 → hero is the overshoot, labelled honestly.
 const over = buildDailyCard({ targetKcal: 2000, foodKcal: 2400, workoutKcal: 0 });
 eq('over-budget hero is the overshoot', over.eligible && over.card.hero, { value: '400', label: 'kcal over' });
-ok('over-budget last row is labelled over', over.eligible && over.card.equation[over.card.equation.length - 1].label === 'over');
-// No train row when nothing was logged in Train.
-ok('no train row without train', under.eligible && !under.card.equation.some((r) => r.label === 'train'));
+ok('over-budget last row is labelled over', over.eligible && over.card.equation.some((r) => r.label === 'over'));
+ok('a trained overshoot equals an untrained one', JSON.stringify(withTrain.card.hero) === JSON.stringify(over.card.hero));
+
+// Training is still reported, but as an aside: last in the table, muted, and
+// with no "+" — nothing in it reads as a term in the sum above.
+const trainedRow = withTrain.eligible && withTrain.card.equation[withTrain.card.equation.length - 1];
+eq('trained row is reported last', trainedRow, { label: 'trained', value: '300', muted: true });
+ok('trained row carries no plus sign', withTrain.eligible && !withTrain.card.equation.some((r) => r.value.startsWith('+')));
+ok('no trained row without training', under.eligible && !under.card.equation.some((r) => r.label === 'trained'));
+ok('trained row is never signed', withTrain.eligible && !withTrain.card.equation.some((r) => r.label === 'trained' && r.signed));
 
 // A session with no food logged is eligible, and must not print a signed zero:
 // that is the one day where "food −0" reached the card.
 const trainOnly = buildDailyCard({ targetKcal: 2100, foodKcal: 0, workoutKcal: 420 });
 eq('train-only day is eligible', trainOnly.eligible, true);
-eq('train-only hero is the whole budget', trainOnly.eligible && trainOnly.card.hero, { value: '2,520', label: 'kcal left' });
+eq('train-only hero is the whole goal', trainOnly.eligible && trainOnly.card.hero, { value: '2,100', label: 'kcal left' });
 ok('train-only food row is an unsigned zero', trainOnly.eligible && trainOnly.card.equation.some((r) => r.label === 'food' && r.value === '0'));
 ok('no signed zero anywhere in the equation', trainOnly.eligible && !trainOnly.card.equation.some((r) => /[−-]0$/.test(r.value)));
 ok('train-only copy says what was logged', trainOnly.eligible && /train/i.test(trainOnly.card.copy.line));
@@ -64,6 +75,7 @@ for (const [name, s] of [
   ['under-budget day', { targetKcal: 2100, foodKcal: 1420, workoutKcal: 0 }],
   ['over-budget day', { targetKcal: 1800, foodKcal: 2600, workoutKcal: 0 }],
   ['perfect day', { targetKcal: 2000, foodKcal: 1990, workoutKcal: 450 }],
+  ['trained day at a measured target', { targetKcal: 2410, foodKcal: 2200, workoutKcal: 620, measuredBurnKcal: 2410, usedMeasuredTarget: true }],
 ]) {
   const d = buildDailyCard(s);
   const text = d.eligible

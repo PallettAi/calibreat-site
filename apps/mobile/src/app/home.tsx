@@ -397,7 +397,7 @@ export default function HomeScreen() {
   // Adopted measured target overrides dial until profile is re-saved in setup.
   // Keep leaves the formula target on the dial — never auto-drive from True Burn.
   const dialTarget = overrideKcal ?? goals?.calorieTarget ?? 2000;
-  const budget = calorieBudget(dialTarget, workoutKcal);
+  const budget = calorieBudget(dialTarget);
   const dialMeasuredLabel = adaptive?.ready ? `Measured burn ${adaptive.measuredTdee?.toLocaleString()} kcal` : null;
   const showAdoptPrompt = !!adaptive?.ready && adaptive.suggestedTarget != null && overrideKcal == null && shouldShowAdoptPrompt(trueBurnPersist, adaptive.suggestedTarget);
 
@@ -1005,7 +1005,7 @@ export default function HomeScreen() {
               </View>
             </Pressable>
             {(() => {
-              const remain = caloriesRemaining({ target: dialTarget, foodKcal: intakeKcal, workoutKcal });
+              const remain = caloriesRemaining({ target: dialTarget, foodKcal: intakeKcal });
               return (
                 <>
                   <Text style={[styles.dialRemain, { color: remain < 0 ? Brand.danger : accentText }]}>
@@ -1013,7 +1013,7 @@ export default function HomeScreen() {
                   </Text>
                   {workoutKcal > 0 ? (
                     <ThemedText type="small" themeColor="textSecondary" style={styles.dialFoot}>
-                      Includes {workoutKcal.toLocaleString()} kcal from Train.
+                      Trained {workoutKcal.toLocaleString()} kcal — already inside this target.
                     </ThemedText>
                   ) : null}
                 </>

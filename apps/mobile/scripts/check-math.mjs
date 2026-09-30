@@ -239,13 +239,23 @@ const plLose = detectPlateau({
 });
 eq('no plateau when weight moving', plLose.isPlateau ? 1 : 0, 0);
 
-// Eat remaining: logged Train kcal raise the day's budget, not True Burn.
-eq('budget with no workout is the target', calorieBudget(2209, 0), 2209);
-eq('budget adds logged Train kcal', calorieBudget(2209, 34), 2243);
-eq('remaining food only', caloriesRemaining({ target: 2209, foodKcal: 1800, workoutKcal: 0 }), 409);
-eq('remaining grows after a workout', caloriesRemaining({ target: 2209, foodKcal: 1800, workoutKcal: 34 }), 443);
-eq('workout can still leave you over', caloriesRemaining({ target: 2200, foodKcal: 2300, workoutKcal: 34 }), -66);
-eq('junk workout kcal is ignored', calorieBudget(2200, Number.NaN), 2200);
+// Eat remaining: the target IS the budget. Logged Train kcal is deliberately
+// NOT added. The activity multipliers are defined by exercise frequency, so a
+// session is already inside the target; a measured target contains real
+// sessions by construction. Adding it again tells the user to eat kcal they
+// did not burn, which is the commonest way otherwise-perfect tracking fails.
+eq('budget is the target', calorieBudget(2209), 2209);
+eq('remaining food only', caloriesRemaining({ target: 2209, foodKcal: 1800 }), 409);
+eq('over budget goes negative', caloriesRemaining({ target: 2200, foodKcal: 2300 }), -100);
+eq('junk target is ignored', calorieBudget(Number.NaN), 0);
+
+// The regression guard. Both are deliberately given a workout the signatures
+// no longer accept: JavaScript ignores the extra arguments, so these pass only
+// while a session cannot reach the budget. Reintroduce the parameter and they
+// fail. .mjs is outside tsconfig's include, so the extra args don't trip tsc.
+eq('a logged workout cannot raise the budget', calorieBudget(2209, 400), 2209);
+const trained = { target: 2209, foodKcal: 1800, workoutKcal: 400 };
+eq('a logged workout cannot raise what is left', caloriesRemaining(trained), 409);
 
 // Target re-derivation: goals should track body weight, not freeze at setup.
 const cut = { sex: 'male', ageYears: 30, heightCm: 180, weightKg: 80, activityLevel: 'moderate', goal: 'lose', ratePerWeek: 0.5 };

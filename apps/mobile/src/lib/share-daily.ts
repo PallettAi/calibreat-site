@@ -22,7 +22,7 @@ export type DailyStats = {
   targetKcal: number;
   /** kcal actually eaten (summed from the day's log). */
   foodKcal: number;
-  /** kcal logged in Train that day (raises the budget, never True Burn). */
+  /** kcal logged in Train that day. Reported, never added to the budget. */
   workoutKcal: number;
   /** The measured burn for context, when True Burn is ready. */
   measuredBurnKcal?: number | null;
@@ -42,8 +42,12 @@ export type DailyCopy = {
 export type DailyCard = {
   /** Hero number: kcal remaining, or the overshoot when over budget. */
   hero: { value: string; label: string };
-  /** The equation as three readable rows. */
-  equation: { label: string; value: string; signed?: boolean }[];
+  /**
+   * The equation as readable rows. `signed` marks a row that is subtracted and
+   * so renders in the second ink; `muted` marks a row that is a fact about the
+   * day rather than a term in the sum.
+   */
+  equation: { label: string; value: string; signed?: boolean; muted?: boolean }[];
   copy: DailyCopy;
   /** 0–1 dial fill for the day, clamped. */
   fill: number;
@@ -65,19 +69,26 @@ export function buildDailyCard(stats: DailyStats): DailyDecision {
   if (food <= 0 && workout <= 0) return { eligible: false, reason: 'empty' };
   if (target <= 0) return { eligible: false, reason: 'empty' };
 
-  const budget = target + workout; // Train raises what you can eat, never True Burn
+  // The budget is the target and nothing more. The target already assumes the
+  // user trains — the activity multipliers are defined by exercise frequency —
+  // and a measured target contains real sessions by construction, so adding a
+  // session here would pay for the same training twice. See calorieBudget.
+  const budget = target;
   const remaining = budget - food;
   const over = remaining < 0;
   const fill = clamp(food / Math.max(1, budget), 0, 1);
 
   const equation: DailyCard['equation'] = [
     { label: 'goal', value: fmt(target) },
-    ...(workout > 0 ? [{ label: 'train', value: `+${fmt(workout)}` }] : []),
-    // A session with no food logged is eligible (train > 0) and used to print
+    // A session with no food logged is eligible (workout > 0) and used to print
     // "food −0": a signed zero is not a number anyone reads, and it implies a
     // subtraction that never happened. Zero is unsigned.
     { label: 'food', value: food > 0 ? `−${fmt(food)}` : fmt(0), signed: food > 0 },
     { label: over ? 'over' : 'left', value: fmt(Math.abs(remaining)) },
+    // Training is reported last, muted, and with no "+". Above it the table
+    // reads goal − food = left, and this row must not look like a fourth term
+    // in that sum. It stays because a trained day is why people post this card.
+    ...(workout > 0 ? [{ label: 'trained', value: fmt(workout), muted: true }] : []),
   ];
 
   const measured = safeInt(stats.measuredBurnKcal ?? null);

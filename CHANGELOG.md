@@ -9,9 +9,10 @@ Next: **beta v0.0.5** (versionCode 6) — written, not yet built.
 
 ## beta v0.0.5 — Your data can leave the phone, and come back
 
-**Theme:** nothing you log is trapped. A backup you can read back, a diary you
-can bring with you from the app you left, and a day or a week you can show
-someone — all without an account, and all on the device.
+**Theme:** nothing you log is trapped, and nothing you are told is inflated.
+A backup you can read back, a diary you can bring with you from the app you
+left, and a day or a week you can show someone — all without an account, and
+all on the device. And one number stops counting the same workout twice.
 
 - **Import your diary from MyFitnessPal or Cronometer** — the last barrier to
   buying a *lifetime* tracker instead of subscribing to another one. Everyone
@@ -74,14 +75,48 @@ someone — all without an account, and all on the device.
   drift guards on the constants it mirrors), file picking in
   `restore-file.ts` / `.web.ts`.
 
+- **The target stops moving when you train** — the food budget used to add
+  your logged session on top of your daily target, and it was the one place
+  the app contradicted its own reason for existing. Your target is your
+  resting burn multiplied by an activity level, and those multipliers are
+  defined by *exercise frequency* — "moderately active" means "exercise 3–5
+  days a week" — so the training was already in the number before a single
+  set was logged. Adding the session again paid for the same workout twice,
+  and the effect compounded exactly when True Burn was on: a measured target
+  is derived from what you actually ate against what the scale actually did,
+  which means it *contains* your training by construction. Train 400 kcal on a
+  moderate day and the app used to hand you an extra 400 kcal of food you had
+  not earned.
+  This is the commonest way otherwise-perfect tracking quietly fails. You log
+  accurately, the app tells you to eat more, you comply, the plan stops
+  working, and no individual number ever looked wrong. Most tracking apps do
+  it, which is why most people's "calories in" figure is fiction.
+  Now the target is the budget and stays still. A session is still recorded,
+  still estimated from your own BMR, and still shown — on the home screen as
+  *"Trained 400 kcal — already inside this target"*, and on the recap card as
+  a muted row at the end of the equation, outside the sum, so a trained day
+  reads as the same budget with the training reported rather than rewarded.
+  Both the maths (`check:math`) and the card (`check:share-daily`) now assert
+  the regression directly: given a 400 kcal session, the budget and what is
+  left are *unchanged*. Those assertions were previously pinning the old
+  behaviour, with comments arguing for it.
+  Worth being straight about the one trade: a sedentary-labelled user who
+  trains hard will now be under-credited rather than over-credited. That is a
+  smaller and rarer error than the one being fixed, and the activity level is
+  editable in Settings → "Adjust my goals" — where the same "exercise 3–5
+  days a week" framing that caused this is shown. Detecting a stale level
+  automatically is a v0.0.6 item.
+
 - **Daily recap card — "yesterday, calibrated"** — the day is the new share
   moment: the first Home visit after midnight offers a recap of the most
   recent *closed* day, once per day (a small AsyncStorage flag; "Not now"
   dismisses it for that day and it never returns as a nag). The card draws
-  the app's thesis: the **calorie equation** — goal + Train − food = left
+  the app's thesis: the **calorie equation** — goal − food = left
   (or over) — as a budget bar plus a leader-dot table, with the remaining
   figure as the display numeral and the True Burn note when the dial is
-  running on the measured target. Same copy contract as the weekly card
+  running on the measured target. A logged session is reported in its own
+  muted row, deliberately outside the sum (see "The target stops moving"
+  below). Same copy contract as the weekly card
   (behaviour, never bodies; the site URL appears exactly once) enforced by a
   new `check:share-daily` suite; the card builds on the weekly system's
   budgeted layout maths (`shareLayout`, `specklePaths`, shared QR module) and
