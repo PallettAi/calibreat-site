@@ -165,11 +165,18 @@ than usual for a sideloaded paid app — trim the unused ones with
    That page has two states and picks between them from this one constant: the button,
    the "In progress"/"Available" chip, the meta line, the hero CTA **and every line of
    status copy on the page** switch together, so a live download can never sit under a
-   heading that still says "isn't ready to download yet". Nothing else on
-   `download.html` needs editing.
+   heading that still says "isn't ready to download yet". That covers everything
+   *on* the page. The three `<head>` tags do not — JS cannot rewrite a meta tag, so
+   they are step 5's business.
 5. **Update the copy that lives elsewhere** — shorter now, but this is the step that gets
    forgotten, and stale "in progress" text is exactly the honesty problem this project
    keeps fixing:
+   - `apps/web/download.html`: the `<head>` `description`, `og:description` and
+     `twitter:description` (lines 7, 12, 22). Listed first because step 4 has just
+     told you this file is handled — it isn't. JS cannot rewrite a meta tag, so all
+     three keep saying "the APK is a build in progress" and ship that to search
+     results and to every social share card the link is ever pasted into. Drop the
+     clause, keep the sentence; the three must stay identical to each other.
    - `apps/web/index.html`: the FAQ answer (both the visible copy *and* the matching
      `FAQPage` JSON-LD answer near the top of the file — they must stay identical).
    - `apps/web/privacy.html`: "Android (APK sideload; build in progress)".
