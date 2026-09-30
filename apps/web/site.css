@@ -227,11 +227,17 @@ h1, h2, h3, h4 { font-family: var(--font-display); text-wrap: balance; }
 .btn-block { width: 100%; }
 
 /* ── Nav ───────────────────────────────────────────────────────────────── */
+/* The blur is a 6px kernel, not 16px, and that is the whole point of the number.
+   --nav-bg is already 84% opaque, so only a sixth of the backdrop ever shows
+   through: at 16px the extra radius was paying real per-frame cost for a
+   difference you cannot see. A sticky element with a backdrop cannot cache its
+   backdrop, so the kernel is re-run against the page on every scroll frame —
+   the radius is the cost, and 84% opacity is what lets it shrink. */
 .site-nav {
   position: sticky; top: 0; z-index: 60;
   background: var(--nav-bg);
-  backdrop-filter: saturate(1.6) blur(16px);
-  -webkit-backdrop-filter: saturate(1.6) blur(16px);
+  backdrop-filter: saturate(1.4) blur(6px);
+  -webkit-backdrop-filter: saturate(1.4) blur(6px);
   border-bottom: 1px solid var(--hero-line);
   transition: background-color .3s ease, border-color .3s ease;
 }

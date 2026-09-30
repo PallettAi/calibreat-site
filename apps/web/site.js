@@ -130,15 +130,24 @@
     );
 
     Array.prototype.forEach.call(revealables, function (el) {
+      var top = el.getBoundingClientRect().top;
       // Anything already on screen renders complete — no fake entrance on load.
-      if (el.getBoundingClientRect().top < window.innerHeight * 0.85) {
+      if (top < window.innerHeight * 0.85) {
         el.classList.add("revealed");
         return;
       }
       el.classList.add("pre-reveal");
       observer.observe(el);
-      // Safety net: an element must never stay invisible on a quirky layout.
-      setTimeout(function () { el.classList.add("revealed"); }, 1600);
+      // Safety net, but only for what the observer should have reached almost
+      // at once. Unscoped, this fired for every element on the page in the same
+      // frame at 1.6s — which quietly defeated the scroll reveal it was
+      // guarding, and animated ~30 nodes together behind the nav's blur. What is
+      // genuinely far down the page is the observer's job; the net exists for a
+      // layout where it never fires at all, and three viewports is close enough
+      // that a reader is about to see it either way.
+      if (top < window.innerHeight * 3) {
+        setTimeout(function () { el.classList.add("revealed"); }, 1600);
+      }
     });
   }
 })();
