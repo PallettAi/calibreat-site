@@ -28,6 +28,17 @@ node scripts/check-release.mjs --online   # + a live probe of the licence API
 - **Release builds fail closed.** Without `EXPO_PUBLIC_LICENSE_API_URL` baked in,
   activation returns "Activation is not configured on this build yet" — by design,
   so a mis-built APK can never be unlocked with a guessed code.
+- **Builds are arm64-only.** `expo-build-properties` sets
+  `android.buildArchs: ["arm64-v8a"]` in `app.json`, replacing the SDK default
+  of four ABIs. Shipping `armeabi-v7a` alongside it cost ~26 MB of duplicated
+  native libraries — ML Kit's OCR pipeline, barcode, React Native and Hermes
+  are all compiled per-ABI — and this is a sideload, so download size is a real
+  cost to the person deciding whether to pay.
+  **The trade:** a 32-bit-only device can no longer install the app. In
+  practice that is pre-2016 hardware and some low-end 32-bit Android tablets;
+  Expo's default `minSdkVersion` is 24, so such a device *would* otherwise have
+  been eligible. Re-adding `"armeabi-v7a"` to that array restores it and costs
+  the size back — do that deliberately, not by accident.
 - **No APK exists yet.** `apps/web/download.html` says so honestly, and
   `check-release.mjs` prints the exact one-line edit that ships it.
 
