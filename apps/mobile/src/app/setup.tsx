@@ -20,6 +20,7 @@ import { Brand } from '@/constants/app';
 import { Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useKeyboardReveal, type KeyboardFieldProps } from '@/hooks/use-keyboard-reveal';
+import { useT } from '@/i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { getProfile, getUnitPrefs, saveProfile, saveUnitPrefs, type Profile } from '@/lib/db';
 import {
@@ -48,6 +49,7 @@ const TOTAL_STEPS = 8;
 type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export default function SetupScreen() {
+  const { t } = useT();
   const router = useRouter();
   const isDark = useColorScheme() === 'dark';
   const theme = useTheme();
@@ -299,10 +301,10 @@ export default function SetupScreen() {
               style={[styles.card, { borderColor: theme.line }]}>
               {step === 0 ? (
                 <>
-                  <StepHeading title="Which best describes you?" body="Used with your height, weight and age to estimate your daily energy needs." />
+                  <StepHeading title={t('setup.gender')} body="Used with your height, weight and age to estimate your daily energy needs." />
                   <ChoiceRow>
                     <ChoiceCard
-                      label="Female"
+                      label={t('setup.female')}
                       detail="Uses the female BMR formula."
                       selected={sex === 'female'}
                       onPress={() => setSex('female')}
@@ -310,7 +312,7 @@ export default function SetupScreen() {
                       theme={theme}
                     />
                     <ChoiceCard
-                      label="Male"
+                      label={t('setup.male')}
                       detail="Uses the male BMR formula."
                       selected={sex === 'male'}
                       onPress={() => setSex('male')}
@@ -323,7 +325,7 @@ export default function SetupScreen() {
 
               {step === 1 ? (
                 <NumberStep
-                  label="How old are you?"
+                  label={t('setup.age')}
                   body="Your metabolism slows a little with age, so this matters for the estimate."
                   placeholder="Years"
                   value={age}
@@ -337,7 +339,7 @@ export default function SetupScreen() {
               {step === 2 ? (
                 <>
                   <StepHeading
-                    title="How tall are you?"
+                    title={t('setup.height')}
                     body="Height is used to estimate your body size and a healthy weight range."
                   />
                   <UnitPicker
@@ -394,7 +396,7 @@ export default function SetupScreen() {
               {step === 3 ? (
                 <>
                   <StepHeading
-                    title="What do you weigh today?"
+                    title={t('setup.weight')}
                     body="Your targets adjust automatically as this changes over time."
                   />
                   <UnitPicker
@@ -450,7 +452,7 @@ export default function SetupScreen() {
 
               {step === 4 ? (
                 <>
-                  <StepHeading title="How active are you?" body="This scales your baseline up to the calories you actually burn." />
+                  <StepHeading title={t('setup.activity')} body="This scales your baseline up to the calories you actually burn." />
                   <View style={styles.list}>
                     {ACTIVITY_LEVELS.map((level) => (
                       <SelectRow
@@ -471,7 +473,7 @@ export default function SetupScreen() {
               {step === 5 ? (
                 <>
                   <StepHeading
-                    title="What's your goal?"
+                    title={t('setup.goal')}
                     body={
                       heightCm
                         ? `A healthy range for your height is ${healthyWeightRange(heightCm).minKg}–${healthyWeightRange(heightCm).maxKg} kg — use it as a rough guide.`
@@ -494,7 +496,7 @@ export default function SetupScreen() {
 
                   {goal && (goal === 'lose' || goal === 'gain') ? (
                     <View style={styles.rateGroup}>
-                      <ThemedText type="smallBold">Pace</ThemedText>
+                      <ThemedText type="smallBold">{t('setup.pace')}</ThemedText>
                       <View style={styles.list}>
                         {RATE_OPTIONS.map((option) => (
                           <SelectRow
@@ -528,7 +530,7 @@ export default function SetupScreen() {
               {step === 6 ? (
                 <>
                   <StepHeading
-                    title="Do you take any supplements?"
+                    title={t('setup.supplements')}
                     body="Pick any that apply — this helps us tailor hydration hints. Tap again to deselect. Optional — you can skip."
                   />
                   <View style={styles.supplementGrid}>
@@ -573,7 +575,7 @@ export default function SetupScreen() {
               {step === 7 ? (
                 <>
                   <StepHeading
-                    title="Your daily targets"
+                    title={t('setup.targets')}
                     body="Based on your profile, this is what calibrEAT will aim for each day. You can adjust later from the home screen."
                   />
                   {preview ? (

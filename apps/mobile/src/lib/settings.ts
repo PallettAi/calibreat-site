@@ -11,6 +11,7 @@ import {
   type WeighInFrequency,
 } from '@/lib/weigh-in-reminders';
 import { colorSchemeOverride, DEFAULT_THEME_MODE, parseThemeMode, type ThemeMode } from '@/lib/theme-mode';
+import { DEFAULT_LOCALE, parseLocale, type Locale } from '@/i18n/locales';
 
 const SETTINGS_KEY = 'calibreat.settings.v1';
 
@@ -22,6 +23,7 @@ export type AppSettings = {
   weighInReminderMinute: number;
   weighInReminderFrequency: WeighInFrequency;
   themeMode: ThemeMode;
+  language: Locale;
 };
 
 const DEFAULTS: AppSettings = {
@@ -32,6 +34,7 @@ const DEFAULTS: AppSettings = {
   weighInReminderMinute: DEFAULT_WEIGH_IN_MINUTE,
   weighInReminderFrequency: DEFAULT_WEIGH_IN_FREQUENCY,
   themeMode: DEFAULT_THEME_MODE,
+  language: DEFAULT_LOCALE,
 };
 
 /** Forces the whole app to light or dark, or hands control back to the OS. */
@@ -67,6 +70,7 @@ export async function getSettings(): Promise<AppSettings> {
       weighInReminderMinute: clampMinute(parsed.weighInReminderMinute),
       weighInReminderFrequency: parseFrequency(parsed.weighInReminderFrequency),
       themeMode: parseThemeMode(parsed.themeMode),
+      language: parseLocale(parsed.language),
     };
     hydrated = true;
     return snapshot;

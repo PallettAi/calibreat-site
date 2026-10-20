@@ -27,6 +27,8 @@ import { COFID_FOODS } from '@/lib/cofid-catalog';
 import { COFID_CREDIT, searchFoods } from '@/lib/food-search';
 import { useKeyboardReveal, type KeyboardField } from '@/hooks/use-keyboard-reveal';
 import { previousDayKey } from '@/lib/dates';
+import { useT } from '@/i18n';
+import { localiseFoodName } from '@/i18n/foods';
 import { MEAL_SLOTS, logDisplayName, type LogEntry, type MealSlot, type RecentMeal } from '@/lib/diary';
 import {
   deleteSavedMeal,
@@ -149,6 +151,7 @@ export function MealLogSheet({
   const [looking, setLooking] = useState(false);
   const [manualCode, setManualCode] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const { locale } = useT();
   const [searchHits, setSearchHits] = useState<OffFood[]>([]);
   // "Wrong product?" alternatives for the docked food.
   const [candidates, setCandidates] = useState<OffFood[] | null>(null);
@@ -976,7 +979,7 @@ export function MealLogSheet({
                       >
                         <View style={styles.hitText}>
                           <Text style={[styles.hitName, { color: textColor }]} numberOfLines={2}>
-                            {hit.name}
+                            {localiseFoodName(hit.name, locale)}
                           </Text>
                           <Text style={[styles.hitMeta, { color: mutedColor }]}>
                             {hit.source === 'cofid'
@@ -1234,6 +1237,7 @@ function SpecimenDock({
   onPickCandidate: (food: OffFood) => void;
   field: KeyboardField;
 }) {
+  const { locale } = useT();
   const macros = [
     { k: 'P', v: scaled?.proteinG, unit: 'g' },
     { k: 'C', v: scaled?.carbsG, unit: 'g' },
@@ -1255,7 +1259,7 @@ function SpecimenDock({
     <View style={styles.dock}>
       <Text style={styles.dockPortion}>{scaled?.amountLabel ?? food.portionLabel}</Text>
       <Text style={styles.dockName} numberOfLines={2}>
-        {food.name}
+        {localiseFoodName(food.name, locale)}
       </Text>
       <View style={styles.dockTop}>
         <View style={styles.dockKcalCol}>
@@ -1349,7 +1353,7 @@ function SpecimenDock({
                   innerStyle={styles.candidateRow}
                 >
                   <Text style={styles.candidateName} numberOfLines={1}>
-                    {c.name}
+                    {localiseFoodName(c.name, locale)}
                   </Text>
                   <Text style={[styles.chipMeta, { color: mutedColor }]}>
                     {c.source === 'cofid' ? 'UK generic' : 'Packaged'}

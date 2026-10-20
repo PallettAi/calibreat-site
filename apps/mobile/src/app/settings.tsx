@@ -9,6 +9,7 @@ import { Brand } from '@/constants/app';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useKeyboardReveal } from '@/hooks/use-keyboard-reveal';
+import { LOCALE_NAMES, LOCALES, setLocale, useT, type Locale } from '@/i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { connectHealthConnect, disconnectHealthConnect, isHealthConnectEnabled } from '@/lib/health-connect';
 import { COFID_CREDIT } from '@/lib/food-search';
@@ -65,6 +66,7 @@ export default function SettingsScreen() {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
   const theme = useTheme();
+  const { t } = useT();
   const keyboard = useKeyboardReveal();
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [timeDraft, setTimeDraft] = useState('08:00');
@@ -92,8 +94,8 @@ export default function SettingsScreen() {
     }
     const result = await connectHealthConnect();
     setHcOn(result === 'connected');
-    if (result === 'denied') setHcNote('Permission not granted. Train estimates stay in use.');
-    if (result === 'unavailable') setHcNote('Health Connect is not on this phone. Android 14+ or the Health Connect app is needed.');
+    if (result === 'denied') setHcNote(t('settings.hcDenied'));
+    if (result === 'unavailable') setHcNote(t('settings.hcUnavailable'));
   }
   const [exportNote, setExportNote] = useState<string | null>(null);
   // Restore holds a parsed file and both plans until the user picks one.
@@ -165,14 +167,14 @@ export default function SettingsScreen() {
           : diaryCsv(input.logEntries);
       const result = await shareExport(kind, fileName, payload);
       if (result.ok) {
-        setExportNote(kind === 'backup' ? 'Backup shared.' : 'Diary shared.');
+        setExportNote(kind === 'backup' ? t('settings.backupShared') : t('settings.diaryShared'));
       } else if (result.method === 'clipboard') {
-        setExportNote(result.message ?? 'Copied to your clipboard instead.');
+        setExportNote(result.message ?? t('settings.copiedInstead'));
       } else {
-        setExportNote(result.message ?? 'Export failed. Try again.');
+        setExportNote(result.message ?? t('settings.exportFailed'));
       }
     } catch {
-      setExportNote('Could not read your data to export it. Try again.');
+      setExportNote(t('settings.exportReadFailed'));
     } finally {
       setExportBusy(null);
     }
@@ -202,7 +204,7 @@ export default function SettingsScreen() {
     try {
       const picked = await pickBackupText();
       if (!picked.ok) {
-        if (!picked.cancelled) setExportNote(picked.message ?? 'Could not open that file.');
+        if (!picked.cancelled) setExportNote(picked.message ?? t('settings.couldNotOpenFile'));
         return;
       }
       const parsed = parseBackup(picked.text);
@@ -221,7 +223,7 @@ export default function SettingsScreen() {
       });
       setRestoreMode('merge');
     } catch {
-      setExportNote('Could not read that file. Try again.');
+      setExportNote(t('settings.couldNotReadFile'));
     } finally {
       setRestoreBusy(false);
     }
@@ -268,12 +270,12 @@ export default function SettingsScreen() {
     try {
       const picked = await pickDiaryText();
       if (!picked.ok) {
-        if (!picked.cancelled) setExportNote(picked.message ?? 'Could not open that file.');
+        if (!picked.cancelled) setExportNote(picked.message ?? t('settings.couldNotOpenFile'));
         return;
       }
       await showImportPreview(picked.text);
     } catch {
-      setExportNote('Could not read that file. Try again.');
+      setExportNote(t('settings.couldNotReadFile'));
     } finally {
       setRestoreBusy(false);
     }
@@ -310,7 +312,7 @@ export default function SettingsScreen() {
       setExportNote(notes ? `${describeRestored(plan)} ${notes}` : describeRestored(plan));
       setRestore(null);
     } catch {
-      setExportNote('That did not finish, so nothing was changed. Try again.');
+      setExportNote(t('settings.restoreNotFinished'));
     } finally {
       setRestoreBusy(false);
     }
@@ -339,6 +341,12 @@ export default function SettingsScreen() {
     await persist({ ...settings, themeMode: mode });
   }
 
+  async function setLanguage(next: Locale) {
+    if (!settings) return;
+    setLocale(next);
+    await persist({ ...settings, language: next });
+  }
+
   function commitTime() {
     if (!settings) return;
     const parsed = parseReminderTime(timeDraft);
@@ -363,30 +371,58 @@ export default function SettingsScreen() {
               onPress={() => router.back()}
               hitSlop={8}
               accessibilityRole="button"
-              accessibilityLabel="Go back"
+              accessibilityLabel={t('common.goBack')}
               style={({ pressed }) => [styles.backBtn, { borderColor: hairline }, pressed && styles.pressed]}
             >
               <Text style={[styles.backChevron, { color: accent }]}>‹</Text>
-              <ThemedText type="smallBold">Back</ThemedText>
+              <ThemedText type="smallBold">{t('common.back')}</ThemedText>
             </Pressable>
             <ThemedText type="title" style={styles.title}>
-              Settings
+              {t('settings.title')}
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary" style={styles.subtitle}>
-              Tune how calibrEAT behaves on this device.
+              {t('settings.subtitle')}
             </ThemedText>
           </View>
 
           <View style={[styles.card, { backgroundColor: cardBg, borderColor: hairline }]}>
             <ThemedText type="smallBold" style={styles.cardLabel}>
-              PREFERENCES
+              {t('settings.preferences')}
             </ThemedText>
 
             {settings ? (
               <>
+                <View style={styles.reminderExtras}>
+                  <ThemedText type="smallBold">{t('language.label')}</ThemedText>
+                  <View style={styles.freqRow}>
+                    {LOCALES.map((code) => {
+                      const on = settings.language === code;
+                      return (
+                        <Pressable
+                          key={code}
+                          onPress={() => void setLanguage(code)}
+                          accessibilityRole="radio"
+                          accessibilityLabel={LOCALE_NAMES[code]}
+                          accessibilityState={{ selected: on }}
+                          style={({ pressed }) => [
+                            styles.freqChip,
+                            { borderColor: on ? accent : hairline, backgroundColor: on ? (isDark ? 'rgba(183,233,60,0.14)' : 'rgba(31,157,85,0.10)') : 'transparent' },
+                            pressed && styles.pressed,
+                          ]}
+                        >
+                          <Text style={[styles.freqChipText, { color: on ? accent : theme.text }]}>{LOCALE_NAMES[code]}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {t('language.detail')}
+                  </ThemedText>
+                </View>
+                <View style={[styles.divider, { backgroundColor: hairline }]} />
                 <Row
-                  label="Daily reminders"
-                  detail={`One nudge a day at ${dailyNudgeAt}`}
+                  label={t('settings.dailyReminders')}
+                  detail={t('settings.dailyNudge', { time: dailyNudgeAt })}
                   value={settings.remindersEnabled}
                   onValueChange={(v) => toggle('remindersEnabled', v)}
                   accent={accent}
@@ -394,8 +430,8 @@ export default function SettingsScreen() {
                 />
                 <View style={[styles.divider, { backgroundColor: hairline }]} />
                 <Row
-                  label="Haptics"
-                  detail="Taps and completions"
+                  label={t('settings.haptics')}
+                  detail={t('settings.hapticsDetail')}
                   value={settings.hapticsEnabled}
                   onValueChange={(v) => toggle('hapticsEnabled', v)}
                   accent={accent}
@@ -403,13 +439,13 @@ export default function SettingsScreen() {
                 />
                 <View style={[styles.divider, { backgroundColor: hairline }]} />
                 <View style={styles.reminderExtras}>
-                  <ThemedText type="smallBold">Theme</ThemedText>
+                  <ThemedText type="smallBold">{t('settings.theme')}</ThemedText>
                   <View style={styles.freqRow}>
                     {(
                       [
-                        { id: 'system', label: 'System' },
-                        { id: 'light', label: 'Light' },
-                        { id: 'dark', label: 'Dark' },
+                        { id: 'system', label: t('settings.themeSystem') },
+                        { id: 'light', label: t('settings.themeLight') },
+                        { id: 'dark', label: t('settings.themeDark') },
                       ] as const
                     ).map((opt) => {
                       const on = settings.themeMode === opt.id;
@@ -431,13 +467,13 @@ export default function SettingsScreen() {
                     })}
                   </View>
                   <ThemedText type="small" themeColor="textSecondary">
-                    System follows your phone's light or dark setting.
+                    {t('settings.themeHint')}
                   </ThemedText>
                 </View>
                 <View style={[styles.divider, { backgroundColor: hairline }]} />
                 <Row
-                  label="Health Connect"
-                  detail={hcNote ?? 'Reads activity on this phone only. Never uploaded.'}
+                  label={t('settings.healthConnect')}
+                  detail={hcNote ?? t('settings.healthConnectDetail')}
                   value={hcOn}
                   onValueChange={(v) => {
                     void toggleHealthConnect(v);
@@ -447,8 +483,8 @@ export default function SettingsScreen() {
                 />
                 <View style={[styles.divider, { backgroundColor: hairline }]} />
                 <Row
-                  label="Weigh-in reminders"
-                  detail="Alert on this device at a time you choose"
+                  label={t('settings.weighInReminders')}
+                  detail={t('settings.weighInRemindersDetail')}
                   value={settings.weighInReminders}
                   onValueChange={(v) => toggle('weighInReminders', v)}
                   accent={accent}
@@ -457,7 +493,7 @@ export default function SettingsScreen() {
                 {settings.weighInReminders ? (
                   <View style={styles.reminderExtras}>
                     <ThemedText type="small" themeColor="textSecondary">
-                      Time
+                      {t('settings.time')}
                     </ThemedText>
                     <TextInput
                       value={timeDraft}
@@ -474,9 +510,9 @@ export default function SettingsScreen() {
                     <View style={styles.freqRow}>
                       {(
                         [
-                          { id: 'daily', label: 'Daily' },
-                          { id: 'every_2_days', label: 'Every 2 days' },
-                          { id: 'weekly', label: 'Weekly' },
+                          { id: 'daily', label: t('settings.freqDaily') },
+                          { id: 'every_2_days', label: t('settings.freqEvery2Days') },
+                          { id: 'weekly', label: t('settings.freqWeekly') },
                         ] as const
                       ).map((opt) => {
                         const on = settings.weighInReminderFrequency === opt.id;
@@ -496,32 +532,32 @@ export default function SettingsScreen() {
                       })}
                     </View>
                     <ThemedText type="small" themeColor="textSecondary">
-                      Web preview cannot show a system alert. On a phone, allow notifications when asked.
+                      {t('settings.webNotice')}
                     </ThemedText>
                   </View>
                 ) : null}
               </>
             ) : (
               <ThemedText type="small" themeColor="textSecondary">
-                Loading…
+                {t('common.loading')}
               </ThemedText>
             )}
           </View>
 
           <View style={[styles.card, { backgroundColor: cardBg, borderColor: hairline }]}>
             <ThemedText type="smallBold" style={styles.cardLabel}>
-              HELP
+              {t('settings.help')}
             </ThemedText>
             <Pressable
               onPress={() => router.push({ pathname: '/home', params: { tour: '1' } })}
               accessibilityRole="button"
-              accessibilityLabel="Replay the app tour"
+              accessibilityLabel={t('settings.replayTourA11y')}
               style={({ pressed }) => [styles.helpRow, pressed && styles.pressed]}
             >
               <View style={styles.helpText}>
-                <ThemedText type="smallBold">Replay the app tour</ThemedText>
+                <ThemedText type="smallBold">{t('settings.replayTour')}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  A quick reminder of where things live
+                  {t('settings.replayTourDetail')}
                 </ThemedText>
               </View>
               <Text style={[styles.helpChevron, { color: accent }]}>›</Text>
@@ -530,7 +566,7 @@ export default function SettingsScreen() {
 
           <View style={[styles.card, { backgroundColor: cardBg, borderColor: hairline }]}>
             <ThemedText type="smallBold" style={styles.cardLabel}>
-              YOUR DATA
+              {t('settings.yourData')}
             </ThemedText>
             {exportSummary ? (
               <ThemedText type="small" themeColor="textSecondary">
@@ -538,7 +574,7 @@ export default function SettingsScreen() {
               </ThemedText>
             ) : (
               <ThemedText type="small" themeColor="textSecondary">
-                Everything is stored on this device only.
+                {t('settings.deviceOnly')}
               </ThemedText>
             )}
             <View style={styles.exportRow}>
@@ -546,7 +582,7 @@ export default function SettingsScreen() {
                 onPress={() => void runExport('backup')}
                 disabled={exportBusy !== null}
                 accessibilityRole="button"
-                accessibilityLabel="Export a JSON backup"
+                accessibilityLabel={t('settings.exportBackupA11y')}
                 style={({ pressed }) => [
                   styles.exportButton,
                   { borderColor: hairline },
@@ -555,14 +591,14 @@ export default function SettingsScreen() {
                 ]}
               >
                 <Text style={[styles.exportButtonText, { color: accent }]}>
-                  {exportBusy === 'backup' ? 'Preparing…' : 'Backup (JSON)'}
+                  {exportBusy === 'backup' ? t('settings.preparing') : t('settings.exportBackupButton')}
                 </Text>
               </Pressable>
               <Pressable
                 onPress={() => void runExport('diary')}
                 disabled={exportBusy !== null}
                 accessibilityRole="button"
-                accessibilityLabel="Export the food diary as CSV"
+                accessibilityLabel={t('settings.exportDiaryA11y')}
                 style={({ pressed }) => [
                   styles.exportButton,
                   { borderColor: hairline },
@@ -571,7 +607,7 @@ export default function SettingsScreen() {
                 ]}
               >
                 <Text style={[styles.exportButtonText, { color: accent }]}>
-                  {exportBusy === 'diary' ? 'Preparing…' : 'Diary (CSV)'}
+                  {exportBusy === 'diary' ? t('settings.preparing') : t('settings.exportDiaryButton')}
                 </Text>
               </Pressable>
             </View>
@@ -581,7 +617,7 @@ export default function SettingsScreen() {
               </ThemedText>
             ) : (
               <ThemedText type="small" themeColor="textSecondary">
-                Backup = everything (profile, diary, water, weigh-ins, workouts, saved meals). Diary = spreadsheet-friendly meal log.
+                {t('settings.exportDescription')}
               </ThemedText>
             )}
 
@@ -591,7 +627,7 @@ export default function SettingsScreen() {
                   onPress={() => void runPickBackup()}
                   disabled={exportBusy !== null || restoreBusy}
                   accessibilityRole="button"
-                  accessibilityLabel="Restore from a backup file"
+                  accessibilityLabel={t('settings.restoreFromBackup')}
                   style={({ pressed }) => [
                     styles.restoreButton,
                     { borderColor: hairline },
@@ -600,7 +636,7 @@ export default function SettingsScreen() {
                   ]}
                 >
                   <Text style={[styles.exportButtonText, { color: accent }]}>
-                    {restoreBusy ? 'Looking for the file…' : 'Restore from a backup…'}
+                    {restoreBusy ? t('settings.lookingForFile') : t('settings.restoreButton')}
                   </Text>
                 </Pressable>
 
@@ -608,7 +644,7 @@ export default function SettingsScreen() {
                   onPress={() => void runPickDiary()}
                   disabled={exportBusy !== null || restoreBusy}
                   accessibilityRole="button"
-                  accessibilityLabel="Import a diary from another app"
+                  accessibilityLabel={t('settings.importA11y')}
                   style={({ pressed }) => [
                     styles.restoreButton,
                     { borderColor: hairline },
@@ -616,11 +652,10 @@ export default function SettingsScreen() {
                     (exportBusy || restoreBusy) && styles.exportDisabled,
                   ]}
                 >
-                  <Text style={[styles.exportButtonText, { color: accent }]}>Import from another app…</Text>
+                  <Text style={[styles.exportButtonText, { color: accent }]}>{t('settings.importFromApp')}</Text>
                 </Pressable>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Brings your diary across from a MyFitnessPal or Cronometer CSV — worth doing before you
-                  stop paying for the old one.
+                  {t('settings.importDescription')}
                 </ThemedText>
               </View>
             )}
@@ -634,14 +669,13 @@ export default function SettingsScreen() {
                     onPress={() => void swapDateOrder()}
                     disabled={restoreBusy}
                     accessibilityRole="button"
-                    accessibilityLabel="Switch between day-first and month-first dates"
+                    accessibilityLabel={t('settings.dateOrderA11y')}
                     style={({ pressed }) => [styles.restoreOption, pressed && styles.pressed]}
                   >
                     <Text style={[styles.restoreDot, { color: accent }]}>⇄</Text>
                     <View style={styles.flex}>
                       <ThemedText type="small" themeColor="textSecondary">
-                        Dates read as {restore.dateOrder === 'mdy' ? 'M/D/Y' : 'D/M/Y'}. Tap to switch — check
-                        a day you remember logging on.
+                        {t('settings.datesRead', { order: restore.dateOrder === 'mdy' ? 'M/D/Y' : 'D/M/Y' })}
                       </ThemedText>
                     </View>
                   </Pressable>
@@ -649,8 +683,7 @@ export default function SettingsScreen() {
 
                 {restore.kind === 'import' && (
                   <ThemedText type="small" themeColor="textSecondary">
-                    These days are added to the diary you already have, not swapped for it — a diary
-                    import has no weigh-ins or workouts to replace yours with.
+                    {t('settings.importAddedNote')}
                   </ThemedText>
                 )}
 
@@ -663,7 +696,7 @@ export default function SettingsScreen() {
                       onPress={() => setRestoreMode(mode)}
                       accessibilityRole="radio"
                       accessibilityState={{ selected }}
-                      accessibilityLabel={mode === 'merge' ? 'Add to my data' : 'Replace everything'}
+                      accessibilityLabel={mode === 'merge' ? t('settings.addToMyData') : t('settings.replaceEverything')}
                       style={({ pressed }) => [styles.restoreOption, pressed && styles.pressed]}
                     >
                       <Text style={[styles.restoreDot, { color: selected ? accent : theme.textSecondary }]}>
@@ -671,7 +704,7 @@ export default function SettingsScreen() {
                       </Text>
                       <View style={styles.flex}>
                         <ThemedText type="smallBold" style={selected ? { color: accent } : undefined}>
-                          {mode === 'merge' ? 'Add to my data' : 'Replace everything'}
+                          {mode === 'merge' ? t('settings.addToMyData') : t('settings.replaceEverything')}
                         </ThemedText>
                         <ThemedText type="small" themeColor="textSecondary">
                           {describePlan(plan)}
@@ -696,20 +729,20 @@ export default function SettingsScreen() {
                     onPress={() => setRestore(null)}
                     disabled={restoreBusy}
                     accessibilityRole="button"
-                    accessibilityLabel="Cancel the restore"
+                    accessibilityLabel={t('settings.cancelRestore')}
                     style={({ pressed }) => [styles.exportButton, { borderColor: hairline }, pressed && styles.pressed]}
                   >
-                    <Text style={[styles.exportButtonText, { color: accent }]}>Cancel</Text>
+                    <Text style={[styles.exportButtonText, { color: accent }]}>{t('common.cancel')}</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => void confirmRestore()}
                     disabled={restoreBusy}
                     accessibilityRole="button"
-                    accessibilityLabel={restoreMode === 'replace' ? 'Replace everything with this file' : 'Add this file'}
+                    accessibilityLabel={restoreMode === 'replace' ? t('settings.replaceWithFileA11y') : t('settings.addFileA11y')}
                     style={({ pressed }) => [styles.exportButton, { borderColor: hairline }, pressed && styles.pressed]}
                   >
                     <Text style={[styles.exportButtonText, { color: accent }]}>
-                      {restoreBusy ? 'Working…' : restoreMode === 'replace' ? 'Replace everything' : 'Add to my data'}
+                      {restoreBusy ? t('settings.working') : restoreMode === 'replace' ? t('settings.replaceEverything') : t('settings.addToMyData')}
                     </Text>
                   </Pressable>
                 </View>
@@ -721,7 +754,7 @@ export default function SettingsScreen() {
             {COFID_CREDIT}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary" style={styles.footerNote}>
-            calibrEAT will never store or sell your data. We believe in privacy for our users.
+            {t('settings.privacyNote')}
           </ThemedText>
           {keyboard.bottomInset > 0 ? <View style={{ height: keyboard.bottomInset }} /> : null}
         </ScrollView>

@@ -79,6 +79,7 @@
     "check:ocr": "node --experimental-strip-types scripts/check-ocr.mjs",
     "check:recipe": "node --experimental-strip-types scripts/check-recipe.mjs",
     "check:barcode": "node --experimental-strip-types scripts/check-barcode.mjs",
+    "check:food-names": "node --experimental-strip-types scripts/check-food-names.mjs",
     "check:foods": "node --experimental-strip-types scripts/check-foods.mjs",
     "check:inputs": "node --experimental-strip-types scripts/check-input-safety.mjs",
     "check:keyboard": "node --experimental-strip-types scripts/check-keyboard.mjs",

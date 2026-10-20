@@ -16,6 +16,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useKeyboardReveal, type KeyboardFieldProps } from '@/hooks/use-keyboard-reveal';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 import {
   addWorkoutSession,
   dayKey,
@@ -62,6 +63,7 @@ import {
 const REST_TICK_MS = 1000;
 
 export default function TrainScreen() {
+  const { t } = useT();
   const keyboard = useKeyboardReveal();
   const router = useRouter();
   const isDark = useColorScheme() === 'dark';
@@ -371,7 +373,7 @@ export default function TrainScreen() {
               <Pressable
                 onPress={() => setRestLeft(null)}
                 hitSlop={8}
-                accessibilityLabel="Dismiss rest timer"
+                accessibilityLabel={t('train.dismissRest')}
                 accessibilityRole="button"
                 style={styles.restPillClose}
               >
@@ -580,7 +582,7 @@ export default function TrainScreen() {
                         onPress={() => setWeightText('')}
                         hitSlop={8}
                         accessibilityRole="button"
-                        accessibilityLabel="Clear weight"
+                        accessibilityLabel={t('train.clearWeight')}
                         style={styles.weightClear}
                       >
                         <ThemedText type="smallBold" style={{ color: theme.muted }}>
@@ -640,16 +642,16 @@ export default function TrainScreen() {
                     innerStyle={[styles.setButton, { borderColor: accent }]}
                     accessibilityLabel="Repeat your last set"
                   >
-                    <Text style={[styles.setButtonText, { color: accent }]}>Repeat last set</Text>
+                    <Text style={[styles.setButtonText, { color: accent }]}>{t('train.startRest')}</Text>
                   </CrispPress>
                   <CrispPress
                     onPress={logOneSet}
                     disabled={!canLogOne}
                     style={styles.setButtonSlot}
                     innerStyle={[styles.setButton, { borderColor: accent, backgroundColor: accent }]}
-                    accessibilityLabel="Log one set"
+                    accessibilityLabel={t('train.logSet')}
                   >
-                    <Text style={[styles.setButtonText, { color: isDark ? '#0A1019' : '#FFFFFF' }]}>Log one set</Text>
+                    <Text style={[styles.setButtonText, { color: isDark ? '#0A1019' : '#FFFFFF' }]}>{t('train.logSet')}</Text>
                   </CrispPress>
                 </View>
                 {prNote ? (
@@ -744,7 +746,7 @@ export default function TrainScreen() {
                   setRoutineName(t);
                   setRoutineError(null);
                 }}
-                placeholder="Routine name"
+                placeholder={t('train.routineName')}
                 placeholderTextColor={theme.muted}
                 maxLength={ROUTINE_NAME_MAX}
                 style={[styles.routineInput, { color: theme.text, borderColor: hairline }]}

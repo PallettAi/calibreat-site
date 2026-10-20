@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { ErrorBoundary } from '@/components/error-boundary';
+import { setLocale } from '@/i18n';
 import { probeOpenFoodFactsAtLaunch } from '@/lib/barcode';
 import { armDailyReminderReschedule, syncDailyReminder } from '@/lib/daily-reminder-notifications';
 import { applyThemeMode, getSettings } from '@/lib/settings';
@@ -26,7 +27,10 @@ function RootNavigator() {
     // Once per launch: decides whether name search includes Open Food Facts for this run.
     void probeOpenFoodFactsAtLaunch();
     // Restore the saved light/dark choice before the first screen settles.
-    void getSettings().then((s) => applyThemeMode(s.themeMode));
+    void getSettings().then((s) => {
+      applyThemeMode(s.themeMode);
+      setLocale(s.language);
+    });
   }, []);
 
   // One `Stack.Screen` per line, never two on a line: a shared line leaves a

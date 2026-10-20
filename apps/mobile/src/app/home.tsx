@@ -28,6 +28,7 @@ import { Fonts, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useKeyboardReveal } from '@/hooks/use-keyboard-reveal';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 import {
   addLogEntry,
   addWaterForDay,
@@ -100,6 +101,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const scheme = useColorScheme();
   const params = useLocalSearchParams<{ first?: string; sheet?: string; tour?: string }>();
+  const { t } = useT();
   const isDark = scheme === 'dark';
   const theme = useTheme();
 
@@ -217,7 +219,7 @@ export default function HomeScreen() {
         setFast(fs);
         setLoadError(null);
       } catch {
-        if (!cancelled) setLoadError('Could not open your log. Try again.');
+        if (!cancelled) setLoadError(t('home.couldNotOpenLogTry'));
       } finally {
         if (!cancelled) setLoaded(true);
       }
@@ -394,7 +396,7 @@ export default function HomeScreen() {
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
           <View style={[styles.scrollContent, { justifyContent: 'center' }]}>
-            <ThemedText type="title">Could not open your log</ThemedText>
+            <ThemedText type="title">{t('home.couldNotOpenLog')}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
               {loadError}
             </ThemedText>
@@ -409,7 +411,7 @@ export default function HomeScreen() {
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={styles.waterAddText}>Try again</Text>
+              <Text style={styles.waterAddText}>{t('common.tryAgain')}</Text>
             </Pressable>
           </View>
         </SafeAreaView>
@@ -763,7 +765,7 @@ export default function HomeScreen() {
   const weightDeltaKg =
     weighIns.length > 1 && firstWeighIn && latestWeighIn ? latestWeighIn.kg - firstWeighIn.kg : null;
   const weightMeta = !weighIns.length
-    ? 'Start weight from your setup.'
+    ? t('home.startWeightSetup')
     : weightDeltaKg === null
       ? `${weighInCount} weigh-in — log again to see a trend.`
       : Math.abs(weightDeltaKg) < 0.1
@@ -874,10 +876,10 @@ export default function HomeScreen() {
               <BrandMark size={28} />
             </View>
             <View style={styles.headerRight}>
-              <HeaderGlyphButton label="Daily streak" onPress={handleFirePress} borderColor={hairline} backgroundColor={cardBg}>
+              <HeaderGlyphButton label={t('home.dailyStreak')} onPress={handleFirePress} borderColor={hairline} backgroundColor={cardBg}>
                 <StreakFireMark live={fireLive} count={activeStreak.current} color={fireLive ? '#EA580C' : '#9A3412'} />
               </HeaderGlyphButton>
-              <HeaderGlyphButton label="Add water" onPress={openWater} borderColor={hairline} backgroundColor={cardBg}>
+              <HeaderGlyphButton label={t('home.addWater')} onPress={openWater} borderColor={hairline} backgroundColor={cardBg}>
                 <WaterDropMark fill={waterPct} color={isDark ? '#38BDF8' : '#0284C7'} />
               </HeaderGlyphButton>
               <HeaderMenuButton onPress={() => setShowMenu(true)} borderColor={hairline} backgroundColor={cardBg} lineColor={theme.text} />
@@ -902,7 +904,7 @@ export default function HomeScreen() {
                 });
               }}
               accessibilityRole="button"
-              accessibilityLabel="Choose a date"
+              accessibilityLabel={t('home.chooseDate')}
               style={({ pressed }) => [styles.datePress, pressed && styles.pressed]}
             >
               <View style={[styles.calendarIconWrap, { backgroundColor: accentSoft, borderColor: accentText }]}>
@@ -957,7 +959,7 @@ export default function HomeScreen() {
                       onPress={() => setPickerMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
                       hitSlop={8}
                       accessibilityRole="button"
-                      accessibilityLabel="Previous month"
+                      accessibilityLabel={t('home.previousMonth')}
                       style={({ pressed }) => [styles.calNav, pressed && styles.pressed]}
                     >
                       <Text style={[styles.calNavText, { color: accentText }]}>‹</Text>
@@ -973,7 +975,7 @@ export default function HomeScreen() {
                           disabled={!canGoNext}
                           hitSlop={8}
                           accessibilityRole="button"
-                          accessibilityLabel="Next month"
+                          accessibilityLabel={t('home.nextMonth')}
                           accessibilityState={{ disabled: !canGoNext }}
                           onPress={() => canGoNext && setPickerMonth(new Date(year, month + 1, 1))}
                           style={[styles.calNav, !canGoNext && styles.calNavDisabled]}
@@ -1042,7 +1044,7 @@ export default function HomeScreen() {
                   <View style={styles.calFooter}>
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel="Jump to today"
+                      accessibilityLabel={t('home.jumpToToday')}
                       onPress={() => {
                         const t = new Date();
                         t.setHours(0, 0, 0, 0);
@@ -1056,7 +1058,7 @@ export default function HomeScreen() {
                         Today
                       </ThemedText>
                     </Pressable>
-                    <Pressable onPress={() => setShowPicker(false)} accessibilityRole="button" accessibilityLabel="Close date picker" style={({ pressed }) => [styles.pickerDone, pressed && styles.pressed]}>
+                    <Pressable onPress={() => setShowPicker(false)} accessibilityRole="button" accessibilityLabel={t('home.closeDatePicker')} style={({ pressed }) => [styles.pickerDone, pressed && styles.pressed]}>
                       <ThemedText type="smallBold" style={{ color: accentText }}>
                         Done
                       </ThemedText>
@@ -1085,7 +1087,7 @@ export default function HomeScreen() {
                 onPress={openNewLog}
                 hitSlop={8}
                 accessibilityRole="button"
-                accessibilityLabel="Log a meal"
+                accessibilityLabel={t('home.logMeal')}
                 style={({ pressed }) => [styles.dialAdd, { borderColor: accentText, backgroundColor: accentSoft }, pressed && styles.pressed]}
               >
                 <View style={[styles.plusMark, { pointerEvents: 'none' }]}>
@@ -1094,7 +1096,7 @@ export default function HomeScreen() {
                 </View>
               </Pressable>
             </View>
-            <Pressable onPress={openNewLog} style={({ pressed }) => [pressed && styles.pressed]} accessibilityRole="button" accessibilityLabel="Log a meal">
+            <Pressable onPress={openNewLog} style={({ pressed }) => [pressed && styles.pressed]} accessibilityRole="button" accessibilityLabel={t('home.logMeal')}>
               <View style={styles.dialStage}>
                 <CalibrationDial
                   value={intakeKcal}
@@ -1112,13 +1114,13 @@ export default function HomeScreen() {
               return (
                 <>
                   <Text style={[styles.dialRemain, { color: remain < 0 ? Brand.danger : accentText }]}>
-                    {remain >= 0 ? `${remain.toLocaleString()} left` : `${Math.abs(remain).toLocaleString()} over`}
+                    {remain >= 0 ? t('home.kcalLeft', { kcal: remain.toLocaleString() }) : t('home.kcalOver', { kcal: Math.abs(remain).toLocaleString() })}
                   </Text>
                   {dayBudget ? (
                     <ThemedText type="small" themeColor="textSecondary" style={styles.dialFoot}>
                       {dayBudget.burnSource === 'none'
-                        ? 'Exercise: none logged yet · add a workout on Train'
-                        : `Exercise burned: ${dayBudget.measuredActiveKcal.toLocaleString()} kcal (${dayBudget.sourceLabel})`}
+                        ? t('home.exerciseNone')
+                        : t('home.exerciseBurned', { kcal: dayBudget.measuredActiveKcal.toLocaleString(), source: dayBudget.sourceLabel })}
                     </ThemedText>
                   ) : null}
                   {dayBudget && dayBudget.burnSource !== 'none' ? (
@@ -1140,7 +1142,7 @@ export default function HomeScreen() {
               </ThemedText>
             ) : (
               <ThemedText type="small" themeColor="textSecondary" style={styles.dialFoot}>
-                {intakeKcal === 0 ? 'Nothing logged yet — add your first meal to move the needle.' : `${intakeKcal.toLocaleString()} kcal today · ${adaptive?.reason ?? 'Log weigh-ins for True Burn.'}`}
+                {intakeKcal === 0 ? t('home.nothingLoggedYet') : t('home.kcalToday', { kcal: intakeKcal.toLocaleString(), reason: adaptive?.reason ?? t('home.logWeighInsForTrueBurn') })}
               </ThemedText>
             )}
           </View>
@@ -1148,7 +1150,7 @@ export default function HomeScreen() {
           {/* ── FASTING TIMER ─────────────────────────────────── */}
           <View style={[styles.stripCard, { backgroundColor: cardBg, borderColor: hairline }]}>
             <View style={styles.stripHead}>
-              <ThemedText type="smallBold" style={styles.stripTitle}>FASTING</ThemedText>
+              <ThemedText type="smallBold" style={styles.stripTitle}>{t('home.fasting')}</ThemedText>
               {!fastActive && fast.lastDurationMs != null ? (
                 <ThemedText type="small" themeColor="textSecondary">
                   Last fast {formatElapsed(fast.lastDurationMs)}
@@ -1190,7 +1192,7 @@ export default function HomeScreen() {
                   );
                 })()}
                 <CrispPress onPress={() => void handleStopFast()} innerStyle={[styles.fastStop, { borderColor: hairline }]}>
-                  <Text style={[styles.fastStopText, { color: Brand.danger }]}>End fast</Text>
+                  <Text style={[styles.fastStopText, { color: Brand.danger }]}>{t('home.endFast')}</Text>
                 </CrispPress>
                 <ThemedText type="small" themeColor="textSecondary" style={styles.cardHint}>
                   The clock runs from when you started — closing the app doesn&apos;t pause it.
@@ -1199,12 +1201,12 @@ export default function HomeScreen() {
             ) : (
               <>
                 <CrispPress onPress={() => void handleStartFast()} innerStyle={[styles.fastStart, { backgroundColor: accentText }]}>
-                  <Text style={[styles.fastStartText, { color: isDark ? '#0A1019' : '#fff' }]}>Start fast</Text>
+                  <Text style={[styles.fastStartText, { color: isDark ? '#0A1019' : '#fff' }]}>{t('home.startFast')}</Text>
                 </CrispPress>
                 <ThemedText type="small" themeColor="textSecondary" style={styles.cardHint}>
                   {fast.lastDurationMs != null
-                    ? `Last run ${formatElapsed(fast.lastDurationMs)}. Tap start when you finish eating.`
-                    : 'Tap start when you finish eating — the clock keeps running with the app closed.'}
+                    ? t('home.lastRun', { duration: formatElapsed(fast.lastDurationMs) })
+                    : t('home.tapStartHint')}
                 </ThemedText>
               </>
             )}
@@ -1214,10 +1216,10 @@ export default function HomeScreen() {
             <View style={[styles.stripCard, { backgroundColor: cardBg, borderColor: hairline }]}>
               <View style={styles.stripHead}>
                 <ThemedText type="smallBold" style={styles.stripTitle}>
-                  TODAY’S LOG
+                  {t('home.todaysLog')}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Tap to edit
+                  {t('home.tapToEdit')}
                 </ThemedText>
               </View>
               {MEAL_SLOTS.map((slot) => {
@@ -1272,7 +1274,7 @@ export default function HomeScreen() {
           {/* ── True Burn Calibration card (Phase A) ────────────── */}
           <View style={[styles.stripCard, { backgroundColor: cardBg, borderColor: hairline }]}>
             <View style={styles.stripHead}>
-              <ThemedText type="smallBold" style={styles.stripTitle}>TRUE BURN</ThemedText>
+              <ThemedText type="smallBold" style={styles.stripTitle}>{t('home.trueBurn')}</ThemedText>
               {adaptive?.ready ? (
                 <View style={[styles.badge, { backgroundColor: accentSoft, borderColor: accentText }]}>
                   <Text style={[styles.badgeText, { color: accentText }]}>
@@ -1280,19 +1282,19 @@ export default function HomeScreen() {
                   </Text>
                 </View>
               ) : (
-                <ThemedText type="small" themeColor="textSecondary">Needs data</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">{t('common.needsData')}</ThemedText>
               )}
             </View>
             {adaptive?.ready ? (
               <>
                 <View style={styles.trueBurnRow}>
                   <View style={styles.trueBurnStat}>
-                    <ThemedText type="small" themeColor="textSecondary">Formula</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">{t('home.formula')}</ThemedText>
                     <Text style={[styles.trueBurnNum, { color: theme.text }]}>{adaptive.estimatedTdee.toLocaleString()}</Text>
                   </View>
                   <Text style={[styles.trueBurnArrow, { color: accentText }]}>→</Text>
                   <View style={styles.trueBurnStat}>
-                    <ThemedText type="small" themeColor="textSecondary">Measured burn</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">{t('home.measuredBurn')}</ThemedText>
                     <Text style={[styles.trueBurnNum, { color: accentText }]}>{adaptive.measuredTdee?.toLocaleString()}</Text>
                   </View>
                   <View style={[styles.trueBurnDelta, { backgroundColor: accentSoft, borderColor: accentText }]}>
@@ -1316,7 +1318,7 @@ export default function HomeScreen() {
                 </View>
                 <ThemedText type="small" themeColor="textSecondary" style={styles.cardHint}>
                   {adaptive.confidence === 'high'
-                    ? `Strong signal over ${adaptive.windowDays} days — your measured burn is trusted.`
+                    ? t('home.strongSignal', { days: adaptive.windowDays })
                     : adaptive.confidence === 'medium'
                       ? `Moderate signal — ${adaptive.loggedDays ?? adaptive.windowDays} of ${adaptive.windowDays} days logged, trend still settling.`
                       : `Early signal — keep logging and weighing in to tighten the estimate (${Math.round((adaptive.blend ?? 0) * 100)}% blended toward your formula).`}
@@ -1333,31 +1335,31 @@ export default function HomeScreen() {
                 {showAdoptPrompt ? (
                   <View style={styles.adoptRow}>
                     <CrispPress onPress={handleKeepBurn} disabled={trueBurnActionBusy} innerStyle={[styles.adoptGhost, { borderColor: hairline }]}>
-                      <Text style={[styles.adoptGhostText, { color: theme.muted }]}>Keep {goals?.calorieTarget.toLocaleString()} kcal</Text>
+                      <Text style={[styles.adoptGhostText, { color: theme.muted }]}>{t('home.keepKcal', { kcal: goals?.calorieTarget.toLocaleString() ?? '' })}</Text>
                     </CrispPress>
                     <CrispPress onPress={handleAdoptBurn} disabled={trueBurnActionBusy} innerStyle={[styles.adoptPrimary, { backgroundColor: accentText }]}>
-                      <Text style={[styles.adoptPrimaryText, { color: isDark ? '#0A1019' : '#fff' }]}>Adopt {adaptive.suggestedTarget?.toLocaleString()} kcal</Text>
+                      <Text style={[styles.adoptPrimaryText, { color: isDark ? '#0A1019' : '#fff' }]}>{t('home.adoptKcal', { kcal: adaptive.suggestedTarget?.toLocaleString() ?? '' })}</Text>
                     </CrispPress>
                   </View>
                 ) : overrideKcal != null ? (
                   <View style={styles.adoptRow}>
-                    <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1 }}>Dial using adopted {overrideKcal.toLocaleString()} kcal</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1 }}>{t('home.adoptedDial', { kcal: overrideKcal.toLocaleString() })}</ThemedText>
                     <CrispPress onPress={handleRevertBurn} disabled={trueBurnActionBusy} innerStyle={[styles.adoptGhost, { borderColor: hairline }]}>
-                      <Text style={[styles.adoptGhostText, { color: theme.muted }]}>Revert</Text>
+                      <Text style={[styles.adoptGhostText, { color: theme.muted }]}>{t('home.revert')}</Text>
                     </CrispPress>
                   </View>
                 ) : null}
                 <ThemedText type="small" themeColor="textSecondary" style={styles.cardHint}>
                   {overrideKcal != null
-                    ? `Inferred from your weight and intake. Adopted ${overrideKcal.toLocaleString()} kcal drives the dial.`
+                    ? t('home.inferredAdopted', { kcal: overrideKcal.toLocaleString() })
                     : showAdoptPrompt
-                      ? 'Inferred from your weight and intake. Adopting retargets the dial to your measured burn with your weekly goal applied — nothing changes until you tap.'
-                      : 'Inferred from your weight and intake. Keep or Adopt — the dial never changes on its own.'}
+                      ? t('home.inferredAdopting')
+                      : t('home.inferredKeep')}
                 </ThemedText>
               </>
             ) : (
               <ThemedText type="small" themeColor="textSecondary" style={styles.cardHint}>
-                {adaptive?.reason ?? 'Log weigh-ins and daily intake for a week to unlock your measured burn.'} Until then the dial uses your formula target — every other app trusts it forever.
+                {t('home.untilThen', { reason: adaptive?.reason ?? t('home.unlockBurn') })}
               </ThemedText>
             )}
           </View>
@@ -1407,18 +1409,18 @@ export default function HomeScreen() {
                 style={[styles.waterInputField, { color: theme.text, backgroundColor: isDark ? '#0C1420' : '#FFFFFF', borderColor: weighInInput.length ? accentText : hairline }]}
               />
               <Pressable onPress={handleAddWeighIn} disabled={addingWeighIn || !weighInInput.trim()} style={({ pressed }) => [styles.waterAddButton, { backgroundColor: accentText }, pressed && styles.pressed, (addingWeighIn || !weighInInput.trim()) && styles.buttonDimmed]}>
-                <Text style={[styles.waterAddText, { color: isDark ? '#0A1019' : '#fff' }]}>{addingWeighIn ? '…' : 'Weigh in'}</Text>
+                <Text style={[styles.waterAddText, { color: isDark ? '#0A1019' : '#fff' }]}>{addingWeighIn ? '…' : t('home.weighIn')}</Text>
               </Pressable>
             </View>
             {targetRecheck?.stale && goals ? (
               <View style={[styles.recheckWrap, { borderColor: accentText, backgroundColor: accentSoft }]}>
                 <View style={styles.recheckCopy}>
                   <ThemedText type="smallBold" style={{ color: accentText }}>
-                    Formula shift: {targetRecheck.deltaKcal > 0 ? '+' : ''}
+                    {t('home.formulaShift')} {targetRecheck.deltaKcal > 0 ? '+' : ''}
                     {targetRecheck.deltaKcal} kcal/day
                   </ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
-                    Your latest weigh-in moves your formula target from {goals.calorieTarget.toLocaleString()} to {targetRecheck.next.calorieTarget.toLocaleString()} kcal ({targetRecheck.next.proteinG}g P · {targetRecheck.next.carbsG}g C · {targetRecheck.next.fatG}g F).
+                    {t('home.recheckBody', { from: goals.calorieTarget.toLocaleString(), to: targetRecheck.next.calorieTarget.toLocaleString(), protein: targetRecheck.next.proteinG, carbs: targetRecheck.next.carbsG, fat: targetRecheck.next.fatG })}
                   </ThemedText>
                 </View>
                 <CrispPress
@@ -1427,17 +1429,17 @@ export default function HomeScreen() {
                   innerStyle={[styles.adoptPrimary, { backgroundColor: accentText, flex: 0 }]}
                 >
                   <Text style={[styles.adoptPrimaryText, { color: isDark ? '#0A1019' : '#fff' }]}>
-                    {recalibratingGoals ? '…' : 'Recalibrate'}
+                    {recalibratingGoals ? '…' : t('home.recalibrate')}
                   </Text>
                 </CrispPress>
               </View>
             ) : null}
             <ThemedText type="small" themeColor="textSecondary" style={styles.cardHint}>
               {adaptive?.ready && latestWeighIn
-                ? `Latest weigh-in ${latestWeighInLabel} — this is what feeds True Burn above.`
+                ? t('home.latestWeighIn', { when: latestWeighInLabel })
                 : weighIns.length
-                  ? 'True Burn switches on after 7 days of logging plus 2 weigh-ins.'
-                  : 'Log a weight to start the trend. True Burn switches on after 7 days plus 2 weigh-ins.'}
+                  ? t('home.trueBurnSwitch')
+                  : t('home.logWeightStart')}
             </ThemedText>
           </View>
           {keyboard.bottomInset > 0 ? <View style={{ height: keyboard.bottomInset }} /> : null}
@@ -1497,7 +1499,7 @@ export default function HomeScreen() {
             mutedColor={theme.muted}
             cardBg={isDark ? '#131F2E' : '#FFFFFF'}
             onShare={streakShareCard.eligible ? handleStreakCardShare : undefined}
-            shareLabel={cardShare === 'working' ? 'Preparing…' : cardShare === 'error' ? 'Try again' : undefined}
+            shareLabel={cardShare === 'working' ? t('common.preparing') : cardShare === 'error' ? t('common.tryAgain') : undefined}
             sharePreview={
               weeklyCardProps
                 ? (selection) => (
@@ -1570,7 +1572,7 @@ export default function HomeScreen() {
               <View style={styles.menuSheetWrap}>
                 <Pressable onPress={() => {}} style={[styles.menuSheet, { backgroundColor: isDark ? '#131F2E' : '#FFFFFF', borderColor: isDark ? 'rgba(255,255,255,0.12)' : hairline }]}>
                   <View style={[styles.pickerHandle, { backgroundColor: isDark ? '#FFFFFF' : '#0A1019' }]} />
-                  <ThemedText type="smallBold" style={[styles.menuTitle, { color: theme.muted }]}>MENU</ThemedText>
+                  <ThemedText type="smallBold" style={[styles.menuTitle, { color: theme.muted }]}>{t('home.menu')}</ThemedText>
                   <Pressable
                     onPress={() => {
                       setShowMenu(false);
@@ -1578,7 +1580,7 @@ export default function HomeScreen() {
                     }}
                     style={({ pressed }) => [styles.menuItem, { borderColor: hairline }, pressed && styles.pressed]}
                   >
-                    <ThemedText type="smallBold">Settings</ThemedText>
+                    <ThemedText type="smallBold">{t('home.settings')}</ThemedText>
                     <Text style={[styles.menuChevron, { color: accentText }]}>›</Text>
                   </Pressable>
                   <Pressable
@@ -1588,7 +1590,7 @@ export default function HomeScreen() {
                     }}
                     style={({ pressed }) => [styles.menuItem, { borderColor: hairline }, pressed && styles.pressed]}
                   >
-                    <ThemedText type="smallBold">Adjust my goals</ThemedText>
+                    <ThemedText type="smallBold">{t('home.adjustGoals')}</ThemedText>
                     <Text style={[styles.menuChevron, { color: accentText }]}>›</Text>
                   </Pressable>
                   <Pressable
@@ -1598,7 +1600,7 @@ export default function HomeScreen() {
                     }}
                     style={({ pressed }) => [styles.menuItem, { borderColor: hairline }, pressed && styles.pressed]}
                   >
-                    <ThemedText type="smallBold">Nutrients</ThemedText>
+                    <ThemedText type="smallBold">{t('home.nutrients')}</ThemedText>
                     <Text style={[styles.menuChevron, { color: accentText }]}>›</Text>
                   </Pressable>
                   <Pressable
@@ -1608,7 +1610,7 @@ export default function HomeScreen() {
                     }}
                     style={({ pressed }) => [styles.menuItem, { borderColor: hairline }, pressed && styles.pressed]}
                   >
-                    <ThemedText type="smallBold">True Burn trends</ThemedText>
+                    <ThemedText type="smallBold">{t('home.trueBurnTrends')}</ThemedText>
                     <Text style={[styles.menuChevron, { color: accentText }]}>›</Text>
                   </Pressable>
                   <ThemedText type="smallBold" style={[styles.menuTitle, { color: theme.muted }]}>
@@ -1621,7 +1623,7 @@ export default function HomeScreen() {
                     }}
                     style={({ pressed }) => [styles.menuItem, { borderColor: hairline }, pressed && styles.pressed]}
                   >
-                    <ThemedText type="smallBold">BMI</ThemedText>
+                    <ThemedText type="smallBold">{t('home.bmi')}</ThemedText>
                     <Text style={[styles.menuChevron, { color: accentText }]}>›</Text>
                   </Pressable>
                   <ThemedText type="small" themeColor="textSecondary" style={styles.menuNote}>
@@ -1785,6 +1787,7 @@ function ArcGauge({
 }
 
 function BurnSparkline({ points, est, accentText, muted, track }: { points: number[]; est: number; accentText: string; muted: string; track: string }) {
+  const { t } = useT();
   const w = 240;
   const h = 56;
   const pad = 6;
@@ -1816,13 +1819,13 @@ function BurnSparkline({ points, est, accentText, muted, track }: { points: numb
         <View style={styles.sparkLegendItem}>
           <View style={[styles.sparkSwatchSolid, { backgroundColor: accentText }]} />
           <ThemedText type="small" style={[styles.sparkLegendText, { color: muted }]}>
-            Measured
+            {t('home.measured')}
           </ThemedText>
         </View>
         <View style={styles.sparkLegendItem}>
           <View style={[styles.sparkSwatchDashed, { borderColor: muted }]} />
           <ThemedText type="small" style={[styles.sparkLegendText, { color: muted }]}>
-            Formula {est.toLocaleString()}
+            {t('home.formula')} {est.toLocaleString()}
           </ThemedText>
         </View>
       </View>
