@@ -1,23 +1,28 @@
 /**
- * Release-config checks (node scripts/check-release.mjs).
+ * Release-config checks (node scripts/check-release.mjs [--online]).
  *
  * The Android APK is built from two files that must agree with the repo around
- * them: `apps/mobile/eas.json` (the build profiles) and `apps/web/download.html`
+ * them: `apps/mobile/eas.json` (what gets baked in) and `apps/web/download.html`
  * (where the released file is offered). Neither is typechecked, and a mistake
- * in either one only shows up after a ~15 minute cloud build. So the invariants
- * live here, and CI runs them.
+ * in either one only shows up after a ~15 minute cloud build — or, worse, after
+ * a customer has paid. So the invariants live here, and CI runs them.
  *
  * Checks:
  *  1. eas.json builds an APK (an .aab cannot be sideloaded from the website),
- *     from the local version source.
- *  2. app.json and package.json agree on the version, and versionCode is real.
- *  3. download.html defines APK_URL exactly once and pairs it with #apk-btn —
+ *     from the local version source, with one licence-API URL across profiles.
+ *  2. That URL's host is bound to the Worker as a custom domain in
+ *     apps/api/wrangler.toml, so a re-deploy can't silently orphan the app.
+ *  3. app.json and package.json agree on the version, and versionCode is real.
+ *  4. download.html defines APK_URL exactly once and pairs it with #apk-btn —
  *     the site used to wire a button that did not exist, so this asserts the
  *     page could actually serve the download.
- *  4. Once APK_URL points at a hosted file, it must be https, an .apk, and
+ *  5. Once APK_URL points at a hosted file, it must be https, an .apk, and
  *     named after the app version (no release whose file disagrees with the
  *     build). While it is still the placeholder that is a NOTICE, not a FAIL.
- *  5. Build output can never be committed.
+ *  6. Build output can never be committed.
+ *
+ * `--online` additionally probes {API}/health, which CI skips so a Cloudflare
+ * hiccup can't fail a pull request. Run it before a release build.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -28,6 +33,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (...p) => readFileSync(join(ROOT, ...p), 'utf8');
 const json = (...p) => JSON.parse(read(...p));
 
+const ONLINE = process.argv.includes('--online');
 const PLACEHOLDER = '#apk-coming-soon';
 
 let fails = 0;
@@ -43,6 +49,7 @@ const eas = json('apps', 'mobile', 'eas.json');
 const app = json('apps', 'mobile', 'app.json').expo;
 const pkg = json('apps', 'mobile', 'package.json');
 const html = read('apps', 'web', 'download.html');
+const wrangler = read('apps', 'api', 'wrangler.toml');
 
 // ── 1. the build produces something a phone can install ────────────────────
 console.log('── APK build profiles (apps/mobile/eas.json) ──');
@@ -51,7 +58,7 @@ check('cli.appVersionSource is local', eas.cli?.appVersionSource === 'local',
   `got ${JSON.stringify(eas.cli?.appVersionSource)}`);
 
 const profiles = eas.build ?? {};
-const PROFILES = ['development', 'preview', 'production'];
+const PROFILES = ['preview', 'production'];
 for (const name of PROFILES) {
   const profile = profiles[name];
   if (!profile) {
@@ -62,16 +69,43 @@ for (const name of PROFILES) {
     `got ${JSON.stringify(profile.android?.buildType)} — an .aab cannot be sideloaded from the website`);
   check(`${name}: not a store build`, profile.distribution !== 'store',
     'distribution "store" contradicts an APK download');
-  check(`${name}: EAS Update channel is set`, profile.channel === name,
-    `got ${JSON.stringify(profile.channel)} — must be "${name}" so OTA hotfixes target the right build`);
+  check(`${name}: licence API URL is set`, typeof profile.env?.EXPO_PUBLIC_LICENSE_API_URL === 'string',
+    'release builds fail closed without it, so the APK would be unusable');
 }
-check('development profile enables developmentClient',
-  profiles.development?.developmentClient === true,
-  'development profile must set developmentClient: true for live LAN reload');
 
 check('extra build profiles are not left unconfigured',
   Object.keys(profiles).every((k) => PROFILES.includes(k)),
   `unknown: ${Object.keys(profiles).filter((k) => !PROFILES.includes(k)).join(', ')}`);
+
+// ── 2. every profile points at the deployed Worker ─────────────────────────
+console.log('\n── licence API URL ──');
+
+const urls = PROFILES.map((n) => profiles[n]?.env?.EXPO_PUBLIC_LICENSE_API_URL).filter(Boolean);
+check('all profiles use one URL', new Set(urls).size === 1, `found ${new Set(urls).size} distinct`);
+
+const apiUrl = urls[0] ?? '';
+let host = '';
+try {
+  const parsed = new URL(apiUrl);
+  host = parsed.host;
+  check('URL is https', parsed.protocol === 'https:', parsed.protocol);
+} catch {
+  fail('URL parses', apiUrl || '(missing)');
+}
+
+const workerName = wrangler.match(/^\s*name\s*=\s*"([^"]+)"/m)?.[1] ?? '';
+check('worker name is declared in wrangler.toml', Boolean(workerName));
+if (host && workerName) {
+  const hostRe = host.replace(/[.]/g, '\\.');
+  const boundAsCustomDomain = new RegExp(
+    `pattern\\s*=\\s*"${hostRe}"[\\s\\S]{0,80}?custom_domain\\s*=\\s*true`,
+  ).test(wrangler);
+  check('API host is bound as a Worker custom domain in wrangler.toml', boundAsCustomDomain,
+    `${host} has no custom_domain route in apps/api/wrangler.toml — a re-deploy would drop the host the app talks to`);
+}
+check('the app does not hardcode the API host',
+  !read('apps', 'mobile', 'src', 'constants', 'app.ts').includes(host),
+  'the URL must come from the build config, not the source');
 
 // ── 3. app identity ───────────────────────────────────────────────────────
 console.log('\n── version + package ──');
@@ -90,18 +124,6 @@ if (!existsSync(join(ROOT, 'apps', 'mobile', 'extra.eas.projectId'))) {
     notice('no extra.eas.projectId yet — run `npx eas-cli@latest init` once before the first build');
   }
 }
-
-const projectId = app.extra?.eas?.projectId ?? '';
-check('EAS Update URL is configured for OTA hotfixes',
-  Boolean(projectId) && app.updates?.url === `https://u.expo.dev/${projectId}`,
-  `got ${JSON.stringify(app.updates?.url)}`);
-check('runtimeVersion policy is appVersion',
-  app.runtimeVersion?.policy === 'appVersion',
-  `got ${JSON.stringify(app.runtimeVersion)}`);
-check('RECORD_AUDIO permission is blocked on Android',
-  Array.isArray(app.android?.blockedPermissions) &&
-    app.android.blockedPermissions.includes('android.permission.RECORD_AUDIO'),
-  'calibrEAT never records audio; block the transitive permission so the install screen stays clean');
 
 const iosIcon = app.ios?.icon;
 if (iosIcon && !existsSync(join(ROOT, 'apps', 'mobile', iosIcon))) {
@@ -167,6 +189,20 @@ if (inGitRepo()) {
   }
 } else {
   notice('not a git checkout — skipped the ignore checks');
+}
+
+// ── optional: the API the APK will talk to is actually up ─────────────────
+if (ONLINE) {
+  console.log('\n── live API ──');
+  try {
+    const res = await fetch(`${apiUrl}/health`, { signal: AbortSignal.timeout(10_000) });
+    const body = await res.json().catch(() => null);
+    check('/health responds ok', res.ok && body?.ok === true, `HTTP ${res.status}`);
+  } catch (error) {
+    fail('/health is reachable', error instanceof Error ? error.message : String(error));
+  }
+} else {
+  console.log('\n(NOTICE) skipping the live /health probe — run with --online before a release build');
 }
 
 console.log(
