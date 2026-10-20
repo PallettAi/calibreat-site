@@ -1,627 +1,270 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>calibrEAT — Your eating, precisely calibrated</title>
-<meta name="description" content="£4.99 lifetime calorie tracker. Log food, scan barcodes, scan nutrition labels, import recipes, track water, weight and workouts. No ads, no subscription. Your data stays on your phone." />
-<meta property="og:site_name" content="calibrEAT" />
-<meta property="og:type" content="website" />
-<meta property="og:locale" content="en_GB" />
-<meta property="og:title" content="calibrEAT — Your eating, precisely calibrated" />
-<meta property="og:description" content="£4.99 lifetime. Log food, scan barcodes, scan nutrition labels, import recipes, track water, weight and workouts. No ads, no subscription. Your data stays on your phone." />
-<meta property="og:url" content="https://calibreat.co.uk/" />
-<meta property="og:image" content="https://calibreat.co.uk/assets/og-image.png" />
-<meta property="og:image:secure_url" content="https://calibreat.co.uk/assets/og-image.png" />
-<meta property="og:image:type" content="image/png" />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
-<meta property="og:image:alt" content="calibrEAT — £4.99 lifetime. Diary, barcode &amp; label scanning, recipes, water, weight and workouts. No ads, no subscription." />
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="calibrEAT — Your eating, precisely calibrated" />
-<meta name="twitter:description" content="£4.99 lifetime. Log food, scan barcodes, scan nutrition labels, import recipes, track water, weight and workouts. No ads, no subscription. Your data stays on your phone." />
-<meta name="twitter:image" content="https://calibreat.co.uk/assets/og-image.png" />
-<meta name="twitter:image:alt" content="calibrEAT — £4.99 lifetime. Diary, barcode &amp; label scanning, recipes, water, weight and workouts. No ads, no subscription." />
-<meta name="theme-color" content="#0B0F0C" />
-<meta name="referrer" content="strict-origin-when-cross-origin" />
-<meta http-equiv="X-Content-Type-Options" content="nosniff" />
-<link rel="canonical" href="https://calibreat.co.uk/" />
-<link rel="icon" href="/favicon.ico" sizes="any" />
-<link rel="icon" type="image/png" href="/favicon.png" sizes="32x32" />
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="site.css" />
-<link rel="stylesheet" href="polish.css" />
-
-<!--
-  ═══════════════════════════════════════════════════════════════════════
-  CONFIG — one place to make the store live
-  ───────────────────────────────────────────────────────────────────────
-  CHECKOUT_URL : Dodo Payments live checkout for the lifetime license.
-                 (The Android APK's download link lives on download.html — one
-                 source, one button; see scripts/check-release.mjs.)
-  ═══════════════════════════════════════════════════════════════════════
--->
-<script>
-  const CHECKOUT_URL = "https://checkout.dodopayments.com/buy/pdt_0NnJYkayhhVbOB0gyOyyE?quantity=1";
-</script>
-<script>
-  // Theme: dark is the default; restore a saved light choice before first paint.
-  (function () {
-    try {
-      if (localStorage.getItem('calibreat-theme') === 'light') {
-        document.documentElement.setAttribute('data-theme', 'light');
-      }
-    } catch (e) {}
-  })();
-</script>
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "Organization",
-      "name": "calibrEAT",
-      "url": "https://calibreat.co.uk/",
-      "logo": "https://calibreat.co.uk/assets/og-image.png",
-      "email": "support@calibreat.co.uk"
-    },
-    {
-      "@type": "WebSite",
-      "name": "calibrEAT",
-      "url": "https://calibreat.co.uk/"
-    },
-    {
-      "@type": "Product",
-      "name": "calibrEAT lifetime license",
-      "description": "One-time lifetime unlock for calibrEAT — calorie, water and weight tracking with barcode scanning, nutrition-label photo scanning, recipe import, workouts and fasting tools. No subscription, no ads, data stays on the device.",
-      "brand": { "@type": "Brand", "name": "calibrEAT" },
-      "image": "https://calibreat.co.uk/assets/og-image.png",
-      "offers": {
-        "@type": "Offer",
-        "price": "4.99",
-        "priceCurrency": "GBP",
-        "availability": "https://schema.org/InStock",
-        "url": "https://calibreat.co.uk/license.html"
-      }
-    },
-    {
-      "@type": "FAQPage",
-      "mainEntity": [
-        { "@type": "Question", "name": "How much does calibrEAT cost?", "acceptedAnswer": { "@type": "Answer", "text": "£4.99 including VAT. One payment unlocks the app for life — no subscription, no in-app purchases, no ads. Every future update is included." } },
-        { "@type": "Question", "name": "Do I need an account?", "acceptedAnswer": { "@type": "Answer", "text": "No. There is no account to create in the app. You verify the email you used to buy, enter your activation code, and your logs stay on the device." } },
-        { "@type": "Question", "name": "Does it work offline?", "acceptedAnswer": { "@type": "Answer", "text": "Your food, water and weight logs live on the device and work without a connection. Looking up foods and scanning barcodes needs internet so we can fetch nutrition from Open Food Facts." } },
-        { "@type": "Question", "name": "Is my food data private?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Logs are stored on your device. calibrEAT has no servers holding your meals, no ads, and no analytics tracking your eating." } },
-        { "@type": "Question", "name": "Where do barcode calories come from?", "acceptedAnswer": { "@type": "Answer", "text": "Packaged foods are looked up in Open Food Facts, a public food database. You can also photograph a nutrition label and the app reads it on your phone, search the offline UK food composition tables (CoFID), or log meals by hand if a barcode is missing." } },
-        { "@type": "Question", "name": "What is True Burn Learning?", "acceptedAnswer": { "@type": "Answer", "text": "After you log food and weigh in, True Burn compares predicted vs actual weight change and nudges your estimated daily burn. The Trends screen shows your measured burn and weight over time. It needs a stretch of honest logging — it isn't a lab measurement." } },
-        { "@type": "Question", "name": "Can I get my data out of the app?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Settings has a full JSON backup plus a diary CSV you can share or save anywhere. Your data is never locked in." } },
-        { "@type": "Question", "name": "Can I use it on a phone / tablet?", "acceptedAnswer": { "@type": "Answer", "text": "Your code is active on one device at a time — phone / tablet. Use Deactivate on this device in the app to move it, or email support if the old device is gone." } },
-        { "@type": "Question", "name": "Is it safe to install the app from this website?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The file is the official calibrEAT installer, downloaded straight from our own site over HTTPS. Android labels any app installed outside its Play Store \"from unknown sources\" — that phrase describes where an app comes from, not what it does. Your phone will ask you to allow installs from your browser once; after that it installs like any other app." } },
-        { "@type": "Question", "name": "Why isn't calibrEAT on the Google Play Store?", "acceptedAnswer": { "@type": "Answer", "text": "A Play Store listing is on the roadmap. Until then the website is the only official source — downloading here means the same file we built and signed, with nothing added by a third party. If you ever see calibrEAT offered anywhere else, that is not us — please let support@calibreat.co.uk know." } },
-        { "@type": "Question", "name": "Is there an iPhone version?", "acceptedAnswer": { "@type": "Answer", "text": "Not yet. Android is first (the APK is a build in progress). iOS will follow. The same lifetime code you buy here will unlock it when it ships — no extra purchase on Apple." } },
-        { "@type": "Question", "name": "Is calibrEAT medical advice?", "acceptedAnswer": { "@type": "Answer", "text": "No. It is a personal food, water and weight diary. It does not diagnose, treat or replace a clinician." } },
-        { "@type": "Question", "name": "How do I get support?", "acceptedAnswer": { "@type": "Answer", "text": "Email support@calibreat.co.uk. That is the only support channel — we reply by email." } }
-      ]
-    }
-  ]
-}
-</script>
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0B0F0C" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <title>calibrEAT: find your balance</title>
+  <meta name="description" content="Track meals, water, weight, workouts and fasts in one calm app. Your data stays on your phone, with no ads and no subscriptions." />
+  <meta property="og:site_name" content="calibrEAT" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="en_GB" />
+  <meta property="og:title" content="calibrEAT: find your balance" />
+  <meta property="og:description" content="Track meals, water, weight and training in one calm app. Your data stays on your phone, with no ads and no subscriptions." />
+  <meta property="og:url" content="https://calibreat.co.uk/" />
+  <meta property="og:image" content="https://calibreat.co.uk/assets/og-image.png" />
+  <meta property="og:image:secure_url" content="https://calibreat.co.uk/assets/og-image.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="calibrEAT, a calm food and wellness tracker for everyday meals and water." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="calibrEAT: find your balance" />
+  <meta name="twitter:description" content="Track meals, water, weight and training in one calm app. Your data stays on your phone, with no ads and no subscriptions." />
+  <meta name="twitter:image" content="https://calibreat.co.uk/assets/og-image.png" />
+  <meta name="twitter:image:alt" content="calibrEAT, a calm food and wellness tracker for everyday meals and water." />
+  <link rel="canonical" href="https://calibreat.co.uk/" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+  <link rel="stylesheet" href="site.css" />
+  <link rel="stylesheet" href="polish.css" />
+<link rel="stylesheet" href="visual-refresh.css" />
+  <link rel="stylesheet" href="landing.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "Organization", "name": "calibrEAT", "url": "https://calibreat.co.uk/", "logo": "https://calibreat.co.uk/assets/og-image.png", "email": "support@calibreat.co.uk" },
+      { "@type": "WebSite", "name": "calibrEAT", "url": "https://calibreat.co.uk/" }
+    ]
+  }
+  </script>
 </head>
 <body>
-
-<!-- ═══════════ Navigation ═══════════ -->
-<header class="site-nav" id="site-nav">
-  <nav class="nav-inner">
-    <a class="brand" href="#top">
-      <img data-mark alt="calibrEAT mark" />
-      <span>calibr<span class="e">EAT</span></span>
-    </a>
-    <div class="nav-links">
-      <a class="link" href="#features">Features</a>
-      <a class="link" href="#compare">Compare</a>
-      <a class="link" href="download.html">Download</a>
-      <a class="link" href="about.html">About</a>
-      <a class="link" href="#faq">FAQ</a>
-      <a class="btn btn-primary nav-cta" id="nav-buy" href="license.html">Get access</a>
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch between light and dark theme">
-        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/></svg>
-        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg>
-      </button>
-    </div>
-    <button class="nav-burger" id="nav-burger" aria-label="Menu" aria-expanded="false">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><g class="ico-burger"><path d="M4 7h16M4 12h16M4 17h16"/></g><g class="ico-x"><path d="M6 6l12 12M18 6 6 18"/></g></svg>
-    </button>
-  </nav>
-</header>
-
-<main id="top">
-  <!-- ═══════════ Hero ═══════════ -->
-  <section class="reveal hero" style="padding-bottom: 0;">
-    <div class="hero-grid-bg"></div>
-    <div class="wrap">
-      <div>
-        <span class="hero-eyebrow"><span class="dot"></span> £4.99 inc VAT · Android 8.0+</span>
-        <h1>Your eating,<br />precisely <span class="lime">calibrated</span><span class="soft">.</span></h1>
-        <p class="lede">
-          calibrEAT is a tracker for meals, water and weight — with a barcode scanner,
-          label photo scanning and recipe import. One lifetime purchase, <b>yours
-          forever</b>. No subscription. No ads. No data sharing.
-        </p>
-        <div class="hero-cta">
-          <a class="btn btn-primary btn-lg" id="hero-buy" href="license.html">Get lifetime access <span class="arr">→</span></a>
-          <a class="btn btn-dark btn-lg" href="download.html">Download</a>
-        </div>
-        <p class="hero-note">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="m8 10 2.5 2.5L16 8"/></svg>
-          <span class="note-text">
-            <b>One-time payment.</b>
-            <span>Your <b>permanent activation code arrives by email instantly</b>, ready to type into the app.</span>
-          </span>
-        </p>
-        <p class="hero-math">
-          The big-name trackers charge up to <b>£191.88 a year</b>. calibrEAT is
-          <span class="lime-num">£4.99 once</span> — every feature, every update, forever.
-        </p>
-        <div class="hero-trust">
-          <span class="trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f9d55" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> Your data stays on your phone</span>
-          <span class="trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f9d55" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> Every future update included</span>
-          <span class="trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f9d55" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.2a15 15 0 0 1 19 0"/><path d="M5.5 12.7a10 10 0 0 1 13 0"/><path d="M8.5 16.2a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1.1" fill="#1f9d55" stroke="none"/></svg> Logs work offline · food lookup needs internet</span>
-        </div>
-      </div>
-
-      <!-- Phone mockup -->
-      <div class="hero-visual">
-        <div class="phone-glow"></div>
-        <div class="float-card fc-a">
-          <div class="fc-ic lime">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="M3 10h18"/><path d="m8 15 2 2 4-4"/></svg>
-          </div>
-          <div><b>Email delivered</b><span>Your code arrives instantly</span></div>
-        </div>
-        <div class="float-card fc-b">
-          <div class="fc-ic green">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-          </div>
-          <div><b>Pay once, own it</b><span>No subscription — ever</span></div>
-        </div>
-
-        <div class="phone">
-          <div class="phone-screen">
-            <div class="statusbar">
-              <span>9:41</span>
-              <span class="sys">
-                <svg width="15" height="10" viewBox="0 0 15 10" fill="none"><rect x="0.5" y="4.5" width="8" height="5" rx="1.5" stroke="#dde5ea" opacity=".8"/><path d="M2.6 7 5 3.4l1.2 2L8 4l1.8-3.4" stroke="#dde5ea" stroke-width="1" fill="none"/><rect x="11" y="5" width="3.4" height="5" rx="0.9" fill="#dde5ea"/></svg>
-              </span>
-            </div>
-            <div class="lock-body">
-              <img class="lock-mark" data-mark alt="" />
-              <div class="lock-word">calibr<span class="e">EAT</span></div>
-              <p class="lock-sub">Enter your license code to<br />unlock calibrEAT for life</p>
-              <div class="lock-bullets">
-                <div class="lock-bullet"><span class="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#b7e93c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg></span> Food, water, weight &amp; workout logs</div>
-                <div class="lock-bullet"><span class="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#b7e93c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg></span> Barcode &amp; label photo scanning</div>
-                <div class="lock-bullet"><span class="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#b7e93c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg></span> Tools that run on your phone, never uploaded</div>
-              </div>
-              <div class="lock-field">XXXX-XXXX-XXXX</div>
-              <div class="lock-btn">Unlock lifetime</div>
-              <a class="lock-link" href="license.html">Get a lifetime license on the website →</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════ How it works ═══════════ -->
-  <section class="reveal reveal" id="how">
-    <div class="wrap">
-      <div class="sec-head center reveal">
-        <span class="kicker">How it works</span>
-        <h2>Pay once. Code by email. Unlock.</h2>
-        <p>No account to create. The code is yours for life.</p>
-      </div>
-      <div class="steps">
-        <div class="step reveal">
-          <div class="num">1</div>
-          <h3>Pay £4.99</h3>
-          <p>One payment, VAT included. No subscription and nothing else to buy in the app.</p>
-        </div>
-        <div class="step reveal" style="transition-delay:.08s;">
-          <div class="num">2</div>
-          <h3>Check your inbox</h3>
-          <p>Your <b>permanent activation code</b> is emailed as soon as payment completes.</p>
-        </div>
-        <div class="step reveal" style="transition-delay:.16s;">
-          <div class="num">3</div>
-          <h3>Unlock this device</h3>
-          <p>Enter the code in the app. Move it later with Deactivate — same code, new phone.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════ Features ═══════════ -->
-  <section class="reveal reveal" id="features" style="padding-top: 0;">
-    <div class="wrap">
-      <div class="sec-head center reveal">
-        <span class="kicker">What you get</span>
-        <h2>Everything to calibrate your eating</h2>
-        <p>Built for anyone dialing in their eating lifestyle — no accounts, no clutter.</p>
-      </div>
-      <div class="features">
-        <div class="feature reveal">
-          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.4 14.2c-2.1 1.1-3.6 2.8-3.6 4.7 0 1.7 1.8 2.6 7.2 2.6s7.2-.9 7.2-2.6c0-1.9-1.5-3.6-3.6-4.7"/><path d="M12 3.5c1.8 2.4 4.2 5.1 4.2 7.4a4.2 4.2 0 0 1-8.4 0C7.8 8.6 10.2 5.9 12 3.5Z"/><path d="M12 8.2v2.8"/></svg></div>
-          <h3>True Burn Learning</h3><p>Weigh-ins plus what you actually eat nudge your daily burn — so the dial tracks you, not a static formula. The Trends screen charts your measured burn and weight over time.</p>
-        </div>
-        <div class="feature reveal" style="transition-delay:.05s;">
-          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="12" height="15" rx="2.5"/><path d="M9.5 5V3.2h5V5"/><path d="M8.6 11h6.8M8.6 14.2h6.8M8.6 17.4h4"/></svg></div>
-          <h3>Food diary</h3><p>Log meals and snacks by meal slot with calories &amp; macros. Save the meals you eat on repeat and log them again in two taps.</p>
-        </div>
-        <div class="feature reveal" style="transition-delay:.1s;">
-          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5.6A1.6 1.6 0 0 1 5.6 4H8M16 4h2.4A1.6 1.6 0 0 1 20 5.6V8M20 16v2.4a1.6 1.6 0 0 1-1.6 1.6H16M8 20H5.6A1.6 1.6 0 0 1 4 18.4V16"/><path d="M8.6 10v4M11.4 10v4.8M14.2 10v4M17 10v3" stroke-width="2.2"/></svg></div>
-          <h3>Barcode scanner</h3><p>Scan packaged foods straight from Open Food Facts, the free open food database — and search the built-in offline UK food tables when you have no signal.</p>
-        </div>
-        <div class="feature reveal">
-          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6H8l1.6-2.4h4.8L16 6h1.5A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5Z"/><circle cx="12" cy="12.5" r="3.4"/></svg></div>
-          <h3>Label &amp; recipe import</h3><p>Photograph a nutrition label and the app reads it on your phone — no cloud. Or paste a recipe URL and the ingredients and calories are pulled in for you.</p>
-        </div>
-        <div class="feature reveal" style="transition-delay:.05s;">
-          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.4 19.4a8.6 8.6 0 1 1 13.2 0"/><path d="M12 14.6 16 9.6"/><circle cx="12" cy="15" r="1.1" fill="currentColor" stroke="none"/></svg></div>
-          <h3>Weight &amp; goals</h3><p>Set a target and log weigh-ins. BMI and your healthy weight range are calculated on-device, and True Burn can nudge your daily burn — it never silently overwrites your target.</p>
-        </div>
-        <div class="feature reveal" style="transition-delay:.1s;">
-          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.4c2.9 3.7 6.2 7.3 6.2 10.7a6.2 6.2 0 0 1-12.4 0C5.8 10.7 9.1 7.1 12 3.4Z"/><path d="M9.6 14.6a2.5 2.5 0 0 0 2.6 2.4"/></svg></div>
-          <h3>Water tracker</h3><p>Stay hydrated alongside your meals — millilitres or cups, logged with the day and shown against your daily goal.</p>
-        </div>
-        <div class="feature reveal">
-          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 6.6v10.8M17.4 6.6v10.8M3.6 9.2v5.6M20.4 9.2v5.6M6.6 12h10.8"/></svg></div>
-          <h3>Workout logging</h3><p>Log strength sessions — sets, reps and estimated burn from your own body stats. Logged workouts widen the day's calorie budget.</p>
-        </div>
-        <div class="feature reveal" style="transition-delay:.05s;">
-          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10.2v3.3l2.3 1.8M9.8 2.5h4.4M12 2.5V6"/></svg></div>
-          <h3>Fasting timer</h3><p>Start a fast and watch the clock — with gentle milestones at 12, 16, 18, 20, 24 and beyond. Stops the moment you tap end.</p>
-        </div>
-        <div class="feature reveal" style="transition-delay:.1s;">
-          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9.5a6 6 0 0 0-12 0c0 5-2 6.5-2 6.5h16s-2-1.5-2-6.5"/><path d="M10.3 19.5a1.9 1.9 0 0 0 3.4 0"/></svg></div>
-          <h3>Streaks &amp; reminders</h3><p>Claim a daily streak for logging, and get a nudge to log your day or step on the scales — at the time you choose.</p>
-        </div>
-        <div class="feature reveal">
-          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7.2 20v-5.6M12 20V6.4M16.8 20v-9.2" stroke-width="2.4"/></svg></div>
-          <h3>Macros &amp; nutrients</h3><p>Protein, carbs and fat against your targets, plus the basics that matter — fibre, sugars, saturated fat and salt.</p>
-        </div>
-        <div class="feature reveal" style="transition-delay:.05s;">
-          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v10M8.4 9.9l3.6 3.6 3.6-3.6"/><path d="M4 16.5v2A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-2"/></svg></div>
-          <h3>Export your data</h3><p>One tap in Settings saves a full JSON backup or a diary CSV — share it, keep it, reopen it anywhere. Your data is never locked in.</p>
-        </div>
-        <div class="feature reveal" style="transition-delay:.1s;">
-          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5.2 5.9v5.2c0 4.5 2.9 8 6.8 9.7 3.9-1.7 6.8-5.2 6.8-9.7V5.9Z"/><path d="m9.3 12.2 2 1.9 3.6-4"/></svg></div>
-          <h3>Private by design</h3><p>No account, no tracking, no analytics: your logs live on your device, and on-device tools like label scanning never phone home.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════ Compare ═══════════ -->
-  <section id="compare" class="compare-section" style="padding-top: 0;">
-    <div class="wrap">
-      <div class="sec-head center reveal">
-        <span class="kicker">Compare</span>
-        <h2>One payment against a monthly bill</h2>
-        <p>calibrEAT is £4.99 once. The others are subscriptions.</p>
-      </div>
-      <div class="compare-scroll reveal">
-        <table class="compare">
-          <thead>
-            <tr>
-              <th scope="col">Feature</th>
-              <th scope="col" class="is-us">calibrEAT<span>£4.99 once</span></th>
-              <th scope="col">MyFitnessPal<span>£15.99/mo</span></th>
-              <th scope="col">MacroFactor<span>£10.99/mo</span></th>
-              <th scope="col">Cronometer<span>£7.99/mo</span></th>
-              <th scope="col">Nutracheck<span>£6.99/mo</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th scope="row">Pricing model</th>
-              <td class="is-us"><span class="qual">One-time £4.99</span></td>
-              <td><span class="qual">Subscription</span></td>
-              <td><span class="qual">Subscription</span></td>
-              <td><span class="qual">Subscription</span></td>
-              <td><span class="qual">Subscription</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Calorie &amp; macro tracking</th>
-              <td class="is-us"><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-            </tr>
-            <tr>
-              <th scope="row">AI photo food recognition</th>
-              <td class="is-us"><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Barcode scanner</th>
-              <td class="is-us"><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Nutrition label photo scanning</th>
-              <td class="is-us"><span class="qual">On-device OCR</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Offline UK food database</th>
-              <td class="is-us"><span class="qual">Built-in (CoFID)</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Expenditure / TDEE algorithm</th>
-              <td class="is-us"><span class="qual">True Burn</span></td>
-              <td><span class="qual">Basic</span></td>
-              <td><span class="qual">Advanced (dynamic)</span></td>
-              <td><span class="qual">Basic</span></td>
-              <td><span class="qual">Basic</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Detailed micronutrient tracking</th>
-              <td class="is-us"><span class="qual">Basic</span></td>
-              <td><span class="qual">Basic</span></td>
-              <td><span class="qual">Basic</span></td>
-              <td><span class="qual">Advanced (full specs)</span></td>
-              <td><span class="qual">Basic</span></td>
-            </tr>
-            <tr>
-              <th scope="row">UK supermarket food database</th>
-              <td class="is-us"><span class="qual">Open Food Facts</span></td>
-              <td><span class="qual">High</span></td>
-              <td><span class="qual">Standard</span></td>
-              <td><span class="qual">Standard</span></td>
-              <td><span class="qual">Extensive (UK focused)</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Custom recipe builder</th>
-              <td class="is-us"><span class="qual">Import by URL</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Meal &amp; recipe AI generator</th>
-              <td class="is-us"><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Wearable &amp; health syncing</th>
-              <td class="is-us"><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Offline food logging</th>
-              <td class="is-us"><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="qual">Limited</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-              <td><span class="mark-no" title="No" role="img" aria-label="No">–</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Zero ads / premium experience</th>
-              <td class="is-us"><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-              <td><span class="mark-yes" title="Yes" role="img" aria-label="Yes">✓</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="compare-caption">
-        Competitor prices are typical UK premium rates and can change. Subscriptions are billed monthly.
-      </p>
-    </div>
-  </section>
-
-  <!-- ═══════════ Year-one cost ═══════════ -->
-  <section class="reveal" id="math" style="padding-top: 0;">
-    <div class="wrap">
-      <div class="sec-head center reveal">
-        <span class="kicker">The math</span>
-        <h2>What a year of tracking actually costs</h2>
-        <p>Same twelve months, typical premium prices. calibrEAT is the short bar.</p>
-      </div>
-      <div class="cost-bars reveal" role="list" aria-label="First-year cost compared">
-        <div class="cost-row" role="listitem">
-          <span class="name">MyFitnessPal</span>
-          <span class="cost-track" aria-hidden="true"><span class="cost-fill" style="width: 100%;"></span></span>
-          <span class="amt">£191.88/yr</span>
-        </div>
-        <div class="cost-row" role="listitem">
-          <span class="name">MacroFactor</span>
-          <span class="cost-track" aria-hidden="true"><span class="cost-fill" style="width: 69%;"></span></span>
-          <span class="amt">£131.88/yr</span>
-        </div>
-        <div class="cost-row" role="listitem">
-          <span class="name">Cronometer</span>
-          <span class="cost-track" aria-hidden="true"><span class="cost-fill" style="width: 50%;"></span></span>
-          <span class="amt">£95.88/yr</span>
-        </div>
-        <div class="cost-row" role="listitem">
-          <span class="name">Nutracheck</span>
-          <span class="cost-track" aria-hidden="true"><span class="cost-fill" style="width: 44%;"></span></span>
-          <span class="amt">£83.88/yr</span>
-        </div>
-        <div class="cost-row is-us" role="listitem">
-          <span class="name">calibrEAT</span>
-          <span class="cost-track" aria-hidden="true"><span class="cost-fill" style="width: 4%;"></span></span>
-          <span class="amt">£4.99 once</span>
-        </div>
-      </div>
-      <p class="cost-note reveal">
-        Subscription figures are the per-month prices in the table above × 12 months.
-        calibrEAT is one payment — year two costs £0.00.
-      </p>
-    </div>
-  </section>
-
-  <!-- ═══════════ Buy ═══════════ -->
-  <section class="reveal band" id="pricing">
-    <div class="wrap">
-      <div class="pricing">
-        <div class="pricing-left reveal">
-          <span class="kicker on-dark">Lifetime access</span>
-          <h2>The whole app.<br />£4.99. For life.</h2>
-          <p>One payment unlocks the food diary, barcode and label scanning, recipe import, water, weight, workouts, fasting tools and True Burn — including every update we ship.</p>
-          <ul class="pricing-list">
-            <li><span class="ck"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span> VAT included · no monthly fees</li>
-            <li><span class="ck"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span> Code by email, then unlock this device</li>
-            <li><span class="ck"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span> <a href="refunds.html" style="color:inherit;text-decoration:underline;">Refunds</a> if it isn’t as described</li>
-          </ul>
-        </div>
-        <div class="reveal" style="transition-delay:.08s;">
-          <div class="buy-card">
-            <span class="buy-tag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> Lifetime license</span>
-            <h3>calibrEAT — full unlock</h3>
-            <p class="prod-sub">Everything in the app, on this device, forever.</p>
-            <div class="buy-rows">
-              <div class="buy-row"><span>Delivery</span><span class="val"><span class="ok">✓</span> <b>Instant email</b></span></div>
-              <div class="buy-row"><span>Renewals</span><span class="val"><span class="ok">✓</span> <b>None — ever</b></span></div>
-              <div class="buy-row"><span>Devices</span><span class="val"><b>One at a time</b></span></div>
-              <div class="buy-row"><span>Updates</span><span class="val"><b>Included for life</b></span></div>
-            </div>
-            <div class="buy-price">
-              <div class="big"><small>£</small>4.99</div>
-              <p>Inc VAT · one-time payment</p>
-              <p class="save-line">£78.89 less than year one of the cheapest tracker above.</p>
-            </div>
-            <a class="btn btn-lime btn-lg btn-block" href="license.html#pricing">Get lifetime access <span class="arr">→</span></a>
-            <p class="buy-fine">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="M3 10h18"/></svg>
-              Secure checkout · code by email · <a href="refunds.html" style="color:inherit;text-decoration:underline;">Refunds</a>
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════ FAQ ═══════════ -->
-  <section class="reveal reveal" id="faq" style="padding-top: 0;">
-    <div class="wrap">
-      <div class="sec-head center reveal">
-        <span class="kicker">FAQ</span>
-        <h2>Good to know</h2>
-      </div>
-      <div class="faq reveal">
-        <details class="faq-item lift"><summary>How much does calibrEAT cost?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">£4.99 including VAT. One payment unlocks the app for life — no subscription, no in-app purchases, no ads. Every future update is included.</p></details>
-        <details class="faq-item lift"><summary>Do I need an account?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">No. There is no account to create in the app. You verify the email you used to buy, enter your activation code, and your logs stay on the device. Tools such as BMI use that local data only — calibrEAT never collects it.</p></details>
-        <details class="faq-item lift"><summary>Does it work offline?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Your food, water and weight logs live on the device and work without a connection. Looking up foods and scanning barcodes needs internet so we can fetch nutrition from Open Food Facts.</p></details>
-        <details class="faq-item lift"><summary>Is my food data private?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Yes. Logs are stored on your device. calibrEAT has no servers holding your meals, no ads, and no analytics tracking your eating.</p></details>
-        <details class="faq-item lift"><summary>Where do barcode calories come from?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Packaged foods are looked up in Open Food Facts, a public food database. You can also photograph a nutrition label and the app reads it on your phone, search the offline UK food composition tables (CoFID), or log meals by hand if a barcode is missing.</p></details>
-        <details class="faq-item lift"><summary>What is True Burn Learning?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">After you log food and weigh in, True Burn compares predicted vs actual weight change and nudges your estimated daily burn. The Trends screen shows your measured burn and weight over time. It needs a stretch of honest logging — it isn’t a lab measurement.</p></details>
-        <details class="faq-item lift"><summary>Can I get my data out of the app?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Yes. Settings has a full JSON backup plus a diary CSV you can share or save anywhere. Your data is never locked in.</p></details>
-        <details class="faq-item lift"><summary>Can I use it on a phone / tablet?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Your code is active on one device at a time — phone / tablet. Use “Deactivate on this device” in the app to move it, or email support if the old device is gone.</p></details>
-        <details class="faq-item lift"><summary>Is it safe to install the app from this website?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Yes. The file is the official calibrEAT installer, downloaded straight from our own site over HTTPS. Android labels any app installed outside its Play Store "from unknown sources" — that phrase describes where an app comes from, not what it does. Your phone will ask you to allow installs from your browser once; after that it installs like any other app.</p></details>
-        <details class="faq-item lift"><summary>Why isn't calibrEAT on the Google Play Store?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">A Play Store listing is on the roadmap. Until then the website is the only official source — downloading here means the same file we built and signed, with nothing added by a third party. If you ever see calibrEAT offered anywhere else, that is not us — please let <a href="mailto:support@calibreat.co.uk">support@calibreat.co.uk</a> know.</p></details>
-        <details class="faq-item lift"><summary>Is there an iPhone version?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Not yet. Android is first (the APK is a build in progress). iOS will follow. The same lifetime code you buy here will unlock it when it ships — no extra purchase on Apple.</p></details>
-        <details class="faq-item lift"><summary>Is calibrEAT medical advice?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">No. It is a personal food, water and weight diary. It does not diagnose, treat or replace a clinician. Talk to a qualified professional before changing how you eat for a medical reason.</p></details>
-        <details class="faq-item lift"><summary>How do I get support?<span class="chev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><p class="ans">Email <a href="mailto:support@calibreat.co.uk">support@calibreat.co.uk</a>. That is the only support channel — we reply by email.</p></details>
-      </div>
-    </div>
-  </section>
-</main>
-
-<!-- ═══════════ Footer ═══════════ -->
-<footer class="footer">
-  <div class="wrap">
-    <div class="footer-grid">
-      <div>
-        <a class="brand" href="#top">
-          <img data-mark alt="calibrEAT mark" style="width: 27px; height: 27px;" />
-          <span>calibr<span class="e">EAT</span></span>
+  <main id="top" class="landing-page">
+    <section class="landing-hero" aria-labelledby="hero-title">
+      <div class="landing-wrap">
+        <a class="landing-brand" href="#top" aria-label="calibrEAT home">
+          <img data-mark alt="" />
+          <span>calibr<span class="landing-brand-accent">EAT</span></span>
         </a>
-        <p class="foot-copy">Calibrate your eating lifestyle. One lifetime unlock, and your data stays on your phone.</p>
-        <div class="foot-trust">
-          <span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No ads</span>
-          <span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No subscriptions</span>
-          <span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No tracking</span>
+
+        <div class="hero-content">
+          <div class="hero-copy">
+            <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span> A little more in balance</p>
+            <h1 id="hero-title">Eat well.<br /><span>Feel good.</span></h1>
+            <p class="hero-lede">A food and wellness tracker that stays out of your way. Log meals, water, weight and training, and keep your data on your phone.</p>
+            <div class="store-actions" aria-label="Get calibrEAT">
+              <button class="store-button" type="button" data-store="apple" aria-label="App Store: Coming soon" disabled>
+                <svg class="store-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.7 12.9c0-2 1.6-3 1.7-3.1a3.7 3.7 0 0 0-2.9-1.6c-1.2-.1-2.3.7-2.9.7s-1.5-.7-2.5-.7a3.9 3.9 0 0 0-3.3 2c-1.4 2.4-.4 5.9 1 7.8.7.9 1.4 1.9 2.4 1.8 1 0 1.3-.6 2.5-.6s1.6.6 2.6.6 1.7-.9 2.3-1.8a8 8 0 0 0 1-2.1 3.5 3.5 0 0 1-2-3Zm-1.9-6a3.5 3.5 0 0 0 .8-2.5 3.7 3.7 0 0 0-2.4 1.2 3.3 3.3 0 0 0-.8 2.4 3.1 3.1 0 0 0 2.4-1.1Z" fill="currentColor"/></svg>
+                <span class="store-copy"><span class="store-overline">Download on the</span><span class="store-name">App Store</span></span>
+                <span class="store-soon">Coming soon</span>
+              </button>
+              <button class="store-button" type="button" data-store="google" aria-label="Google Play: Coming soon" disabled>
+                <svg class="store-icon play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.4 3.1a1.7 1.7 0 0 0-.4 1.2v15.4c0 .5.1.9.4 1.2l8.4-8.4-8.4-9.4Z" fill="currentColor"/><path d="m15.6 15.4-3.2-3.2 3.2-3.2 3.8 2.2c1.1.6 1.1 1.5 0 2.1l-3.8 2.1Z" fill="currentColor" opacity=".72"/><path d="m4.4 20.9 8.4-8.7 2.8 2.8-9.6 5.5c-.6.3-1.2.5-1.6.4Z" fill="currentColor" opacity=".86"/><path d="m4.4 3.1 11.2 6.4-2.8 2.7-8.4-9.1Z" fill="currentColor" opacity=".55"/></svg>
+                <span class="store-copy"><span class="store-overline">Get it on</span><span class="store-name">Google Play</span></span>
+                <span class="store-soon">Coming soon</span>
+              </button>
+            </div>
+            <p class="hero-footnote">Coming to iPhone and Android. No subscriptions, no in-app purchases, no ads.</p>
+          </div>
+
+          <div class="hero-art" aria-label="Illustration of a green apple surrounded by a nutrition tracking chart" role="img">
+            <svg class="orbit-art" viewBox="0 0 720 640" fill="none" aria-hidden="true">
+              <defs>
+                <radialGradient id="orbitGlow" cx="0" cy="0" r="1" gradientTransform="matrix(0 285 -300 0 365 310)" gradientUnits="userSpaceOnUse"><stop stop-color="#1F9D55" stop-opacity=".25"/><stop offset="1" stop-color="#1F9D55" stop-opacity="0"/></radialGradient>
+                <linearGradient id="appleSkin" x1="254" x2="475" y1="208" y2="430" gradientUnits="userSpaceOnUse"><stop stop-color="#B7E93C"/><stop offset=".44" stop-color="#38B86B"/><stop offset="1" stop-color="#12683B"/></linearGradient>
+                <linearGradient id="leafSkin" x1="329" x2="405" y1="112" y2="190" gradientUnits="userSpaceOnUse"><stop stop-color="#D8F57B"/><stop offset="1" stop-color="#35B66A"/></linearGradient>
+                <filter id="appleShadow" width="1.4" height="1.4" x="-.2" y="-.15"><feGaussianBlur in="SourceAlpha" stdDeviation="18"/><feOffset dy="14"/><feComponentTransfer><feFuncA type="linear" slope=".28"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              </defs>
+              <circle cx="362" cy="313" r="292" fill="url(#orbitGlow)"/>
+              <circle class="orbit-turn" cx="362" cy="313" r="239" stroke="#B7E93C" stroke-opacity=".18" stroke-dasharray="2 11"/>
+              <circle cx="362" cy="313" r="209" stroke="#EEF3EE" stroke-opacity=".1"/>
+              <path class="orbit-arc" pathLength="1" d="M216 151a218 218 0 0 1 291 17" stroke="#1F9D55" stroke-opacity=".7" stroke-width="2" stroke-linecap="round"/>
+              <path class="orbit-arc" pathLength="1" d="M159 346a204 204 0 0 0 56 126" stroke="#B7E93C" stroke-opacity=".62" stroke-width="2" stroke-linecap="round"/>
+              <path class="orbit-arc" pathLength="1" d="M514 435a215 215 0 0 0 44-99" stroke="#1F9D55" stroke-opacity=".76" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="216" cy="151" r="5" fill="#B7E93C"/><circle cx="558" cy="336" r="5" fill="#1FD37E"/><circle cx="215" cy="472" r="4" fill="#1FD37E"/>
+              <g filter="url(#appleShadow)">
+                <path d="M362 228c-20-31-55-43-88-38-56 8-84 55-73 119 14 80 67 137 121 137 16 0 27-8 40-8 14 0 26 8 42 8 55 0 107-61 119-138 10-65-18-110-72-118-35-5-68 8-89 38Z" fill="url(#appleSkin)"/>
+                <path d="M362 228c-9 25-14 54-14 87 0 59 14 101 27 130-5-4-9-7-13-7-13 0-24 8-40 8-54 0-107-57-121-137-11-64 17-111 73-119 34-5 68 7 88 38Z" fill="#E9FFAE" fill-opacity=".12"/>
+                <path d="M363 224c-5-25 4-53 26-73" stroke="#397E39" stroke-width="9" stroke-linecap="round"/>
+                <path class="leaf-sway" d="M372 162c27-35 64-37 86-30-7 34-34 56-71 52" fill="url(#leafSkin)"/>
+                <path d="M382 177c18-16 40-29 65-40" stroke="#EFFFAF" stroke-opacity=".58" stroke-width="2" stroke-linecap="round"/>
+                <path d="M289 253c-16 18-21 42-17 65" stroke="#F2FFD7" stroke-opacity=".36" stroke-width="6" stroke-linecap="round"/>
+                <path d="M310 390c14 16 29 25 46 28" stroke="#F2FFD7" stroke-opacity=".23" stroke-width="3" stroke-linecap="round"/>
+              </g>
+              <g class="art-readout">
+                <rect x="35" y="214" width="156" height="94" rx="16" fill="#111714" stroke="#EEF3EE" stroke-opacity=".12"/>
+                <text x="55" y="242" fill="#A9B6AC" font-family="-apple-system, sans-serif" font-size="12" letter-spacing="1.2">TODAY SO FAR</text>
+                <text x="54" y="279" fill="#EEF3EE" font-family="-apple-system, sans-serif" font-size="29" font-weight="600">1,840</text>
+                <text x="135" y="279" fill="#A9B6AC" font-family="-apple-system, sans-serif" font-size="12">kcal</text>
+                <rect x="55" y="289" width="112" height="3" rx="1.5" fill="#29332D"/><rect class="art-bar" x="55" y="289" width="76" height="3" rx="1.5" fill="#B7E93C"/>
+              </g>
+              <g class="art-readout art-readout--right">
+                <rect x="510" y="382" width="174" height="94" rx="16" fill="#111714" stroke="#EEF3EE" stroke-opacity=".12"/>
+                <text x="531" y="411" fill="#A9B6AC" font-family="-apple-system, sans-serif" font-size="12" letter-spacing="1.2">YOUR TRUE BURN</text>
+                <text x="530" y="448" fill="#EEF3EE" font-family="-apple-system, sans-serif" font-size="26" font-weight="600">2,410</text>
+                <text x="615" y="448" fill="#A9B6AC" font-family="-apple-system, sans-serif" font-size="12">kcal</text>
+                <text x="531" y="463" fill="#B7E93C" font-family="-apple-system, sans-serif" font-size="11">Learning from your trends</text>
+              </g>
+              <g opacity=".9">
+                <path d="m576 193 7 7 14-16" stroke="#B7E93C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="584" cy="192" r="20" stroke="#B7E93C" stroke-opacity=".32"/>
+              </g>
+              <path class="art-spark" d="M113 416c9-17 18-17 27 0s18 17 27 0 18-17 27 0" stroke="#1FD37E" stroke-opacity=".72" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="art-caption">Your day, at a glance</span>
+          </div>
         </div>
       </div>
-      <div>
-        <h4>Product</h4>
-        <ul>
-          <li><a href="license.html">License</a></li>
-          <li><a href="download.html">Download</a></li>
-          <li><a href="about.html">About</a></li>
-          <li><a href="#features">Features</a></li>
-          <li><a href="#compare">Compare</a></li>
-          <li><a href="#faq">FAQ</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4>Support</h4>
-        <ul>
-          <li><a href="resend.html">Resend my code</a></li>
-          <li><a href="mailto:support@calibreat.co.uk">Contact</a></li>
-          <li><a href="privacy.html">Privacy policy</a></li>
-          <li><a href="terms.html">Terms of sale</a></li>
-          <li><a href="refunds.html">Refunds</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4>The app</h4>
-        <ul>
-          <li><a href="download.html">Download</a></li>
-          <li><a href="download.html#android">Android APK</a></li>
-          <li><a href="download.html#ios">iOS — coming soon</a></li>
-          <li><a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open food database</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <span>© <span id="year">2026</span> calibrEAT · All rights reserved.</span>
-      <span>Activation codes are delivered instantly by email after a secure checkout. Made with <span class="heart">🥦</span> and a kitchen scale.</span>
-    </div>
-  </div>
-</footer>
+    </section>
 
-<script>
-  // Page-specific only. Mark, favicon, footer year, theme toggle, mobile nav
-  // and scroll reveal all live in site.js now.
-  // Purchase CTAs go to the License key page, which owns the checkout.
-  const buyButtons = document.querySelectorAll("#nav-buy, #hero-buy");
-  buyButtons.forEach((btn) => {
-    btn.href = "license.html";
-    btn.setAttribute("aria-label", "Buy a lifetime activation code");
-  });
-</script>
-<script src="site.js" defer></script>
-<script src="analytics.js" defer></script>
+    <section class="story-section" aria-labelledby="story-title" data-reveal>
+      <div class="landing-wrap story-layout" data-reveal>
+        <div class="story-heading">
+          <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span> Your own rhythm</p>
+          <h2 id="story-title">Calm to use.<br /><span>Clear to understand.</span></h2>
+          <p>Small choices add up over time. calibrEAT keeps them in one place, so you can see what’s working and get on with your day.</p>
+        </div>
+        <div class="story-list story-grid">
+          <article class="story-item">
+            <span class="story-glyph" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 23.5h22M8 23.5a8 8 0 0 1 16 0"/><path d="m16 19 5-6M9.5 10.5l2 2m13-2-2 2M16 5v3"/></svg></span>
+            <div><h3>Food, made easier</h3><p>Search meals, scan a barcode or nutrition label, import a recipe, or add a food by hand. Save regular meals and log them again in a tap.</p></div>
+          </article>
+          <article class="story-item">
+            <span class="story-glyph" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M8 5.5h12l5 5v16H8z"/><path d="M20 5.5v5h5M12 16h9m-9 4h9m-9 4h5"/></svg></span>
+            <div><h3>Calories &amp; macros</h3><p>See calories, protein, carbs and fat against your personal daily targets, with fibre, sugars, saturated fat and sodium when food labels include them.</p></div>
+          </article>
+          <article class="story-item">
+            <span class="story-glyph" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M12 5v14.5a6.5 6.5 0 1 0 8 0V5a4 4 0 0 0-8 0Z"/><path d="M16 12v12"/></svg></span>
+            <div><h3>Water, made simple</h3><p>Track your daily water total, see it against your goal and add a drink quickly in millilitres or cups.</p></div>
+          </article>
+          <article class="story-item">
+            <span class="story-glyph" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 23.5h22M8 23.5a8 8 0 0 1 16 0"/><path d="m16 19 5-6M9.5 10.5l2 2m13-2-2 2M16 5v3"/></svg></span>
+            <div><h3>True Burn</h3><p>With regular food logs and weigh-ins, calibrEAT estimates your burn from your real trend, not just a formula. You see the signal first, then decide whether to change your target.</p></div>
+          </article>
+          <article class="story-item">
+            <span class="story-glyph" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 25h22M8 21l5-6 4 3 7-9"/><circle cx="24" cy="9" r="2"/></svg></span>
+            <div><h3>Workouts</h3><p>Browse exercises by equipment and muscle group, log your sessions, and keep workout history alongside your everyday progress.</p></div>
+          </article>
+          <article class="story-item">
+            <span class="story-glyph" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="17" r="11"/><path d="M16 10v7l5 3M12 3h8"/></svg></span>
+            <div><h3>Fasting</h3><p>Start and stop a fast when it suits you, follow elapsed time and milestones, and keep fasting separate from food logging.</p></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="daily-section" aria-labelledby="daily-title" data-reveal>
+      <div class="landing-wrap daily-layout">
+        <div class="daily-art" aria-hidden="true">
+          <svg class="macro-rings" viewBox="0 0 470 470" fill="none" aria-hidden="true">
+            <circle cx="235" cy="235" r="215" stroke="rgba(31,157,85,.1)" stroke-width="6"/>
+            <circle cx="235" cy="235" r="195" stroke="rgba(31,157,85,.1)" stroke-width="6"/>
+            <circle cx="235" cy="235" r="175" stroke="rgba(31,157,85,.1)" stroke-width="6"/>
+            <circle class="macro-ring" style="--end: 22; --delay: .2s" cx="235" cy="235" r="215" pathLength="100" stroke="#1F9D55" stroke-width="6" stroke-linecap="round"/>
+            <circle class="macro-ring" style="--end: 36; --delay: .4s" cx="235" cy="235" r="195" pathLength="100" stroke="#6DB33F" stroke-width="6" stroke-linecap="round"/>
+            <circle class="macro-ring" style="--end: 54; --delay: .6s" cx="235" cy="235" r="175" pathLength="100" stroke="#E4B04A" stroke-width="6" stroke-linecap="round"/>
+          </svg>
+          <div class="daily-phone food-entry-phone">
+            <div class="food-entry-top"><span class="food-entry-back" aria-hidden="true">‹</span><span><small>CAPTURE · TODAY</small><strong>Add food</strong></span><span class="food-entry-close" aria-hidden="true">×</span></div>
+            <div class="food-entry-meals" aria-hidden="true"><span>Breakfast</span><span class="is-selected">Lunch</span><span>Dinner</span><span>Snack</span></div>
+            <div class="food-entry-modes" aria-hidden="true"><span class="is-selected">Search</span><span>Scan</span><span>Label</span><span>Web</span><span>Quick</span></div>
+            <label class="food-entry-label">SEARCH FOODS</label>
+            <div class="food-entry-search"><span aria-hidden="true">⌕</span><span>Greek yoghurt</span><span class="food-entry-search-action">Search</span></div>
+            <div class="food-entry-recents"><span>RECENT PACKS</span><span>Oats&nbsp; <b>150</b></span><span>Apple&nbsp; <b>95</b></span></div>
+            <div class="food-entry-reading">
+              <div class="food-entry-reading-head"><span>FOOD READING</span><span class="food-entry-dot"></span></div>
+              <strong class="food-entry-name">Greek yoghurt, plain</strong>
+              <span class="food-entry-portion">1 serving · 170 g</span>
+              <div class="food-entry-energy"><strong>165</strong><span>kcal</span><span class="food-entry-energy-label">CALORIES</span></div>
+              <div class="food-entry-macros">
+                <div><span>PROTEIN</span><strong>17 <small>g</small></strong></div>
+                <div><span>CARBS</span><strong>7 <small>g</small></strong></div>
+                <div><span>FAT</span><strong>8 <small>g</small></strong></div>
+              </div>
+            </div>
+            <svg class="burn-trend-art" viewBox="0 0 300 72" role="img" aria-label="True Burn energy trend, gradually settling around a steady estimate">
+              <path d="M9 55H291M9 35H291M9 15H291" stroke="rgba(238,243,238,.12)" stroke-width="1" stroke-dasharray="3 5"/>
+              <path d="M13 49 C38 46 43 22 67 27 S96 48 121 39 155 22 178 31 210 43 232 30 265 22 287 19" fill="none" stroke="#B7E93C" stroke-opacity=".16" stroke-width="12" stroke-linecap="round"/>
+              <path class="trend-draw" pathLength="1" d="M13 49 C38 46 43 22 67 27 S96 48 121 39 155 22 178 31 210 43 232 30 265 22 287 19" fill="none" stroke="#B7E93C" stroke-width="2.5" stroke-linecap="round"/>
+              <circle class="trend-dot" cx="287" cy="19" r="4" fill="#D8F57B"/>
+              <text x="12" y="69" fill="#9CAC9F" font-size="7" font-family="sans-serif" letter-spacing="1">TRUE BURN · TREND SETTLING</text>
+            </svg>
+            <div class="food-entry-lock"><span aria-hidden="true">✓</span> Lock in</div>
+          </div>
+          <div class="daily-orbit daily-orbit--one"></div><div class="daily-orbit daily-orbit--two"></div>
+        </div>
+        <div class="daily-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span> Everything in one place</p>
+          <h2 id="daily-title">More than<br />a food diary.</h2>
+          <p>Log meals and nutrients, keep an eye on water and weight, and record training and fasts. As your food logs and weigh-ins build up, True Burn learns your real-world energy trend. Every target change is still your call.</p>
+          <div class="daily-details"><span>Meals &amp; nutrients</span><span>Water &amp; weight</span><span>Training &amp; fasting</span></div>
+          <p class="daily-burn-note"><span class="daily-burn-signal" aria-hidden="true"></span><span><strong>True Burn learns from your trend.</strong> Consistent food logs and weigh-ins help refine your estimate over time.</span></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="closing-section" aria-labelledby="closing-title" data-reveal>
+      <svg class="closing-botanical" viewBox="0 0 720 640" fill="none" aria-hidden="true">
+        <path class="botanical-line" pathLength="1" d="M362 228c-20-31-55-43-88-38-56 8-84 55-73 119 14 80 67 137 121 137 16 0 27-8 40-8 14 0 26 8 42 8 55 0 107-61 119-138 10-65-18-110-72-118-35-5-68 8-89 38Z" stroke="#B7E93C" stroke-width="2" stroke-linejoin="round"/>
+        <path class="botanical-line botanical-line--stem" pathLength="1" d="M363 224c-5-25 4-53 26-73" stroke="#B7E93C" stroke-width="2" stroke-linecap="round"/>
+        <path class="botanical-line botanical-line--leaf" pathLength="1" d="M372 162c27-35 64-37 86-30-7 34-34 56-71 52Z" stroke="#1FD37E" stroke-width="2" stroke-linejoin="round"/>
+        <path class="botanical-line botanical-line--arc" pathLength="1" d="M289 253c-16 18-21 42-17 65" stroke="#B7E93C" stroke-width="3" stroke-linecap="round" opacity=".6"/>
+      </svg>
+      <span class="closing-dot closing-dot--1" aria-hidden="true"></span>
+      <span class="closing-dot closing-dot--2" aria-hidden="true"></span>
+      <span class="closing-dot closing-dot--3" aria-hidden="true"></span>
+      <span class="closing-dot closing-dot--4" aria-hidden="true"></span>
+      <div class="landing-wrap closing-inner">
+        <img data-mark alt="" class="closing-mark" />
+        <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span> A little more in balance</p>
+        <h2 id="closing-title">Start when<br /><span>you’re ready.</span></h2>
+        <p class="closing-copy">calibrEAT is on its way to the App Store and Google Play. No in-app purchases, no subscriptions.</p>
+        <div class="store-actions" aria-label="Get calibrEAT">
+          <button class="store-button" type="button" data-store="apple" aria-label="App Store: Coming soon" disabled>
+            <svg class="store-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.7 12.9c0-2 1.6-3 1.7-3.1a3.7 3.7 0 0 0-2.9-1.6c-1.2-.1-2.3.7-2.9.7s-1.5-.7-2.5-.7a3.9 3.9 0 0 0-3.3 2c-1.4 2.4-.4 5.9 1 7.8.7.9 1.4 1.9 2.4 1.8 1 0 1.3-.6 2.5-.6s1.6.6 2.6.6 1.7-.9 2.3-1.8a8 8 0 0 0 1-2.1 3.5 3.5 0 0 1-2-3Zm-1.9-6a3.5 3.5 0 0 0 .8-2.5 3.7 3.7 0 0 0-2.4 1.2 3.3 3.3 0 0 0-.8 2.4 3.1 3.1 0 0 0 2.4-1.1Z" fill="currentColor"/></svg>
+            <span class="store-copy"><span class="store-overline">Download on the</span><span class="store-name">App Store</span></span><span class="store-soon">Coming soon</span>
+          </button>
+          <button class="store-button" type="button" data-store="google" aria-label="Google Play: Coming soon" disabled>
+            <svg class="store-icon play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.4 3.1a1.7 1.7 0 0 0-.4 1.2v15.4c0 .5.1.9.4 1.2l8.4-8.4-8.4-9.4Z" fill="currentColor"/><path d="m15.6 15.4-3.2-3.2 3.2-3.2 3.8 2.2c1.1.6 1.1 1.5 0 2.1l-3.8 2.1Z" fill="currentColor" opacity=".72"/><path d="m4.4 20.9 8.4-8.7 2.8 2.8-9.6 5.5c-.6.3-1.2.5-1.6.4Z" fill="currentColor" opacity=".86"/><path d="m4.4 3.1 11.2 6.4-2.8 2.7-8.4-9.1Z" fill="currentColor" opacity=".55"/></svg>
+            <span class="store-copy"><span class="store-overline">Get it on</span><span class="store-name">Google Play</span></span><span class="store-soon">Coming soon</span>
+          </button>
+        </div>
+        <p class="closing-note">Built for real life. Your data stays on your device. <a class="closing-link" href="download.html">Already on Android? Install it directly.</a></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="landing-footer">
+    <div class="landing-wrap footer-inner">
+      <a class="footer-brand" href="#top"><img data-mark alt="" /><span>calibr<span class="landing-brand-accent">EAT</span></span></a>
+      <p>© <span id="year">2026</span> calibrEAT</p>
+      <div class="footer-links" aria-label="Policies and support">
+        <a href="download.html">Download</a><a href="privacy.html">Privacy</a><a href="support.html">Support</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="site.js" defer></script>
+  <script>
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+      document.documentElement.classList.add('has-scroll-reveal');
+      window.addEventListener('DOMContentLoaded', () => {
+        const observer = new IntersectionObserver((entries, revealObserver) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('is-revealed');
+            revealObserver.unobserve(entry.target);
+          });
+        }, { threshold: 0.14, rootMargin: '0px 0px -36px 0px' });
+        document.querySelectorAll('[data-reveal]').forEach((element) => observer.observe(element));
+      }, { once: true });
+    }
+  </script>
+  <script src="analytics.js" defer></script>
+  <script src="script.js" defer></script>
 </body>
 </html>

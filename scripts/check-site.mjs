@@ -206,43 +206,6 @@ if (!existsSync(join(WEB, '_headers'))) {
   }
 }
 
-console.log('\n── checkout url is single-sourced ──');
-
-const urlPattern = /https:\/\/checkout\.dodopayments\.com\/buy\/[A-Za-z0-9_?=&-]+/g;
-const found = new Map();
-for (const page of pages) {
-  for (const url of read(page).match(urlPattern) ?? []) {
-    if (!found.has(url)) found.set(url, []);
-    found.get(url).push(page);
-  }
-}
-check('checkout url appears at least once', found.size > 0);
-if (found.size > 1) {
-  fail('exactly one checkout url', [...found.keys()].join(' vs '));
-} else if (found.size === 1) {
-  pass(`exactly one checkout url (${found.size})`);
-}
-for (const page of pages) {
-  const html = read(page);
-  const config = /const CHECKOUT_URL = "([^"]+)"/.exec(html)?.[1];
-  if (!config) continue;
-  const hrefs = new Set(html.match(urlPattern) ?? []);
-  check(
-    `${page}: checkout hrefs match CHECKOUT_URL`,
-    hrefs.size === 0 || (hrefs.size === 1 && hrefs.has(config)),
-    [...hrefs].join(', '),
-  );
-}
-
-console.log('\n── compare table marks are announced ──');
-
-const index = read('index.html');
-const marks = index.match(/<span class="mark-(yes|no)"[^>]*>/g) ?? [];
-const unlabelled = marks.filter((m) => !/aria-label=/.test(m));
-check(`compare marks present (${marks.length})`, marks.length > 0);
-check('every mark carries an aria-label', unlabelled.length === 0, `${unlabelled.length} unlabelled`);
-check('no caption inside the scrolling table', !/<table class="compare">[\s\S]*?<caption/.test(index));
-
 console.log('\n── local links and assets resolve ──');
 
 const refs = new Set();

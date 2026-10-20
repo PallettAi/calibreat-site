@@ -35,3 +35,9 @@
   Cache-Control: public, max-age=3600, must-revalidate
 /polish.css
   Cache-Control: public, max-age=3600, must-revalidate
+/visual-refresh.css
+  Cache-Control: public, max-age=3600, must-revalidate
+/landing.css
+  Cache-Control: public, max-age=3600, must-revalidate
+/scripts/*
+  Cache-Control: public, max-age=3600, must-revalidate

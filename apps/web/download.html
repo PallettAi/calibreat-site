@@ -3,25 +3,25 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Download — calibrEAT</title>
-<meta name="description" content="Download calibrEAT for Android. The APK is a build in progress. iOS later. One lifetime activation code for £4.99 inc VAT, delivered by email." />
+<title>Download | calibrEAT</title>
+<meta name="description" content="Download calibrEAT for Android. The APK is a build in progress. iOS later. Free to download. No account, no subscription, no ads." />
 <meta property="og:site_name" content="calibrEAT" />
 <meta property="og:type" content="website" />
 <meta property="og:locale" content="en_GB" />
-<meta property="og:title" content="Download — calibrEAT" />
-<meta property="og:description" content="Download calibrEAT for Android. The APK is a build in progress. iOS later. One lifetime activation code for £4.99 inc VAT, delivered by email." />
+<meta property="og:title" content="Download | calibrEAT" />
+<meta property="og:description" content="Download calibrEAT for Android. The APK is a build in progress. iOS later. Free to download. No account, no subscription, no ads." />
 <meta property="og:url" content="https://calibreat.co.uk/download.html" />
 <meta property="og:image" content="https://calibreat.co.uk/assets/og-image.png" />
 <meta property="og:image:secure_url" content="https://calibreat.co.uk/assets/og-image.png" />
 <meta property="og:image:type" content="image/png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:image:alt" content="calibrEAT — Download for Android. One lifetime code for £4.99." />
+<meta property="og:image:alt" content="calibrEAT: download for Android. Free to download." />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Download — calibrEAT" />
-<meta name="twitter:description" content="Download calibrEAT for Android. The APK is a build in progress. iOS later. One lifetime activation code for £4.99 inc VAT, delivered by email." />
+<meta name="twitter:title" content="Download | calibrEAT" />
+<meta name="twitter:description" content="Download calibrEAT for Android. The APK is a build in progress. iOS later. Free to download. No account, no subscription, no ads." />
 <meta name="twitter:image" content="https://calibreat.co.uk/assets/og-image.png" />
-<meta name="twitter:image:alt" content="calibrEAT — Download for Android. One lifetime code for £4.99." />
+<meta name="twitter:image:alt" content="calibrEAT: download for Android. Free to download." />
 <meta name="theme-color" content="#0B0F0C" />
 <meta name="referrer" content="strict-origin-when-cross-origin" />
 <meta http-equiv="X-Content-Type-Options" content="nosniff" />
@@ -35,21 +35,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="site.css" />
 <link rel="stylesheet" href="polish.css" />
+<link rel="stylesheet" href="visual-refresh.css" />
 
 <!--
-  CONFIG — one place to make the store live
-  CHECKOUT_URL : hosted checkout for the one-time "lifetime activation code"
-  APK_URL      : direct download link for the free Android APK. While it stays
-                 the placeholder, the Android card shows an honest "in progress"
-                 state; set it to the hosted .apk and the card goes live — the
-                 button, chip and meta line all read APK_URL, nothing else.
-                 scripts/check-release.mjs asserts #apk-btn exists on every page
-                 that defines APK_URL.
+  CONFIG — one place to make the Android download live
+  APK_URL : direct download link for the free Android APK. While it stays
+            the placeholder, the Android card shows an honest "in progress"
+            state; set it to the hosted .apk and the card goes live — the
+            button, chip and meta line all read APK_URL, nothing else.
+            scripts/check-release.mjs asserts #apk-btn exists on every page
+            that defines APK_URL.
 -->
 <script>
-  const CHECKOUT_URL = "https://checkout.dodopayments.com/buy/pdt_0NnJYkayhhVbOB0gyOyyE?quantity=1";
   const APK_URL = "#apk-coming-soon"; // TODO: paste the hosted .apk link
-  const NOTIFY_API_BASE = "https://api.calibreat.co.uk"; // license Worker base (POST /v1/notify lives there)
 </script>
 <script>
   (function () {
@@ -72,11 +70,10 @@
     </a>
     <div class="nav-links">
       <a class="link" href="index.html#features">Features</a>
-      <a class="link" href="index.html#compare">Compare</a>
       <a class="link" href="download.html" aria-current="page">Download</a>
       <a class="link" href="about.html">About</a>
       <a class="link" href="index.html#faq">FAQ</a>
-      <a class="btn btn-primary nav-cta" href="license.html">Get access</a>
+      <a class="btn btn-primary nav-cta" href="download.html">Download</a>
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch between light and dark theme">
         <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/></svg>
         <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg>
@@ -94,10 +91,10 @@
     <div class="hero-grid-bg"></div>
     <div class="wrap">
       <h1>Download <span class="lime">calibrEAT</span></h1>
-      <p class="lede" id="apk-lede">Android APK is a build in progress. iOS later. One lifetime purchase (£4.99 inc VAT) unlocks everything — no subscription, no ads.</p>
+      <p class="lede" id="apk-lede">We’re finishing the Android build. iOS comes later. Free, with no account, no subscription and no ads.</p>
       <div class="hero-cta">
         <a class="btn btn-primary btn-lg" id="hero-dl" href="#android">Android status <span class="arr">→</span></a>
-        <a class="btn btn-dark btn-lg" href="license.html">Get a license · £4.99</a>
+        <a class="btn btn-dark btn-lg" href="#guide-android">How to install</a>
       </div>
     </div>
   </section>
@@ -107,7 +104,7 @@
       <div class="sec-head center reveal">
         <span class="kicker">Choose your platform</span>
         <h2>Get the app</h2>
-        <p id="apk-note">Android first, iOS later. The APK isn’t ready to download yet — the install steps below are for when it ships.</p>
+        <p id="apk-note">Android first, iOS later. The Android download isn’t ready yet, and the install steps below will help once it is.</p>
       </div>
       <div class="download">
         <div class="dl-card reveal" id="android">
@@ -116,33 +113,22 @@
             <div><div class="os-name">Android</div><small>Direct APK</small></div>
             <span class="soon" id="apk-chip">In progress</span>
           </div>
-          <p id="apk-copy">The Android APK is a build in progress (Android 8.0+). When it ships you’ll sideload it — your device will ask you to allow installs from unknown sources, which is normal for a direct download.</p>
+          <p id="apk-copy">We’re still finishing the Android build (Android 8.0+). When it’s ready you’ll install it straight from this page. Your phone will ask you to allow installs from outside the Play Store. That’s normal for a direct download.</p>
           <div class="dl-actions"><span class="btn btn-outline" id="apk-pending" style="opacity:.5;" aria-disabled="true">Build in progress</span><a class="btn btn-primary" id="apk-btn" href="#apk-coming-soon" hidden>Download APK</a><a class="btn btn-dark" href="#guide-android" style="padding:12px 16px; font-size:13.5px;">Install guide ↓</a></div>
           <small class="dl-meta" id="apk-meta">Build in progress · Android 8.0+ · <a href="#guide-android" style="text-decoration:underline;">how to install</a></small>
         </div>
         <div class="dl-card reveal" style="transition-delay:.06s;" id="ios">
           <div class="dl-head">
             <div class="os-ic soon-os"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4.4 0-7-2.8-7-6.3 0-2.5 1.5-4.6 3.4-6.4L12 3.6l3.6 3.7c1.9 1.8 3.4 3.9 3.4 6.4C19 17.2 16.4 20 12 20Z"/><path d="M12 20c2 0 3.2-2.6 3.2-6.2S14 7.6 12 7.6 8.8 11.4 8.8 13.8 10 20 12 20Z"/></svg></div>
-            <div><div class="os-name">iPhone &amp; iPad</div><small>App Store — later</small></div>
+            <div><div class="os-name">iPhone &amp; iPad</div><small>App Store, later</small></div>
             <span class="soon">Soon</span>
           </div>
-          <p>iOS isn’t available yet. Same one-time license when it ships — no extra purchase on Apple.</p>
+          <p>iOS isn’t out yet. It will be free too, with no extra purchase from Apple.</p>
           <div class="dl-actions"><span class="btn btn-outline" style="opacity:.5;" aria-disabled="true">Coming soon</span><a class="btn btn-dark" href="#guide-ios" style="padding:12px 16px; font-size:13.5px;">Install guide ↓</a></div>
           <small class="dl-meta">Requires iOS 15+ · <a href="#guide-ios" style="text-decoration:underline;">how to install</a></small>
         </div>
       </div>
 
-      <!-- ── Notify me (revealed by JS only while APK_URL is still a placeholder) ── -->
-      <div class="notify-card reveal" id="notify" hidden>
-        <h3>Want it the moment it ships?</h3>
-        <p>Leave your email and we’ll send you one message — with the download link — when the Android build is ready. No newsletter, nothing else.</p>
-        <form class="notify-form" id="notify-form" novalidate>
-          <input id="notify-email" name="email" class="text-input" type="email" inputmode="email" autocomplete="email" aria-label="Email address" placeholder="you@example.com" required />
-          <button class="btn btn-primary" id="notify-btn" type="submit">Notify me</button>
-        </form>
-        <p class="notify-status" id="notify-status" role="status"></p>
-        <p class="notify-fineprint">One email when it ships — that’s the only thing we’ll ever send to this address.</p>
-      </div>
     </div>
   </section>
 
@@ -151,44 +137,39 @@
       <div class="sec-head center reveal">
         <span class="kicker">Installation guides</span>
         <h2>How to install</h2>
-        <p id="apk-guide-note">Android install steps for when the APK is ready. iOS comes later. No account until you unlock.</p>
+        <p id="apk-guide-note">Android install steps for when the APK is ready. iOS comes later. No account needed.</p>
       </div>
 
       <div class="guide-grid">
 
         <div class="guide-card reveal" id="guide-android">
-          <h3><span class="g-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></span> Android — APK sideload</h3>
+          <h3><span class="g-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></span> Android: install the APK</h3>
           <p class="g-sub" id="apk-guide-sub">Build in progress · Android 8.0+ · No Play Store needed</p>
           <ol class="guide-steps">
-            <li><span><b>When the APK is ready</b> — tap the download on this page. Chrome may warn “unknown file type” — tap <b>Download anyway</b>.</span></li>
+            <li><span><b>When it’s ready,</b> tap the download on this page. Chrome may warn about an “unknown file type”. Tap <b>Download anyway</b>.</span></li>
             <li><span>Open the file from your notification or <b>Downloads</b>. If prompted, tap <b>Allow from this source</b> (or enable <b>Install unknown apps</b> for your browser).</span></li>
-            <li><span>Tap <b>Install</b> → <b>Open</b>. calibrEAT opens on the welcome screen — tap <b>Enter your license code</b> when you’re ready to unlock.</span></li>
-            <li><span><b>Lost the prompt?</b> — open <b>Files → Downloads → calibrEAT.apk</b> and tap again.</span></li>
+            <li><span>Tap <b>Install</b> → <b>Open</b>. calibrEAT opens straight onto Home.</span></li>
+            <li><span><b>Lost the prompt?</b> Open <b>Files → Downloads → calibrEAT.apk</b> and tap again.</span></li>
           </ol>
-          <div class="guide-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span><b>Safety note:</b> “Unknown sources” just means outside the Play Store. The APK is signed by us — Android lets you review permissions before you tap Install. You can turn the permission off after.</span></div>
+          <div class="guide-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span><b>Safety note:</b> “Unknown sources” just means outside the Play Store. The APK is signed by us. Android lets you review permissions before you tap Install. You can turn the permission off after.</span></div>
           <div class="chip-row"><span class="chip">Android 8.0+</span><span class="chip">~95 MB</span><span class="chip">No Google account</span></div>
         </div>
 
         <div class="guide-card reveal" style="transition-delay:.06s;" id="guide-ios">
           <h3><span class="g-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4.4 0-7-2.8-7-6.3 0-2.5 1.5-4.6 3.4-6.4L12 3.6l3.6 3.7c1.9 1.8 3.4 3.9 3.4 6.4C19 17.2 16.4 20 12 20Z"/><path d="M12 20c2 0 3.2-2.6 3.2-6.2S14 7.6 12 7.6 8.8 11.4 8.8 13.8 10 20 12 20Z"/></svg></span> iPhone &amp; iPad</h3>
-          <p class="g-sub">Coming later · same lifetime license</p>
+          <p class="g-sub">Coming later</p>
           <ol class="guide-steps">
             <li><span><b>Not available yet.</b> There is no iOS download and no beta invite. We’ll put the App Store link here when it ships.</span></li>
-            <li><span>The <b>same lifetime code</b> you buy on this site will unlock iOS — no extra purchase on Apple, no in-app purchase.</span></li>
+            <li><span>iOS will be free too, when it ships.</span></li>
             <li><span>Until then, Android is the first platform. Email <a href="mailto:support@calibreat.co.uk" style="text-decoration:underline; color:var(--green);">support@calibreat.co.uk</a> if you want to be told when iOS is ready.</span></li>
           </ol>
-          <div class="guide-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span>Your license is one active device at a time — phone / tablet. Enter it on the welcome screen. Use <b>Deactivate on this device</b> to move it.</span></div>
-          <div class="chip-row"><span class="chip">Coming later</span><span class="chip">App Store</span><span class="chip">One license</span></div>
+                    <div class="chip-row"><span class="chip">Coming later</span><span class="chip">App Store</span><span class="chip">Free</span></div>
         </div>
 
 
 
       </div>
 
-      <div class="guide-note reveal" style="margin-top:16px; background: var(--surface); border-color: var(--line);">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5.2 5.9v5.2c0 4.5 2.9 8 6.8 9.7 3.9-1.7 6.8-5.2 6.8-9.7V5.9Z"/><path d="m9.3 12.2 2 1.9 3.6-4"/></svg>
-        <span><b>Already bought a license?</b> Your code is permanent — enter it on the welcome screen (one active device at a time, phone / tablet). Use <b>Deactivate on this device</b> in-app to free a slot, or if you lost it, <a href="resend.html" style="text-decoration:underline; color:var(--green);">get a replacement code here</a>.</span>
-      </div>
 
     </div>
   </section>
@@ -203,27 +184,24 @@
           <img data-mark alt="calibrEAT mark" style="width:27px; height:27px;" />
           <span>calibr<span class="e">EAT</span></span>
         </a>
-        <p class="foot-copy">Calibrate your eating lifestyle. One lifetime unlock, and your data stays on your phone.</p>
+        <p class="foot-copy">Calibrate your eating lifestyle. Free, and your data stays on your phone.</p>
         <div class="foot-trust"><span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No ads</span><span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No subscriptions</span><span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No tracking</span></div>
       </div>
       <div>
         <h4>Product</h4>
         <ul>
-          <li><a href="license.html">License</a></li>
+          
           <li><a href="download.html">Download</a></li>
           <li><a href="about.html">About</a></li>
           <li><a href="index.html#features">Features</a></li>
-          <li><a href="index.html#compare">Compare</a></li>
           <li><a href="index.html#faq">FAQ</a></li>
         </ul>
       </div>
       <div>
         <h4>Support</h4>
         <ul>
-          <li><a href="mailto:support@calibreat.co.uk">Contact</a></li>
+          <li><a href="support.html">Contact</a></li>
           <li><a href="privacy.html">Privacy policy</a></li>
-          <li><a href="terms.html">Terms of sale</a></li>
-          <li><a href="refunds.html">Refunds</a></li>
         </ul>
       </div>
       <div>
@@ -231,7 +209,7 @@
         <ul>
           <li><a href="download.html">Download</a></li>
           <li><a href="download.html#android">Android APK</a></li>
-          <li><a href="download.html#ios">iOS — coming soon</a></li>
+          <li><a href="download.html#ios">iOS, coming soon</a></li>
           <li><a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open food database</a></li>
 
         </ul>
@@ -270,13 +248,13 @@
   if (APK_READY) {
     if (apkMeta) apkMeta.innerHTML = 'Android 8.0+ · <a href="#guide-android" style="text-decoration:underline;">how to install</a>';
     const readyCopy = {
-      "apk-lede": "Android APK is ready to download. iOS later. One lifetime purchase (£4.99 inc VAT) unlocks everything — no subscription, no ads.",
-      "apk-note": "Android first, iOS later. Download the APK above and sideload it — the steps below walk you through it.",
-      "apk-copy": "The Android APK is ready (Android 8.0+). You’ll sideload it — your device will ask you to allow installs from unknown sources, which is normal for a direct download.",
+      "apk-lede": "Android APK is ready to download. iOS later. Free, with no account, no subscription and no ads.",
+      "apk-note": "Android first, iOS later. Download the APK above, then follow the steps below.",
+      "apk-copy": "The Android APK is ready (Android 8.0+). Your phone will ask you to allow installs from outside the Play Store. That’s normal for a direct download.",
       // Only the clause goes, not the sentence: "for when the APK is ready" is
       // the part that turns false the moment APK_URL is set, and the runbook's
       // promise is that no line still says "in progress" once it ships.
-      "apk-guide-note": "Android install steps. iOS comes later. No account until you unlock.",
+      "apk-guide-note": "Android install steps. iOS comes later. No account needed.",
       "apk-guide-sub": "Ready now · Android 8.0+ · No Play Store needed",
     };
     Object.entries(readyCopy).forEach(([id, text]) => {
@@ -289,56 +267,6 @@
     }
   }
 
-  // ── Notify-me waitlist (only while the APK is still a placeholder) ──
-  // POST /v1/notify on the license Worker: idempotent, no OTP — the signup's
-  // only consequence is one launch email to the address given.
-  const notifyCard = document.getElementById("notify");
-  if (notifyCard && !APK_READY) {
-    notifyCard.hidden = false;
-    const notifyForm = document.getElementById("notify-form");
-    const notifyEmail = document.getElementById("notify-email");
-    const notifyBtn = document.getElementById("notify-btn");
-    const notifyStatus = document.getElementById("notify-status");
-    let notifyBusy = false;
-    notifyForm.addEventListener("submit", async (ev) => {
-      ev.preventDefault();
-      if (notifyBusy) return;
-      const email = notifyEmail.value.trim().toLowerCase();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        notifyStatus.textContent = "Enter a valid email address.";
-        notifyStatus.className = "notify-status err";
-        notifyEmail.focus();
-        return;
-      }
-      notifyBusy = true;
-      notifyBtn.disabled = true;
-      notifyBtn.textContent = "One moment…";
-      notifyStatus.textContent = "";
-      notifyStatus.className = "notify-status";
-      let data = {};
-      try {
-        const res = await fetch(NOTIFY_API_BASE + "/v1/notify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, source: "download-page" }),
-        });
-        data = await res.json().catch(() => ({}));
-      } catch (e) {
-        data = { ok: false, message: "" };
-      }
-      notifyBusy = false;
-      notifyBtn.disabled = false;
-      notifyBtn.textContent = "Notify me";
-      if (data.ok !== false) {
-        notifyStatus.textContent = data.message || "You're on the list — we'll email you when calibrEAT is ready to download.";
-        notifyStatus.className = "notify-status good";
-        notifyEmail.value = "";
-      } else {
-        notifyStatus.textContent = data.message || "Could not reach the license service — check your connection and try again.";
-        notifyStatus.className = "notify-status err";
-      }
-    });
-  }
 </script>
 <script src="site.js" defer></script>
 <script src="analytics.js" defer></script>
