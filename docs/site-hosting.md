@@ -74,8 +74,8 @@ The surviving reason is the security headers, and they are worth having but not
 urgent: this is a static marketing site with no forms, no logins and no user
 input, so a CSP is hardening rather than a fix for something a visitor noticed.
 It is **not** worth risking the mail records on a whim — the MX for
-`support@calibreat.co.uk` and Resend's SPF/DKIM are what deliver activation codes,
-and losing them stops people unlocking the app.
+`support@calibreat.co.uk` and Resend's SPF/DKIM are what deliver support mail and
+the uptime alert emails.
 
 Free plan is genuinely free for this site: unlimited requests and bandwidth,
 500 builds/month, 20,000 files, 25 MiB per file, 100 custom domains.
@@ -101,11 +101,10 @@ Free plan is genuinely free for this site: unlimited requests and bandwidth,
 ## One-time setup (~5 minutes, two secrets)
 
 Everything below is a dashboard step. Nothing here can be done from a laptop's
-`wrangler` session unless it was authorised with the **Pages** scope — the
-session that deploys the licence Worker is scoped to Workers only
+`wrangler` session unless it was authorised with the **Pages** scope —the session that deploys the uptime Worker is scoped to Workers only
 (`workers_*`), so it cannot create or deploy a Pages project.
 
-1. Use your existing Cloudflare account — the licence Worker already lives on it.
+1. Use your existing Cloudflare account — the uptime Worker already lives on it.
    The account ID is **`92e5d7d3336709a2a783488b3cdc0241`** (it is the middle
    column of `npx wrangler whoami`).
 2. Create an API token: **My Profile → API Tokens → Create Token → Edit
@@ -200,7 +199,7 @@ DNS provider. These must survive, and importers routinely mangle them:
 | Record | What breaks if it is lost |
 | --- | --- |
 | **MX** for `support@calibreat.co.uk` | The support inbox stops receiving (Resend Inbound) |
-| **TXT/SPF + DKIM** for Resend | Verification-code email stops — **nobody can activate the app** |
+| **TXT/SPF + DKIM** for Resend | Uptime alert emails stop being delivered |
 | **A/CNAME** for the site | The site itself |
 
 Losing an email record is far worse than a blank share card, so treat the email
@@ -211,8 +210,9 @@ records as the risky part and the website as the easy part.
 2. Add `calibreat.co.uk` as a zone on Cloudflare (Free plan). Let it import the
    existing records, then **diff the import against your inventory** — restore
    anything missing, especially MX and the Resend records.
-3. **Verify email before you touch the site:** request an activation OTP and send
-   a test message to `support@calibreat.co.uk` from an external address. Fix any
+3. **Verify email before you touch the site:** send a test message to
+   `support@calibreat.co.uk` from an external address, and confirm an uptime alert
+   test email arrives. Fix any
    failures while the old DNS is still authoritative.
 4. In the Pages project, add the custom domain `calibreat.co.uk` — Cloudflare
    creates the DNS record. Add `www` too and redirect it to the apex, so the site

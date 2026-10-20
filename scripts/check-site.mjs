@@ -38,7 +38,6 @@ for (const page of pages) {
     ['description meta', /<meta name="description" content="[^"]{40,}"/],
     ['canonical link', /<link rel="canonical" href="https:\/\/calibreat\.co\.uk/],
     ['theme-color meta', /<meta name="theme-color"/],
-    ['focus-visible styling', /:focus-visible/],
     ['closing html tag', /<\/html>/],
   ];
   for (const [label, pattern] of required) {
@@ -47,6 +46,38 @@ for (const page of pages) {
   if (page !== '404.html') {
     check(`${page}: og:image`, /<meta property="og:image"/.test(html));
   }
+}
+
+// ── shared stylesheet ─────────────────────────────────────────────────────
+// The design system moved out of nine duplicated <style> blocks into apps/web/
+// site.css, so "does this page have :focus-visible styling" can no longer be
+// answered by grepping the page's own HTML. These checks follow the real
+// <link rel="stylesheet"> chain instead of trusting that someone remembered,
+// which is the property that was actually being enforced before.
+console.log('\n── shared stylesheet ──');
+
+/** The local stylesheets a page actually links, in document order. */
+const linkedStylesheets = (html) => {
+  const hrefs = [...html.matchAll(/<link[^>]+rel="stylesheet"[^>]*>/g)]
+    .map((m) => (m[0].match(/href="([^"]+)"/) || [])[1])
+    .filter((h) => h && !/^(https?:)?\/\//.test(h));
+  return hrefs.map((h) => ({ href: h, css: existsSync(join(WEB, h)) ? read(h) : null }));
+};
+
+for (const page of pages) {
+  const html = read(page);
+  const sheets = linkedStylesheets(html);
+
+  check(`${page}: links the shared design system`,
+    sheets.some((s) => s.href === 'site.css'));
+
+  const missing = sheets.filter((s) => s.css === null).map((s) => s.href);
+  check(`${page}: every linked stylesheet exists`, missing.length === 0, missing.join(', '));
+
+  // The guarantee this replaced: keyboard focus is visible on every page.
+  const focusStyled = sheets.some((s) => s.css && /:focus-visible/.test(s.css))
+    || /:focus-visible/.test(html);
+  check(`${page}: focus-visible styling`, focusStyled);
 }
 
 // ── share cards (what X, Slack, WhatsApp and iMessage render) ──────────────
@@ -174,43 +205,6 @@ if (!existsSync(join(WEB, '_headers'))) {
       !read(page).includes('Content-Security-Policy'));
   }
 }
-
-console.log('\n── checkout url is single-sourced ──');
-
-const urlPattern = /https:\/\/checkout\.dodopayments\.com\/buy\/[A-Za-z0-9_?=&-]+/g;
-const found = new Map();
-for (const page of pages) {
-  for (const url of read(page).match(urlPattern) ?? []) {
-    if (!found.has(url)) found.set(url, []);
-    found.get(url).push(page);
-  }
-}
-check('checkout url appears at least once', found.size > 0);
-if (found.size > 1) {
-  fail('exactly one checkout url', [...found.keys()].join(' vs '));
-} else if (found.size === 1) {
-  pass(`exactly one checkout url (${found.size})`);
-}
-for (const page of pages) {
-  const html = read(page);
-  const config = /const CHECKOUT_URL = "([^"]+)"/.exec(html)?.[1];
-  if (!config) continue;
-  const hrefs = new Set(html.match(urlPattern) ?? []);
-  check(
-    `${page}: checkout hrefs match CHECKOUT_URL`,
-    hrefs.size === 0 || (hrefs.size === 1 && hrefs.has(config)),
-    [...hrefs].join(', '),
-  );
-}
-
-console.log('\n── compare table marks are announced ──');
-
-const index = read('index.html');
-const marks = index.match(/<span class="mark-(yes|no)"[^>]*>/g) ?? [];
-const unlabelled = marks.filter((m) => !/aria-label=/.test(m));
-check(`compare marks present (${marks.length})`, marks.length > 0);
-check('every mark carries an aria-label', unlabelled.length === 0, `${unlabelled.length} unlabelled`);
-check('no caption inside the scrolling table', !/<table class="compare">[\s\S]*?<caption/.test(index));
 
 console.log('\n── local links and assets resolve ──');
 

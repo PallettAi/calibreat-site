@@ -1,24 +1,44 @@
 /*
- * Shared polish layer for calibreat.co.uk — behaviour is in site.js.
+ * Shared polish & interactive hardware telemetry layer for calibreat.co.uk.
+ * Behaviour is driven by site.js and script.js.
  * Everything here is additive: pages look complete without JS, and all
  * motion is disabled under prefers-reduced-motion.
  */
 
-/* Scroll reveals — see site.js. Stagger optional via --reveal-delay. */
+/* ── Ambient Precision Film Grain (Fixed GPU-Safe Overlay) ─────────────── */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.024;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+[data-theme="light"] body::after {
+  opacity: 0.018;
+}
+
+/* ── Scroll reveals — see site.js. Stagger optional via --reveal-delay. ── */
 .reveal.pre-reveal.revealed {
   opacity: 1;
   transform: none;
-  transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
   transition-delay: var(--reveal-delay, 0ms);
 }
 .reveal.pre-reveal:not(.revealed) {
   opacity: 0;
-  transform: translateY(14px);
+  transform: translateY(16px);
 }
 
-/* Card hover lift — opt-in via .lift where a section has no hover of its own. */
+/* ── Double-Bezel (Doppelrand) Machined Hardware Shells ────────────────── */
+
+/* ── Card hover lift ───────────────────────────────────────────────────── */
 .lift {
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 @media (hover: hover) {
   .lift:hover,
@@ -28,7 +48,125 @@
   }
 }
 
-/* Full stop for reduced motion, whatever the entry path. */
+/* ── Store Badge Pills (App Store & Google Play Coming Soon) ───────────── */
+
+/* ── Bespoke SVG Orbital Reticle & Calibration Artwork ─────────────────── */
+@keyframes orbitSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes orbitSpinReverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+@keyframes radarPulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.985); }
+  50% { opacity: 0.85; transform: scale(1.015); }
+}
+
+.phone {
+  z-index: 2;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Interactive Phone Instrument Screen & Mode Switcher ───────────────── */
+.phone-screen {
+  position: relative;
+  overflow: hidden;
+  border-radius: 32px;
+  background:
+    radial-gradient(240px 170px at 50% -4%, rgba(18, 183, 106, 0.24), transparent 72%),
+    linear-gradient(180deg, #111714 0%, #0B0F0C 74%);
+  height: 534px;
+  padding: 46px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: left;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  transition: box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* Never let legacy pseudo-elements cover the dark OLED screen */
+.phone-screen::before,
+.phone-screen::after {
+  content: none !important;
+  display: none !important;
+}
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.8); }
+}
+
+/* Dial Gauge SVG inside the phone */
+.inst-dial-arc {
+  transition: stroke-dashoffset 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+              stroke 0.45s ease;
+}
+.inst-burn-tag {
+  margin-top: 5px;
+  font-family: var(--f-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: #E4B04A;
+  background: rgba(228, 176, 74, 0.12);
+  border: 1px solid rgba(228, 176, 74, 0.28);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+/* Macro mini bars */
+
+/* Dynamic Telemetry Card inside Phone (responds to scroll / feature hover) */
+
+/* Interactive Mode Pills inside Phone */
+.inst-tab {
+  appearance: none;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(238, 243, 238, 0.1);
+  border-radius: 5px;
+  padding: 5px 2px;
+  font-family: var(--f-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #A9B6AC;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.inst-tab:hover,
+.inst-tab.active {
+  background: rgba(18, 183, 106, 0.16);
+  border-color: #1FD37E;
+  color: #EEF3EE;
+}
+
+/* ── Calibration Architecture Strip (Bespoke Artwork Diagram) ──────────── */
+@keyframes telemetryDash {
+  from { stroke-dashoffset: 120; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* ── Active Feature Highlight in the Ledger ────────────────────────────── */
+.feature {
+  cursor: pointer;
+  transition: background-color 0.25s ease, padding-left 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.feature.is-active {
+  background: linear-gradient(90deg, var(--fill-soft), transparent 85%);
+  padding-left: 12px;
+}
+.feature.is-active::after {
+  transform: scaleX(1);
+}
+.feature.is-active::before {
+  color: var(--brass);
+}
+
+/* ── Animated Year-One Cost Bars ───────────────────────────────────────── */
+
+/* ── Reduced motion fallback ───────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .reveal.pre-reveal,
   .reveal.pre-reveal.revealed {
@@ -38,7 +176,11 @@
   }
   .lift,
   .lift:hover,
-  .lift:focus-within {
+  .lift:focus-within,
+  .bezel-shell,
+  .bezel-shell:hover,
+  .store-badge,
+  .store-badge:hover {
     transform: none;
     transition: none;
   }

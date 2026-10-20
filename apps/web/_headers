@@ -24,3 +24,20 @@
 # that cache by URL, and a stuck stale file is exactly the failure we are fixing.
 /assets/*
   Cache-Control: public, max-age=3600, must-revalidate
+
+# The design system and the shared behaviour left the HTML for the first time —
+# they used to be duplicated inline in all nine pages, so there was nothing here
+# to cache. Same conservative lifetime as /assets: revalidate rather than pin, so
+# a fix to site.css can never be stranded behind a long browser cache.
+/site.css
+  Cache-Control: public, max-age=3600, must-revalidate
+/site.js
+  Cache-Control: public, max-age=3600, must-revalidate
+/polish.css
+  Cache-Control: public, max-age=3600, must-revalidate
+/visual-refresh.css
+  Cache-Control: public, max-age=3600, must-revalidate
+/landing.css
+  Cache-Control: public, max-age=3600, must-revalidate
+/scripts/*
+  Cache-Control: public, max-age=3600, must-revalidate
