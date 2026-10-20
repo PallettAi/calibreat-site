@@ -4,14 +4,19 @@
  * Verifies the real implementation (src/lib/diary.ts) — day totals, recents,
  * meal grouping, and migrating old kcal-only intake rows into log entries.
  */
-import {
+import { register } from 'node:module';
+
+// diary.ts imports its sibling micronutrients module without an extension, as Metro expects.
+register('./alias-hooks.mjs', import.meta.url);
+const {
+  formatMacroSummary,
   groupLogsByMeal,
   migrateIntakeToLogs,
   parseOptionalGrams,
   parseRequiredKcal,
   recentsFromLogs,
   sumDayMacros,
-} from '../src/lib/diary.ts';
+} = await import('../src/lib/diary.ts');
 
 let fails = 0;
 const eq = (label, got, want) => {
@@ -44,6 +49,17 @@ eq('fiber ignores null', withMicros.fiberG, 5);
 eq('sugar sums when present', withMicros.sugarG, 16);
 eq('sat fat ignores null', withMicros.satFatG, 3);
 eq('sodium sums when present', withMicros.sodiumMg, 600);
+
+const microDay = sumDayMacros([
+  { kcal: 300, micros: { vitaminC: 20, iron: 1.5, folate: null } },
+  { kcal: 150, micros: { vitaminC: 5.25, iron: null, folate: null } },
+  { kcal: 100, micros: null },
+]);
+eq('vitamin C sums across entries', microDay.micros.vitaminC, 25.25);
+eq('iron ignores null entries', microDay.micros.iron, 1.5);
+eq('folate stays null when nothing reports it', microDay.micros.folate, null);
+eq('unreported vitamin D stays null', microDay.micros.vitaminD ?? null, null);
+eq('day without micros has empty micro totals', sumDayMacros([{ kcal: 200 }]).micros.vitaminC, null);
 
 const recents = recentsFromLogs(
   [
@@ -83,6 +99,11 @@ eq('required kcal rejects zero', parseRequiredKcal('0'), null);
 eq('required kcal rounds', parseRequiredKcal('199.6'), 200);
 eq('optional grams empty is unset', parseOptionalGrams(''), null);
 eq('optional grams zero is filled', parseOptionalGrams('0'), 0);
+
+eq('macro summary full', formatMacroSummary({ proteinG: 42, carbsG: 50, fatG: 14 }), '42P · 50C · 14F');
+eq('macro summary partial', formatMacroSummary({ proteinG: 30, carbsG: null, fatG: 10 }), '30P · 10F');
+eq('macro summary with kcal', formatMacroSummary({ proteinG: 30, carbsG: null, fatG: 10 }, 520), '520 kcal · 30P · 10F');
+eq('macro summary empty', formatMacroSummary({ proteinG: null, carbsG: null, fatG: null }), '');
 
 console.log(fails === 0 ? '\nALL CHECKS PASSED' : `\n${fails} CHECK(S) FAILED`);
 process.exit(fails === 0 ? 0 : 1);

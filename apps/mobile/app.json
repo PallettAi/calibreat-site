@@ -2,18 +2,17 @@
   "expo": {
     "name": "calibrEAT",
     "slug": "calibreat",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "calibreat",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.calibreat.app"
     },
     "android": {
       "package": "com.calibreat.app",
-      "versionCode": 5,
+      "versionCode": 9,
       "adaptiveIcon": {
         "backgroundColor": "#0A1019",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -22,7 +21,13 @@
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+        "android.permission.health.READ_EXERCISE",
+        "android.permission.health.READ_STEPS"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -56,6 +61,34 @@
         }
       ],
       "expo-sharing",
+      "react-native-health-connect",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "CalibreatSmall",
+              "label": "calibrEAT",
+              "description": "Calories left today",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 0
+            },
+            {
+              "name": "CalibreatMedium",
+              "label": "calibrEAT",
+              "description": "Calories, protein, water and fasting",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 0
+            }
+          ]
+        }
+      ],
       [
         "expo-image-picker",
         {
@@ -67,7 +100,10 @@
         "expo-build-properties",
         {
           "android": {
-            "buildArchs": ["arm64-v8a"]
+            "buildArchs": [
+              "arm64-v8a"
+            ],
+            "minSdkVersion": 26
           }
         }
       ]
@@ -81,6 +117,14 @@
       "eas": {
         "projectId": "2eb3df97-e80d-4d39-8dbc-a54fba7e41d6"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/2eb3df97-e80d-4d39-8dbc-a54fba7e41d6",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
     }
   }
 }

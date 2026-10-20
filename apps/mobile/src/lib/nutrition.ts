@@ -18,9 +18,6 @@ export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'ver
 
 export type GoalDirection = 'lose' | 'maintain' | 'gain' | 'monitor';
 
-/** Goals that adjust the calorie target up/down (as opposed to tracking). */
-export const ADJUSTING_GOALS: GoalDirection[] = ['lose', 'gain'];
-
 export const GOAL_OPTIONS: { value: GoalDirection; label: string; detail: string }[] = [
   { value: 'lose', label: 'Lose', detail: 'Gentle calorie deficit' },
   { value: 'maintain', label: 'Maintain', detail: 'Stay where you are' },
@@ -144,7 +141,7 @@ export type BmiWeightSource = 'weigh-in' | 'setup';
 
 export function resolveBmiWeight(
   setupKg: number,
-  weighIns: Array<{ kg: number; at: string }>,
+  weighIns: { kg: number; at: string }[],
 ): { kg: number; source: BmiWeightSource; at: string | null } {
   const latest = weighIns[weighIns.length - 1];
   if (latest && Number.isFinite(latest.kg) && latest.kg > 0) {

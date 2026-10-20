@@ -1,15 +1,14 @@
 /**
  * Name-search ranking and OFF-down fallback (npm run check:foods).
  */
-import {
-  cofidToFood,
-  mergeFoodSearch,
-  parseCofidNumber,
-  searchCofid,
-  searchFoods,
-} from '../src/lib/food-search.ts';
-import { parseSearchPayload } from '../src/lib/barcode.ts';
-import { parseUsdaSearchPayload } from '../src/lib/usda.ts';
+import { register } from 'node:module';
+
+// barcode.ts imports its sibling modules without extensions, as Metro expects.
+register('./alias-hooks.mjs', import.meta.url);
+const { cofidToFood, mergeFoodSearch, parseCofidNumber, searchCofid, searchFoods } = await import(
+  '../src/lib/food-search.ts'
+);
+const { parseSearchPayload } = await import('../src/lib/barcode.ts');
 
 let fails = 0;
 const eq = (label, got, want) => {
@@ -86,28 +85,6 @@ eq('offline empty still marks packs failed', emptyOffline.packsFailed, true);
 const reachedEmpty = mergeFoodSearch([], []);
 eq('online miss is not a connection failure', reachedEmpty.packsFailed, false);
 
-const usda = parseUsdaSearchPayload({
-  foods: [{
-    fdcId: 123,
-    description: 'Chicken breast, roasted',
-    brandOwner: 'Open Kitchen',
-    foodNutrients: [
-      { nutrientId: 1008, value: 165 },
-      { nutrientId: 1003, value: 31 },
-      { nutrientId: 1005, value: 0 },
-      { nutrientId: 1004, value: 3.6 },
-      { nutrientId: 1079, value: 0 },
-      { nutrientId: 1093, value: 74 },
-    ],
-  }],
-});
-eq('USDA parses a food', usda.length, 1);
-eq('USDA adds brand to name', usda[0]?.name, 'Open Kitchen Chicken breast, roasted');
-eq('USDA uses per-100-g serving', usda[0]?.portion, '100g');
-eq('USDA maps calories', usda[0]?.kcal, 165);
-eq('USDA maps sodium', usda[0]?.sodiumMg, 74);
-eq('USDA source label', usda[0]?.source, 'usda');
-
 const many = Array.from({ length: 30 }, (_, i) => cofidToFood({ ...catalog[0], code: `x-${i}`, name: `Chicken cut ${i}` }));
 eq('merged list caps at 20', mergeFoodSearch(many, remote).hits.length, 20);
 eq('packs still appear when CoFID is crowded', mergeFoodSearch(many, remote).hits.some((h) => h.source === 'off'), true);
@@ -116,8 +93,6 @@ eq('crowded merge still leads with CoFID', mergeFoodSearch(many, remote).hits[0]
 const down = await searchFoods('chicken', {
   catalog,
   lookup: async () => null,
-  usdaLookup: async () => ({ foods: [] }),
-  parseUsda: parseUsdaSearchPayload,
 });
 eq('searchFoods keeps CoFID when OFF is down', down.hits[0]?.name, 'Chicken, roast');
 eq('searchFoods does not throw when OFF is down', down.packsFailed, true);
@@ -135,38 +110,31 @@ eq(
   true,
 );
 
-// The case that made an empty list lie. OFF answered — with nothing — and
-// then the USDA fallback went dark, so "no hits" stopped meaning "no such
-// food" and started meaning "we did not finish asking".
-const offQuietUsdaDark = await searchFoods('zzzzzz', {
+// OFF answered with nothing: a genuine miss, not a connection failure.
+const offQuiet = await searchFoods('zzzzzz', {
   catalog,
   lookup: async () => ({ products: [] }),
   parseRemote: (payload) => parseSearchPayload(payload),
-  usdaLookup: async () => null,
-  parseUsda: parseUsdaSearchPayload,
 });
-eq('OFF answering with nothing is not a pack failure', offQuietUsdaDark.packsFailed, false);
-eq('a dark USDA is reported separately', offQuietUsdaDark.usdaFailed, true);
-eq('so an empty list is never presented as a real miss', offQuietUsdaDark.hits.length, 0);
+eq('OFF answering with nothing is not a pack failure', offQuiet.packsFailed, false);
+eq('a genuine miss has no hits', offQuiet.hits.length, 0);
 
-const usdaQuiet = await searchFoods('zzzzzz', {
+// Name search is UK-only: the world catalogue is never asked, even when the UK list is empty.
+const askedHosts = [];
+await searchFoods('zzzzzz', {
   catalog,
-  lookup: async () => ({ products: [] }),
-  parseRemote: (payload) => parseSearchPayload(payload),
-  usdaLookup: async () => ({ foods: [] }),
-  parseUsda: parseUsdaSearchPayload,
+  lookup: async (url) => {
+    askedHosts.push(new URL(url).host);
+    return { products: [] };
+  },
+  parseRemote: () => [],
 });
-eq('a USDA that answered with nothing is not a failure', usdaQuiet.usdaFailed, false);
+eq('empty UK OFF does not fall back to the world catalogue', askedHosts.join(','), 'uk.openfoodfacts.org');
 
-const offHasHits = await searchFoods('zzzzzz', {
-  catalog,
-  lookup: async () => ({ products: [] }),
-  parseRemote: () => [{ barcode: 'x', name: 'A pack', kcal: 1, source: 'off' }],
-  usdaLookup: async () => null,
-  parseUsda: parseUsdaSearchPayload,
-});
-eq('USDA is not consulted when OFF already answered', offHasHits.usdaFailed, false);
-eq('a plain merge reports no USDA failure', mergeFoodSearch(catalog, remote).usdaFailed, false);
+// Offline at launch: no lookup is passed, so OFF is never asked and that is not a pack failure.
+const offAtLaunch = await searchFoods('chicken', { catalog });
+eq('offline at launch keeps CoFID hits', offAtLaunch.hits[0]?.name, 'Chicken, roast');
+eq('offline at launch is not a pack failure', offAtLaunch.packsFailed, false);
 
 console.log(fails === 0 ? '\nALL CHECKS PASSED' : `\n${fails} CHECK(S) FAILED`);
 process.exit(fails === 0 ? 0 : 1);

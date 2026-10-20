@@ -12,9 +12,11 @@
  * not a fact about the pack in your hand.
  */
 
+import { MICRO_DEFS, roundMicro, scaleMicros, type MicroKey, type Micros } from './micronutrients';
+
 export type OffPortion = 'serving' | '100g';
 
-export type FoodSource = 'cofid' | 'off' | 'usda';
+export type FoodSource = 'cofid' | 'off';
 
 export type OffFood = {
   barcode: string;
@@ -31,6 +33,7 @@ export type OffFood = {
   portion: OffPortion;
   servingGrams: number | null;
   source: FoodSource;
+  micros?: Micros | null;
 };
 
 export type ScaledFood = {
@@ -42,6 +45,7 @@ export type ScaledFood = {
   sugarG: number | null;
   satFatG: number | null;
   sodiumMg: number | null;
+  micros: Micros | null;
   amountLabel: string;
 };
 
@@ -136,6 +140,43 @@ function extrasAt(n: OffNutriments, suffix: string) {
   };
 }
 
+/** OFF nutriment ids for each micronutrient. OFF stores these in grams per 100 g. */
+const OFF_MICRO_IDS: Record<MicroKey, string> = {
+  vitaminA: 'vitamin-a',
+  vitaminD: 'vitamin-d',
+  vitaminE: 'vitamin-e',
+  vitaminK: 'vitamin-k',
+  vitaminC: 'vitamin-c',
+  thiamin: 'vitamin-b1',
+  riboflavin: 'vitamin-b2',
+  niacin: 'vitamin-pp',
+  vitaminB6: 'vitamin-b6',
+  vitaminB12: 'vitamin-b12',
+  folate: 'vitamin-b9',
+  potassium: 'potassium',
+  calcium: 'calcium',
+  magnesium: 'magnesium',
+  phosphorus: 'phosphorus',
+  iron: 'iron',
+  zinc: 'zinc',
+  selenium: 'selenium',
+  iodine: 'iodine',
+};
+
+/** Vitamins and minerals converted from OFF's grams into each key's declared unit. */
+function microsAt(n: OffNutriments, suffix: string): Micros | null {
+  const out: Micros = {};
+  let any = false;
+  for (const def of MICRO_DEFS) {
+    const grams = num(n[`${OFF_MICRO_IDS[def.key]}${suffix}`]);
+    const factor = def.unit === 'mg' ? 1000 : 1_000_000;
+    const value = grams != null && grams >= 0 ? roundMicro(grams * factor) : null;
+    out[def.key] = value;
+    if (value != null) any = true;
+  }
+  return any ? out : null;
+}
+
 function scaleMacros(
   food: Pick<OffFood, 'proteinG' | 'carbsG' | 'fatG' | 'fiberG' | 'sugarG' | 'satFatG' | 'sodiumMg'>,
   factor: number,
@@ -158,6 +199,7 @@ export function scaleFood(food: OffFood | null | undefined, amount: number): Sca
     return {
       kcal: Math.round(food.kcal * amount),
       ...scaleMacros(food, amount),
+      micros: scaleMicros(food.micros, amount),
       amountLabel: `${trimAmount(amount)}× serving (${food.portionLabel})`,
     };
   }
@@ -165,6 +207,7 @@ export function scaleFood(food: OffFood | null | undefined, amount: number): Sca
   return {
     kcal: Math.round(food.kcal * factor),
     ...scaleMacros(food, factor),
+    micros: scaleMicros(food.micros, factor),
     amountLabel: `${trimAmount(amount)} g`,
   };
 }
@@ -198,6 +241,7 @@ export function parseOffProduct(payload: OffResponse, barcode = payload.code ?? 
     carbsG: carbs,
     fatG: fat,
     ...extras,
+    micros: microsAt(n, suffix),
     portionLabel: servingSize,
     portion: serving ? 'serving' : '100g',
     servingGrams: serving ? parseServingGrams(payload.product.serving_size) : 100,
@@ -205,7 +249,7 @@ export function parseOffProduct(payload: OffResponse, barcode = payload.code ?? 
   };
 }
 
-export function parseOffSearchProducts(products: OffProduct[], codes: Array<string | undefined> = []): OffFood[] {
+export function parseOffSearchProducts(products: OffProduct[], codes: (string | undefined)[] = []): OffFood[] {
   const out: OffFood[] = [];
   for (let i = 0; i < products.length; i += 1) {
     const product = products[i];
@@ -277,14 +321,31 @@ export async function fetchOff(url: string): Promise<OffFetch> {
 }
 
 /**
- * The `lookup` shape `searchFoods` expects, which only ever needs ok-or-null.
- * Its offline reporting comes from that caller's own `packsFailed` and
- * `usdaFailed` flags, which stay separate so neither source can hide behind
- * the other's silence.
+ * The `lookup` shape `searchFoods` expects: the payload, or null when OFF could
+ * not be used. `searchFoods` reports that as `packsFailed`, so a CoFID hit
+ * cannot hide an Open Food Facts outage.
  */
 export async function fetchOpenFoodFacts(url: string): Promise<unknown | null> {
   const res = await fetchOff(url);
   return res.ok ? res.payload : null;
+}
+
+const LAUNCH_PROBE_URL =
+  'https://uk.openfoodfacts.org/cgi/search.pl?search_terms=milk&search_simple=1&action=process&json=1&page_size=1';
+
+let launchProbe: Promise<boolean> | null = null;
+
+/**
+ * Whether UK Open Food Facts answered, asked once per process. The first
+ * caller starts the probe and every later caller gets the same answer, so
+ * name search keeps its sources until the app is quit and reopened.
+ * Being answered (any HTTP status) counts as reachable; a connection failure does not.
+ */
+export function probeOpenFoodFactsAtLaunch(): Promise<boolean> {
+  if (!launchProbe) {
+    launchProbe = fetchOff(LAUNCH_PROBE_URL).then((res) => res.reachable);
+  }
+  return launchProbe;
 }
 
 export type BarcodeLookup =

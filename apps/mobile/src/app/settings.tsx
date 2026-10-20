@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Redirect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand } from '@/constants/app';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useKeyboardReveal } from '@/hooks/use-keyboard-reveal';
 import { useTheme } from '@/hooks/use-theme';
-import { useLicense } from '@/lib/license-context';
-import { getVerifiedEmail } from '@/lib/license';
+import { connectHealthConnect, disconnectHealthConnect, isHealthConnectEnabled } from '@/lib/health-connect';
 import { COFID_CREDIT } from '@/lib/food-search';
 import { dailyReminderFromSettings, formatDailyReminderTime } from '@/lib/daily-reminders';
-import { getSettings, saveSettings, type AppSettings } from '@/lib/settings';
+import { applyThemeMode, getSettings, saveSettings, type AppSettings } from '@/lib/settings';
+import { type ThemeMode } from '@/lib/theme-mode';
 import { syncDailyReminder } from '@/lib/daily-reminder-notifications';
 import { syncWeighInReminder } from '@/lib/weigh-in-notifications';
 import {
@@ -64,13 +65,36 @@ export default function SettingsScreen() {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
   const theme = useTheme();
-  const { license } = useLicense();
-
+  const keyboard = useKeyboardReveal();
   const [settings, setSettings] = useState<AppSettings | null>(null);
-  const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
   const [timeDraft, setTimeDraft] = useState('08:00');
   const [exportInput, setExportInput] = useState<ExportInput | null>(null);
   const [exportBusy, setExportBusy] = useState<'backup' | 'diary' | null>(null);
+  const [hcOn, setHcOn] = useState(false);
+  const [hcNote, setHcNote] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    isHealthConnectEnabled().then((v) => {
+      if (!cancelled) setHcOn(v);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /** Turning it on asks Health Connect; a denial or a missing app leaves it off. */
+  async function toggleHealthConnect(next: boolean) {
+    setHcNote(null);
+    if (!next) {
+      await disconnectHealthConnect();
+      setHcOn(false);
+      return;
+    }
+    const result = await connectHealthConnect();
+    setHcOn(result === 'connected');
+    if (result === 'denied') setHcNote('Permission not granted. Train estimates stay in use.');
+    if (result === 'unavailable') setHcNote('Health Connect is not on this phone. Android 14+ or the Health Connect app is needed.');
+  }
   const [exportNote, setExportNote] = useState<string | null>(null);
   // Restore holds a parsed file and both plans until the user picks one.
   // Nothing is written until they do. A backup and a diary import share this
@@ -100,7 +124,6 @@ export default function SettingsScreen() {
       setSettings(next);
       setTimeDraft(formatReminderTime(next.weighInReminderHour, next.weighInReminderMinute));
     });
-    getVerifiedEmail().then(setVerifiedEmail);
   }, []);
 
   async function loadExportInput(): Promise<ExportInput> {
@@ -310,6 +333,12 @@ export default function SettingsScreen() {
     await persist({ ...settings, weighInReminderFrequency: frequency });
   }
 
+  async function setThemeMode(mode: ThemeMode) {
+    if (!settings) return;
+    applyThemeMode(mode);
+    await persist({ ...settings, themeMode: mode });
+  }
+
   function commitTime() {
     if (!settings) return;
     const parsed = parseReminderTime(timeDraft);
@@ -321,25 +350,14 @@ export default function SettingsScreen() {
     void persist({ ...settings, weighInReminderHour: parsed.hour, weighInReminderMinute: parsed.minute });
   }
 
-  const email = license?.customerEmail ?? verifiedEmail ?? '—';
   // Shown to the user so the switch says exactly when the nudge will arrive.
   const dailyNudgeAt = formatDailyReminderTime(dailyReminderFromSettings({ remindersEnabled: true }));
-  // Derive a display name from the email when no explicit name is stored
-  const displayName = (() => {
-    if (!email || email === '—') return '—';
-    const prefix = email.split('@')[0] ?? '';
-    if (!prefix) return email;
-    return prefix.replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  })();
-
   const exportSummary = exportInput ? describeBundle(buildExportBundle(exportInput)) : null;
-
-  if (!license) return <Redirect href="/" />;
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView {...keyboard.scrollProps} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <Pressable
               onPress={() => router.back()}
@@ -384,6 +402,50 @@ export default function SettingsScreen() {
                   isDark={isDark}
                 />
                 <View style={[styles.divider, { backgroundColor: hairline }]} />
+                <View style={styles.reminderExtras}>
+                  <ThemedText type="smallBold">Theme</ThemedText>
+                  <View style={styles.freqRow}>
+                    {(
+                      [
+                        { id: 'system', label: 'System' },
+                        { id: 'light', label: 'Light' },
+                        { id: 'dark', label: 'Dark' },
+                      ] as const
+                    ).map((opt) => {
+                      const on = settings.themeMode === opt.id;
+                      return (
+                        <Pressable
+                          key={opt.id}
+                          onPress={() => void setThemeMode(opt.id)}
+                          accessibilityRole="radio"
+                          accessibilityState={{ selected: on }}
+                          style={({ pressed }) => [
+                            styles.freqChip,
+                            { borderColor: on ? accent : hairline, backgroundColor: on ? (isDark ? 'rgba(183,233,60,0.14)' : 'rgba(31,157,85,0.10)') : 'transparent' },
+                            pressed && styles.pressed,
+                          ]}
+                        >
+                          <Text style={[styles.freqChipText, { color: on ? accent : theme.text }]}>{opt.label}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    System follows your phone's light or dark setting.
+                  </ThemedText>
+                </View>
+                <View style={[styles.divider, { backgroundColor: hairline }]} />
+                <Row
+                  label="Health Connect"
+                  detail={hcNote ?? 'Reads activity on this phone only. Never uploaded.'}
+                  value={hcOn}
+                  onValueChange={(v) => {
+                    void toggleHealthConnect(v);
+                  }}
+                  accent={accent}
+                  isDark={isDark}
+                />
+                <View style={[styles.divider, { backgroundColor: hairline }]} />
                 <Row
                   label="Weigh-in reminders"
                   detail="Alert on this device at a time you choose"
@@ -400,6 +462,7 @@ export default function SettingsScreen() {
                     <TextInput
                       value={timeDraft}
                       onChangeText={setTimeDraft}
+                      {...keyboard.field('reminderTime')}
                       onBlur={commitTime}
                       onSubmitEditing={commitTime}
                       placeholder="08:00"
@@ -443,6 +506,26 @@ export default function SettingsScreen() {
                 Loading…
               </ThemedText>
             )}
+          </View>
+
+          <View style={[styles.card, { backgroundColor: cardBg, borderColor: hairline }]}>
+            <ThemedText type="smallBold" style={styles.cardLabel}>
+              HELP
+            </ThemedText>
+            <Pressable
+              onPress={() => router.push({ pathname: '/home', params: { tour: '1' } })}
+              accessibilityRole="button"
+              accessibilityLabel="Replay the app tour"
+              style={({ pressed }) => [styles.helpRow, pressed && styles.pressed]}
+            >
+              <View style={styles.helpText}>
+                <ThemedText type="smallBold">Replay the app tour</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  A quick reminder of where things live
+                </ThemedText>
+              </View>
+              <Text style={[styles.helpChevron, { color: accent }]}>›</Text>
+            </Pressable>
           </View>
 
           <View style={[styles.card, { backgroundColor: cardBg, borderColor: hairline }]}>
@@ -634,54 +717,13 @@ export default function SettingsScreen() {
             )}
           </View>
 
-          <View style={[styles.card, { backgroundColor: cardBg, borderColor: hairline }]}>
-            <ThemedText type="smallBold" style={styles.cardLabel}>
-              ACCOUNT
-            </ThemedText>
-            <View style={styles.accountRow}>
-              <ThemedText type="small" themeColor="textSecondary">
-                Account:
-              </ThemedText>
-              <ThemedText type="smallBold" style={styles.accountValue}>
-                {email} {displayName !== '—' && displayName.toLowerCase() !== email.toLowerCase() ? `· ${displayName}` : ''}
-              </ThemedText>
-            </View>
-            <View style={styles.accountRow}>
-              <ThemedText type="small" themeColor="textSecondary">
-                Account status:
-              </ThemedText>
-              <View
-                style={[
-                  styles.statusPill,
-                  {
-                    backgroundColor: license
-                      ? isDark
-                        ? 'rgba(183,233,60,0.14)'
-                        : 'rgba(31,157,85,0.10)'
-                      : isDark
-                        ? 'rgba(255,255,255,0.06)'
-                        : 'rgba(0,0,0,0.05)',
-                    borderColor: license ? accent : hairline,
-                  },
-                ]}
-              >
-                <View style={[styles.statusDot, { backgroundColor: license ? accent : theme.muted }]} />
-                <Text style={[styles.statusText, { color: license ? accent : theme.muted }]}>
-                  {license ? 'Activated' : 'Locked'}
-                </Text>
-              </View>
-            </View>
-            <ThemedText type="small" themeColor="textSecondary" style={styles.accountHint}>
-              Lifetime access — 1 active device. Open Account from Home (menu) to deactivate and move, or email support if that device is gone.
-            </ThemedText>
-          </View>
-
           <ThemedText type="small" themeColor="textSecondary" style={styles.footerNote}>
             {COFID_CREDIT}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary" style={styles.footerNote}>
             calibrEAT will never store or sell your data. We believe in privacy for our users.
           </ThemedText>
+          {keyboard.bottomInset > 0 ? <View style={{ height: keyboard.bottomInset }} /> : null}
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -749,6 +791,9 @@ const styles = StyleSheet.create({
   cardLabel: { letterSpacing: 1.2, opacity: 0.7, fontSize: 11 },
   divider: { height: StyleSheet.hairlineWidth, opacity: 1 },
   reminderExtras: { gap: 8, paddingTop: 4 },
+  helpRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: 6 },
+  helpText: { flex: 1, gap: 2 },
+  helpChevron: { fontSize: 22, fontWeight: '700' },
   timeInput: { minHeight: 44, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, fontSize: 16, fontWeight: '700', letterSpacing: 0.6, maxWidth: 120 },
   freqRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   freqChip: { borderWidth: 1.5, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 12 },
@@ -762,12 +807,6 @@ const styles = StyleSheet.create({
   restorePreview: { borderWidth: 1, borderRadius: 14, padding: 14, gap: 10 },
   restoreOption: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
   restoreDot: { fontSize: 16, lineHeight: 20 },
-  accountRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  accountValue: { flexShrink: 1 },
-  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10 },
-  statusDot: { width: 7, height: 7, borderRadius: 7 },
-  statusText: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6 },
-  accountHint: { lineHeight: 17, marginTop: 2 },
   footerNote: { textAlign: 'center', lineHeight: 17, paddingHorizontal: Spacing.three },
   pressed: { opacity: 0.65 },
 });

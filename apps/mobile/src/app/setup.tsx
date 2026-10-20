@@ -1,4 +1,4 @@
-import { Redirect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -19,6 +19,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Brand } from '@/constants/app';
 import { Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useKeyboardReveal, type KeyboardFieldProps } from '@/hooks/use-keyboard-reveal';
 import { useTheme } from '@/hooks/use-theme';
 import { getProfile, getUnitPrefs, saveProfile, saveUnitPrefs, type Profile } from '@/lib/db';
 import {
@@ -41,17 +42,16 @@ import {
   type WeightUnit,
 } from '@/lib/units';
 import { SUPPLEMENT_OPTIONS } from '@/lib/supplements';
-import { useLicense } from '@/lib/license-context';
 
 const TOTAL_STEPS = 8;
 
 type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export default function SetupScreen() {
-  const { license } = useLicense();
   const router = useRouter();
   const isDark = useColorScheme() === 'dark';
   const theme = useTheme();
+  const keyboard = useKeyboardReveal();
 
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -247,7 +247,6 @@ export default function SetupScreen() {
     }
   }
 
-  if (!license) return <Redirect href="/" />;
   if (!loaded) {
     return <ThemedView style={styles.container} />;
   }
@@ -259,6 +258,7 @@ export default function SetupScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
           <ScrollView
+            {...keyboard.scrollProps}
             style={styles.flex}
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
@@ -328,6 +328,7 @@ export default function SetupScreen() {
                   placeholder="Years"
                   value={age}
                   onChange={setAge}
+                  inputProps={keyboard.field('age')}
                   suffix="years"
                   theme={theme}
                 />
@@ -351,12 +352,14 @@ export default function SetupScreen() {
                       <DualInput
                         label="ft"
                         value={heightFeet}
+                        inputProps={keyboard.field('heightFeet')}
                         onChange={setHeightFeet}
                         theme={theme}
                       />
                       <DualInput
                         label="in"
                         value={heightInches}
+                        inputProps={keyboard.field('heightInches')}
                         onChange={setHeightInches}
                         theme={theme}
                       />
@@ -365,6 +368,7 @@ export default function SetupScreen() {
                     <View style={styles.numberInputRow}>
                       <TextInput
                         value={heightValue}
+                        {...keyboard.field('height')}
                         onChangeText={(text) => setHeightValue(text.replace(/[^0-9.]/g, ''))}
                         placeholder={heightUnit === 'cm' ? 'cm' : 'm'}
                         placeholderTextColor={theme.muted}
@@ -405,12 +409,14 @@ export default function SetupScreen() {
                       <DualInput
                         label="st"
                         value={weightStones}
+                        inputProps={keyboard.field('weightStones')}
                         onChange={setWeightStones}
                         theme={theme}
                       />
                       <DualInput
                         label="lb"
                         value={weightValue}
+                        inputProps={keyboard.field('weightPounds')}
                         onChange={setWeightValue}
                         theme={theme}
                       />
@@ -419,6 +425,7 @@ export default function SetupScreen() {
                     <View style={styles.numberInputRow}>
                       <TextInput
                         value={weightValue}
+                        {...keyboard.field('weight')}
                         onChangeText={(text) => setWeightValue(text.replace(/[^0-9.]/g, ''))}
                         placeholder={weightUnit === 'kg' ? 'kg' : 'lb'}
                         placeholderTextColor={theme.muted}
@@ -651,6 +658,7 @@ export default function SetupScreen() {
                 </Pressable>
               </View>
             </ThemedView>
+          {keyboard.bottomInset > 0 ? <View style={{ height: keyboard.bottomInset }} /> : null}
           </ScrollView>
         </SafeAreaView>
       </KeyboardAvoidingView>
@@ -680,6 +688,7 @@ function NumberStep({
   value,
   onChange,
   suffix,
+  inputProps,
   theme,
 }: {
   label: string;
@@ -688,6 +697,7 @@ function NumberStep({
   value: string;
   onChange: (value: string) => void;
   suffix: string;
+  inputProps: KeyboardFieldProps;
   theme: { text: string; inputBackground: string; lineStrong: string; muted: string };
 }) {
   return (
@@ -695,6 +705,7 @@ function NumberStep({
       <StepHeading title={label} body={body} />
       <View style={styles.numberInputRow}>
         <TextInput
+          {...inputProps}
           value={value}
           onChangeText={(text) => onChange(text.replace(/[^0-9]/g, ''))}
           placeholder={placeholder}
@@ -759,16 +770,19 @@ function DualInput({
   label,
   value,
   onChange,
+  inputProps,
   theme,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  inputProps: KeyboardFieldProps;
   theme: { text: string; inputBackground: string; lineStrong: string; muted: string };
 }) {
   return (
     <View style={styles.dualInput}>
       <TextInput
+        {...inputProps}
         value={value}
         onChangeText={(text) => onChange(text.replace(/[^0-9]/g, ''))}
         placeholder="0"

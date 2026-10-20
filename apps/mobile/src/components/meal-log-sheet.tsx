@@ -18,13 +18,14 @@ import { CrispPress } from '@/components/crisp-press';
 import { ThemedText } from '@/components/themed-text';
 import { Brand } from '@/constants/app';
 import { Fonts, Spacing } from '@/constants/theme';
-import { lookupBarcode, scaleFood, defaultAmount, fetchOpenFoodFacts, parseSearchPayload, type OffFood, type ScaledFood } from '@/lib/barcode';
+import { lookupBarcode, scaleFood, defaultAmount, fetchOpenFoodFacts, parseSearchPayload, probeOpenFoodFactsAtLaunch, type OffFood, type ScaledFood } from '@/lib/barcode';
+import { MICRO_DEFS, formatMicroValue, hasAnyMicro } from '@/lib/micronutrients';
 import { labelQualityNote } from '@/lib/label-parse';
 import { scanLabel } from '@/lib/label-ocr';
 import { importRecipeUrl } from '@/lib/recipe-fetch';
 import { COFID_FOODS } from '@/lib/cofid-catalog';
 import { COFID_CREDIT, searchFoods } from '@/lib/food-search';
-import { fetchUsdaFoods, parseUsdaSearchPayload } from '@/lib/usda';
+import { useKeyboardReveal, type KeyboardField } from '@/hooks/use-keyboard-reveal';
 import { previousDayKey } from '@/lib/dates';
 import { MEAL_SLOTS, logDisplayName, type LogEntry, type MealSlot, type RecentMeal } from '@/lib/diary';
 import {
@@ -149,6 +150,9 @@ export function MealLogSheet({
   const [manualCode, setManualCode] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchHits, setSearchHits] = useState<OffFood[]>([]);
+  // "Wrong product?" alternatives for the docked food.
+  const [candidates, setCandidates] = useState<OffFood[] | null>(null);
+  const [candidatesBusy, setCandidatesBusy] = useState(false);
   const [searching, setSearching] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -172,6 +176,7 @@ export function MealLogSheet({
   const [mealName, setMealName] = useState('');
   const [quickBusy, setQuickBusy] = useState(false);
   const [quickNote, setQuickNote] = useState<string | null>(null);
+  const [showRepeatNutrients, setShowRepeatNutrients] = useState(false);
 
   const yesterdayKey = previousDayKey(dayKey);
   const slotLabel = MEAL_SLOTS.find((s) => s.value === meal)?.label ?? 'Meal';
@@ -262,6 +267,24 @@ export function MealLogSheet({
     setAmount(String(defaultAmount(food)));
     setError(null);
     setSearchHits([]);
+    setCandidates(null);
+  }
+
+  // "Wrong product?": look for other products under the same name, leaving out the
+  // barcode that was just scanned. Uses the same sources as the search box.
+  async function findAlternatives() {
+    const current = specimen;
+    if (!current) return;
+    setCandidatesBusy(true);
+    setCandidates(null);
+    try {
+      const { hits } = await queryFoods(current.name);
+      setCandidates(hits.filter((hit) => hit.barcode !== current.barcode).slice(0, 6));
+    } catch {
+      setCandidates([]);
+    } finally {
+      setCandidatesBusy(false);
+    }
   }
 
   async function resolveCode(code: string) {
@@ -409,23 +432,16 @@ export function MealLogSheet({
     setError(null);
     setSpecimen(null);
     try {
-      const { hits, packsFailed, usdaFailed } = await searchFoods(query, {
-        catalog: COFID_FOODS,
-        lookup: fetchOpenFoodFacts,
-        parseRemote: (payload) => parseSearchPayload(payload),
-        usdaLookup: fetchUsdaFoods,
-        parseUsda: parseUsdaSearchPayload,
-      });
+      const { hits, packsFailed } = await queryFoods(query);
       setSearchHits(hits);
       // Three distinct states: nothing at all, only generic CoFID, or full results.
-      // Either remote source being dark makes an empty list inconclusive, so
-      // "nothing matched" is only ever said when both were actually asked.
-      const degraded = packsFailed || usdaFailed;
-      if (!hits.length && degraded) {
-        setError('Could not reach the food databases. Your UK generics could not load — check the connection and try again.');
+      // An Open Food Facts outage makes an empty list inconclusive, so
+      // "nothing matched" is only ever said when the pack database was actually asked.
+      if (!hits.length && packsFailed) {
+        setError('Could not reach the Open Food Facts database. Check the connection and try again.');
       } else if (!hits.length) {
         setError(`Nothing matched "${query}" — try another name, or scan the pack.`);
-      } else if (degraded) {
+      } else if (packsFailed) {
         setError(`Generic foods loaded for "${query}". Branded packs didn't load — check the connection or try again for more results.`);
       }
     } catch {
@@ -547,6 +563,9 @@ export function MealLogSheet({
   const inkOnAccent = isDark ? '#0A1019' : '#FFFFFF';
   const trackBg = isDark ? '#0B121C' : '#EEF0EC';
 
+  // Keeps the focused field above the keyboard; see useKeyboardReveal.
+  const keyboard = useKeyboardReveal();
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -595,7 +614,7 @@ export function MealLogSheet({
               compact
             />
 
-            <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.sheetScrollInner} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            <ScrollView {...keyboard.scrollProps} style={styles.sheetScroll} contentContainerStyle={styles.sheetScrollInner} showsVerticalScrollIndicator={false}>
             {!editing && !specimen ? (
               <View
                 style={[
@@ -638,15 +657,35 @@ export function MealLogSheet({
                   </View>
                 ) : (
                   <Text style={[styles.quickBody, { color: mutedColor }]}>
-                    Log a meal you eat often, then save it here — porridge, a protein shake, your
-                    usual lunch. From then on it re-logs in one tap, into any day.
+                    Save a meal you eat often to re-log it in one tap.
                   </Text>
                 )}
+
+                {savedMeals.length ? (
+                  <>
+                    <CrispPress haptic="light" onPress={() => setShowRepeatNutrients((on) => !on)} innerStyle={styles.microToggle}>
+                      <Text style={[styles.microToggleText, { color: accentText }]}>
+                        {showRepeatNutrients ? 'Hide nutrients ▴' : 'Nutrients ▾'}
+                      </Text>
+                    </CrispPress>
+                    {showRepeatNutrients
+                      ? savedMeals.map((saved) => (
+                          <View key={saved.id} style={styles.nutRow}>
+                            <Text style={[styles.chipName, { color: textColor }]} numberOfLines={1}>
+                              {saved.name}
+                            </Text>
+                            <Text style={[styles.chipMeta, { color: mutedColor }]}>{formatMicroTotals(saved.items)}</Text>
+                          </View>
+                        ))
+                      : null}
+                  </>
+                ) : null}
 
                 {slotEntries.length ? (
                   <>
                     <View style={styles.quickActionRow}>
                       <TextInput
+                        {...keyboard.field('mealName')}
                         value={mealName}
                         onChangeText={setMealName}
                         placeholder="Name it, e.g. Usual breakfast"
@@ -731,6 +770,7 @@ export function MealLogSheet({
                     Type the name and numbers straight from the label — no search needed. Ideal for shakes and supplements.
                   </Text>
                   <TextInput
+                    {...keyboard.field('quickName')}
                     value={quickName}
                     onChangeText={setQuickName}
                     placeholder="Name — e.g. Protein shake"
@@ -740,6 +780,7 @@ export function MealLogSheet({
                   />
                   <View style={styles.quickGrid}>
                     <TextInput
+                      {...keyboard.field('quickKcal')}
                       value={quickKcal}
                       onChangeText={(t) => setQuickKcal(t.replace(/[^0-9.,]/g, ''))}
                       placeholder="kcal *"
@@ -749,6 +790,7 @@ export function MealLogSheet({
                       style={[styles.manualInput, styles.quickNumInput, { color: textColor, borderColor: hairline, backgroundColor: isDark ? '#0C1420' : '#F6F7F4' }]}
                     />
                     <TextInput
+                      {...keyboard.field('quickP')}
                       value={quickP}
                       onChangeText={(t) => setQuickP(t.replace(/[^0-9.,]/g, ''))}
                       placeholder="P g"
@@ -758,6 +800,7 @@ export function MealLogSheet({
                       style={[styles.manualInput, styles.quickNumInput, { color: textColor, borderColor: hairline, backgroundColor: isDark ? '#0C1420' : '#F6F7F4' }]}
                     />
                     <TextInput
+                      {...keyboard.field('quickC')}
                       value={quickC}
                       onChangeText={(t) => setQuickC(t.replace(/[^0-9.,]/g, ''))}
                       placeholder="C g"
@@ -767,6 +810,7 @@ export function MealLogSheet({
                       style={[styles.manualInput, styles.quickNumInput, { color: textColor, borderColor: hairline, backgroundColor: isDark ? '#0C1420' : '#F6F7F4' }]}
                     />
                     <TextInput
+                      {...keyboard.field('quickF')}
                       value={quickF}
                       onChangeText={(t) => setQuickF(t.replace(/[^0-9.,]/g, ''))}
                       placeholder="F g"
@@ -790,7 +834,13 @@ export function MealLogSheet({
                   onClear={() => {
                     setSpecimen(null);
                     setSearchHits([]);
+                    setCandidates(null);
                   }}
+                  candidates={candidates}
+                  candidatesBusy={candidatesBusy}
+                  onFindAlternatives={() => void findAlternatives()}
+                  onPickCandidate={dockFood}
+                  field={keyboard.field}
                 />
               ) : mode === 'search' ? (
                 <View style={styles.searchWell}>
@@ -823,7 +873,8 @@ export function MealLogSheet({
                   </Text>
                   <View style={styles.labelActions}>
                     <TextInput
-                      value={recipeUrl}
+                      {...keyboard.field('recipeUrl')}
+                    value={recipeUrl}
                       onChangeText={setRecipeUrl}
                       placeholder="recipe site link"
                       placeholderTextColor={mutedColor}
@@ -872,6 +923,7 @@ export function MealLogSheet({
             {(Platform.OS === 'web' || !permission?.granted) && mode === 'scan' && !specimen ? (
               <View style={styles.manualRow}>
                 <TextInput
+                  {...keyboard.field('manualCode')}
                   value={manualCode}
                   onChangeText={(text) => setManualCode(text.replace(/\D/g, ''))}
                   placeholder="Barcode digits"
@@ -895,6 +947,7 @@ export function MealLogSheet({
               <View style={styles.searchBlock}>
                 <View style={styles.manualRow}>
                   <TextInput
+                    {...keyboard.field('searchQuery')}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     placeholder="Food name"
@@ -927,10 +980,8 @@ export function MealLogSheet({
                           </Text>
                           <Text style={[styles.hitMeta, { color: mutedColor }]}>
                             {hit.source === 'cofid'
-                              ? 'UK CoFID · per 100 g'
-                              : hit.source === 'usda'
-                                ? 'USDA FoodData Central · per 100 g'
-                                : hit.portion === 'serving'
+                              ? 'UK CoFID 2021 · per 100 g'
+                              : hit.portion === 'serving'
                                   ? `Open Food Facts · 1 serving (${hit.portionLabel})`
                                   : 'Open Food Facts · per 100 g'}
                           </Text>
@@ -940,7 +991,7 @@ export function MealLogSheet({
                     ))}
                   </View>
                 ) : null}
-                <Text style={styles.credit}>{COFID_CREDIT} USDA FoodData Central is a U.S. government open dataset.</Text>
+                <Text style={styles.credit}>{COFID_CREDIT}</Text>
               </View>
             ) : null}
 
@@ -1009,6 +1060,8 @@ export function MealLogSheet({
             </View>
           </View>
         </KeyboardAvoidingView>
+        {/* On iOS the KeyboardAvoidingView above already lifts the panel. */}
+        {Platform.OS !== 'ios' && keyboard.bottomInset > 0 ? <View style={{ height: keyboard.bottomInset }} /> : null}
       </View>
     </Modal>
   );
@@ -1046,8 +1099,10 @@ function SlidingBand<T extends string>({
     Animated.spring(slide, { toValue: index, useNativeDriver: true, friction: 8, tension: 170 }).start();
   }, [index, slide]);
 
-  const pad = 4;
-  const inner = Math.max(0, trackW - pad * 2);
+  // The band has a 1px border and its pill sits `pad` inside that border (3 when
+  // compact, matching bandCompact). Subtract both so each pill cell lines up.
+  const pad = compact ? 3 : 4;
+  const inner = Math.max(0, trackW - 2 - pad * 2);
   const cell = values.length ? inner / values.length : 0;
 
   return (
@@ -1111,6 +1166,11 @@ function Reticle() {
   );
 }
 
+const MICRO_GROUPS = [
+  { label: 'Vitamins', defs: MICRO_DEFS.filter((def) => def.group === 'vitamin') },
+  { label: 'Minerals', defs: MICRO_DEFS.filter((def) => def.group === 'mineral') },
+];
+
 function nudgeAmount(current: string, food: OffFood, dir: 1 | -1): string {
   const step = food.portion === 'serving' ? 0.5 : 10;
   const parsed = Number(current.replace(',', '.'));
@@ -1118,6 +1178,33 @@ function nudgeAmount(current: string, food: OffFood, dir: 1 | -1): string {
   const next = Math.round((base + dir * step) * 100) / 100;
   const min = food.portion === 'serving' ? 0.5 : 1;
   return String(Math.max(min, next));
+}
+
+// One search path for the search box and the "Wrong product?" candidates, so both
+// see the same sources and report the same failures. Open Food Facts is only asked
+// when the launch probe reached it; offline at launch means CoFID only until relaunch.
+async function queryFoods(query: string) {
+  const offOnline = await probeOpenFoodFactsAtLaunch();
+  return searchFoods(query, {
+    catalog: COFID_FOODS,
+    lookup: offOnline ? fetchOpenFoodFacts : undefined,
+    parseRemote: (payload) => parseSearchPayload(payload),
+  });
+}
+
+/** Summed micronutrients for a saved meal. A total is shown as "—" when no item carries it. */
+function formatMicroTotals(items: SavedMealItem[]): string {
+  const total = (pick: (item: SavedMealItem) => number | null, unit: string, label: string) => {
+    const values = items.map(pick).filter((v): v is number => v != null);
+    const sum = values.length ? Math.round(values.reduce((a, b) => a + b, 0) * 10) / 10 : null;
+    return `${label} ${sum == null ? '—' : `${sum}${unit}`}`;
+  };
+  return [
+    total((item) => item.fiberG, 'g', 'Fibre'),
+    total((item) => item.sugarG, 'g', 'Sugars'),
+    total((item) => item.satFatG, 'g', 'Sat fat'),
+    total((item) => item.sodiumMg, 'mg', 'Sodium'),
+  ].join(' · ');
 }
 
 function SpecimenDock({
@@ -1128,6 +1215,11 @@ function SpecimenDock({
   accentText,
   mutedColor,
   onClear,
+  candidates,
+  candidatesBusy,
+  onFindAlternatives,
+  onPickCandidate,
+  field,
 }: {
   food: OffFood;
   scaled: ScaledFood | null;
@@ -1136,12 +1228,27 @@ function SpecimenDock({
   accentText: string;
   mutedColor: string;
   onClear: () => void;
+  candidates: OffFood[] | null;
+  candidatesBusy: boolean;
+  onFindAlternatives: () => void;
+  onPickCandidate: (food: OffFood) => void;
+  field: KeyboardField;
 }) {
   const macros = [
-    { k: 'P', v: scaled?.proteinG },
-    { k: 'C', v: scaled?.carbsG },
-    { k: 'F', v: scaled?.fatG },
+    { k: 'P', v: scaled?.proteinG, unit: 'g' },
+    { k: 'C', v: scaled?.carbsG, unit: 'g' },
+    { k: 'F', v: scaled?.fatG, unit: 'g' },
   ];
+  // Fibre, sugars, saturates and sodium: the extras every source carries.
+  const extras = [
+    { k: 'Fibre', v: scaled?.fiberG, unit: 'g' },
+    { k: 'Sugars', v: scaled?.sugarG, unit: 'g' },
+    { k: 'Sat fat', v: scaled?.satFatG, unit: 'g' },
+    { k: 'Sodium', v: scaled?.sodiumMg, unit: 'mg' },
+  ];
+  const hasExtras = extras.some((m) => m.v != null);
+  // Vitamins and minerals get their own section, filled from CoFID or Open Food Facts.
+  const hasVitaminsOrMinerals = hasAnyMicro(scaled?.micros);
   // Recents / edit rows dock already-scaled totals as one serving — don't re-multiply.
   const amountLocked = food.portionLabel === 'logged' || food.portionLabel === 'recent';
   return (
@@ -1150,38 +1257,111 @@ function SpecimenDock({
       <Text style={styles.dockName} numberOfLines={2}>
         {food.name}
       </Text>
-      <Text style={[styles.dockKcal, { color: accentText }]}>{scaled ? scaled.kcal.toLocaleString() : '—'}</Text>
-      <Text style={styles.dockUnit}>kcal</Text>
-      {amountLocked ? (
-        <Text style={[styles.amountHint, { color: mutedColor }]}>Logged amount</Text>
-      ) : (
-        <>
-          <View style={styles.amountRow}>
-            <CrispPress haptic="select" onPress={() => onAmount(nudgeAmount(amount, food, -1))} innerStyle={styles.amountStep}>
-              <Text style={[styles.amountStepText, { color: accentText }]}>−</Text>
-            </CrispPress>
-            <TextInput
-              value={amount}
-              onChangeText={(text) => onAmount(text.replace(/[^0-9.,]/g, ''))}
-              keyboardType="decimal-pad"
-              selectTextOnFocus
-              style={[styles.amountInput, { color: '#EEF2F5', borderColor: 'rgba(255,255,255,0.14)' }]}
-            />
-            <CrispPress haptic="select" onPress={() => onAmount(nudgeAmount(amount, food, 1))} innerStyle={styles.amountStep}>
-              <Text style={[styles.amountStepText, { color: accentText }]}>+</Text>
-            </CrispPress>
+      <View style={styles.dockTop}>
+        <View style={styles.dockKcalCol}>
+          <Text style={[styles.dockKcal, { color: accentText }]}>{scaled ? scaled.kcal.toLocaleString() : '—'}</Text>
+          <Text style={styles.dockUnit}>kcal</Text>
+        </View>
+        {amountLocked ? (
+          <View style={styles.dockAmountCol}>
+            <Text style={[styles.amountHint, { color: mutedColor }]}>Logged amount</Text>
           </View>
-          <Text style={[styles.amountHint, { color: mutedColor }]}>{food.portion === 'serving' ? 'servings' : 'grams'}</Text>
-        </>
-      )}
+        ) : (
+          <View style={styles.dockAmountCol}>
+            <View style={styles.amountRow}>
+              <CrispPress haptic="select" onPress={() => onAmount(nudgeAmount(amount, food, -1))} innerStyle={styles.amountStep}>
+                <Text style={[styles.amountStepText, { color: accentText }]}>−</Text>
+              </CrispPress>
+              <TextInput
+                {...field('amount')}
+                value={amount}
+                onChangeText={(text) => onAmount(text.replace(/[^0-9.,]/g, ''))}
+                keyboardType="decimal-pad"
+                selectTextOnFocus
+                style={[styles.amountInput, { color: '#EEF2F5', borderColor: 'rgba(255,255,255,0.14)' }]}
+              />
+              <CrispPress haptic="select" onPress={() => onAmount(nudgeAmount(amount, food, 1))} innerStyle={styles.amountStep}>
+                <Text style={[styles.amountStepText, { color: accentText }]}>+</Text>
+              </CrispPress>
+            </View>
+            <Text style={[styles.amountHint, { color: mutedColor }]}>{food.portion === 'serving' ? 'servings' : 'grams'}</Text>
+          </View>
+        )}
+      </View>
       <View style={styles.dockMetrics}>
         {macros.map((m, i) => (
           <View key={m.k} style={[styles.dockMetric, i === macros.length - 1 && styles.dockMetricLast]}>
             <Text style={styles.dockMetricK}>{m.k}</Text>
-            <Text style={styles.dockMetricV}>{m.v ?? '—'}</Text>
+            <Text style={styles.dockMetricV}>{m.v != null ? `${m.v}${m.unit}` : '—'}</Text>
           </View>
         ))}
       </View>
+      <Text style={[styles.microLabel, { color: mutedColor }]}>OTHER NUTRIENTS</Text>
+      {hasExtras ? (
+        <View style={styles.dockMetrics}>
+          {extras.map((m, i) => (
+            <View key={m.k} style={[styles.dockMetric, i === extras.length - 1 && styles.dockMetricLast]}>
+              <Text style={styles.dockMetricK} numberOfLines={1}>
+                {m.k}
+              </Text>
+              <Text style={styles.dockMetricV}>{m.v != null ? `${m.v}${m.unit}` : '—'}</Text>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <Text style={[styles.emptyNote, { color: mutedColor }]}>No fibre, sugar or sodium data for this food</Text>
+      )}
+      <Text style={[styles.microLabel, { color: mutedColor }]}>VITAMINS & MINERALS</Text>
+      {hasVitaminsOrMinerals ? (
+        MICRO_GROUPS.map((group) => (
+          <View key={group.label} style={styles.microGroup}>
+            <Text style={[styles.microGroupLabel, { color: mutedColor }]}>{group.label}</Text>
+            <View style={styles.microGrid}>
+              {group.defs.map((def, i) => (
+                <View key={def.key} style={[styles.microCell, (i + 1) % 4 === 0 && styles.microCellLastInRow]}>
+                  <Text style={styles.microCellK} numberOfLines={2}>
+                    {def.label}
+                  </Text>
+                  <Text style={styles.microCellV} numberOfLines={1}>
+                    {formatMicroValue(scaled?.micros?.[def.key], def.unit)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ))
+      ) : (
+        <Text style={[styles.emptyNote, { color: mutedColor }]}>No vitamin or mineral data for this food</Text>
+      )}
+      {!amountLocked && food.source === 'off' ? (
+        <View style={styles.candidateBlock}>
+          <CrispPress haptic="light" onPress={onFindAlternatives} innerStyle={styles.microToggle}>
+            <Text style={[styles.microToggleText, { color: accentText }]}>Wrong product?</Text>
+          </CrispPress>
+          {candidatesBusy ? <Text style={[styles.amountHint, { color: mutedColor }]}>Finding similar products…</Text> : null}
+          {candidates && !candidatesBusy ? (
+            candidates.length ? (
+              candidates.map((c, i) => (
+                <CrispPress
+                  key={`${c.source}-${c.barcode}-${i}`}
+                  haptic="select"
+                  onPress={() => onPickCandidate(c)}
+                  innerStyle={styles.candidateRow}
+                >
+                  <Text style={styles.candidateName} numberOfLines={1}>
+                    {c.name}
+                  </Text>
+                  <Text style={[styles.chipMeta, { color: mutedColor }]}>
+                    {c.source === 'cofid' ? 'UK generic' : 'Packaged'}
+                  </Text>
+                </CrispPress>
+              ))
+            ) : (
+              <Text style={[styles.emptyNote, { color: mutedColor }]}>No other products matched this name.</Text>
+            )
+          ) : null}
+        </View>
+      ) : null}
       <CrispPress onPress={onClear} innerStyle={styles.rescan}>
         <Text style={styles.rescanText}>Change food</Text>
       </CrispPress>
@@ -1212,11 +1392,11 @@ const styles = StyleSheet.create({
   copyTitle: { fontSize: 13, fontWeight: '800' },
   copyMeta: { fontSize: 11, lineHeight: 15 },
   quickNote: { fontSize: 12, fontWeight: '600', lineHeight: 16 },
-  overlay: { flex: 1, backgroundColor: 'rgba(2,8,16,0.84)', justifyContent: 'flex-end', paddingHorizontal: 14, paddingTop: Spacing.four },
-  keyboard: { width: '100%', maxWidth: 420, alignSelf: 'center' },
-  panel: { borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, padding: 14, paddingBottom: 18, gap: 12, maxHeight: '94%' },
+  overlay: { flex: 1, backgroundColor: 'rgba(2,8,16,0.84)', justifyContent: 'center', paddingHorizontal: 14, paddingVertical: Spacing.four },
+  keyboard: { flex: 1, width: '100%', maxWidth: 420, alignSelf: 'center', justifyContent: 'center' },
+  panel: { borderRadius: 24, borderWidth: 1, padding: 12, paddingBottom: 14, gap: 10, maxHeight: '100%' },
   sheetScroll: { flexGrow: 0, flexShrink: 1 },
-  sheetScrollInner: { gap: 12, paddingBottom: 4 },
+  sheetScrollInner: { gap: 10, paddingBottom: 8 },
   panelHead: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   kicker: { fontSize: 11, letterSpacing: 1.6 },
   dayStamp: { marginTop: 2, fontSize: 12 },
@@ -1238,18 +1418,18 @@ const styles = StyleSheet.create({
   },
   bandPillCompact: { top: 3, left: 3, bottom: 3, borderRadius: 9, shadowOpacity: 0.08 },
   bandCellWrap: { flex: 1, zIndex: 1 },
-  bandCell: { minHeight: 40, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 2 },
-  bandCellCompact: { minHeight: 36 },
+  bandCell: { paddingVertical: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 2 },
+  bandCellCompact: { paddingVertical: 8 },
   bandLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.15 },
   bandLabelCompact: { fontSize: 12, fontWeight: '700', letterSpacing: 0.1 },
   well: { backgroundColor: WELL, borderRadius: 16, borderWidth: 1, overflow: 'hidden', paddingBottom: 10 },
   wellHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 10, paddingBottom: 6 },
   wellDot: { width: 5, height: 5, borderRadius: 5, backgroundColor: Brand.lime, opacity: 0.85 },
   wellKicker: { color: 'rgba(183,233,60,0.78)', letterSpacing: 2, fontSize: 10, fontWeight: '800' },
-  finder: { height: 196, marginHorizontal: 10, borderRadius: 10, overflow: 'hidden' },
+  finder: { height: 120, marginHorizontal: 10, borderRadius: 10, overflow: 'hidden' },
   reticleWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  finderEmpty: { height: 196, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 18 },
-  reticleBox: { width: 148, height: 148 },
+  finderEmpty: { height: 120, alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 18 },
+  reticleBox: { width: 84, height: 84 },
   finderHint: { textAlign: 'center', color: 'rgba(167,178,188,0.88)', fontSize: 13, lineHeight: 18 },
   searchWell: { minHeight: 120, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18, paddingVertical: 16 },
   labelWell: { minHeight: 120, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 18, paddingVertical: 16 },
@@ -1263,15 +1443,18 @@ const styles = StyleSheet.create({
   labelBtnText: { fontSize: 13, fontWeight: '800' },
   allowBtn: { minHeight: 44, paddingHorizontal: 18, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   allowText: { fontWeight: '800', fontSize: 14 },
-  dock: { minHeight: 236, alignItems: 'center', justifyContent: 'center', gap: 2, paddingHorizontal: 16, paddingBottom: 4 },
+  dock: { alignItems: 'center', gap: 2, paddingHorizontal: 12, paddingBottom: 4 },
+  dockTop: { flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', justifyContent: 'space-between', gap: 12, marginTop: 6 },
+  dockKcalCol: { alignItems: 'flex-start', minWidth: 96 },
+  dockAmountCol: { flex: 1, minWidth: 0, alignItems: 'flex-end' },
   dockPortion: { letterSpacing: 1.6, textTransform: 'uppercase', color: 'rgba(167,178,188,0.8)', fontSize: 10, fontWeight: '700' },
   dockName: { fontSize: 17, fontWeight: '800', textAlign: 'center', fontFamily: Fonts.rounded, color: '#EEF2F5', marginTop: 4 },
-  dockKcal: { fontSize: 40, fontWeight: '800', letterSpacing: -1.2, fontFamily: Fonts.rounded, marginTop: 2 },
+  dockKcal: { fontSize: 34, fontWeight: '800', letterSpacing: -1, fontFamily: Fonts.rounded, marginTop: 0 },
   dockUnit: { color: 'rgba(167,178,188,0.85)', fontSize: 11, letterSpacing: 1.2, fontWeight: '700', marginTop: -2 },
-  amountRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+  amountRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   amountStep: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: 'rgba(183,233,60,0.35)',
@@ -1280,8 +1463,8 @@ const styles = StyleSheet.create({
   },
   amountStepText: { fontSize: 20, fontWeight: '800', lineHeight: 22 },
   amountInput: {
-    minWidth: 72,
-    minHeight: 40,
+    width: 64,
+    minHeight: 36,
     borderRadius: 10,
     borderWidth: 1,
     textAlign: 'center',
@@ -1291,9 +1474,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   amountHint: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginTop: 2 },
-  dockMetrics: { flexDirection: 'row', marginTop: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 10, overflow: 'hidden' },
-  dockMetric: { width: 64, paddingVertical: 8, alignItems: 'center', borderRightWidth: 1, borderRightColor: 'rgba(255,255,255,0.1)' },
+  dockMetrics: { flexDirection: 'row', alignSelf: 'stretch', marginTop: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 10, overflow: 'hidden' },
+  dockMetric: { flex: 1, paddingVertical: 7, paddingHorizontal: 4, alignItems: 'center', borderRightWidth: 1, borderRightColor: 'rgba(255,255,255,0.1)' },
+  microToggle: { alignSelf: 'center', paddingVertical: 6, paddingHorizontal: 12, marginTop: 2 },
+  microToggleText: { fontSize: 12, fontWeight: '800', letterSpacing: 0.4 },
+  microLabel: { alignSelf: 'center', fontSize: 10, fontWeight: '800', letterSpacing: 0.8, marginTop: 10 },
+  emptyNote: { alignSelf: 'center', fontSize: 13, fontWeight: '500', lineHeight: 18, textAlign: 'center', marginTop: 6, marginBottom: 2 },
+  candidateBlock: { alignItems: 'stretch', gap: 6, marginTop: 4 },
+  candidateRow: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 11, paddingVertical: 8, paddingHorizontal: 10, gap: 2 },
+  candidateName: { fontSize: 13, fontWeight: '700', color: '#EEF2F5' },
+  nutRow: { gap: 2, paddingVertical: 4 },
   dockMetricLast: { borderRightWidth: 0 },
+  microGroup: { alignSelf: 'stretch', marginTop: 2 },
+  microGroupLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 0.8, marginTop: 6, marginLeft: 2 },
+  microGrid: { flexDirection: 'row', flexWrap: 'wrap', alignSelf: 'stretch', marginTop: 4, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 10, overflow: 'hidden' },
+  microCell: { width: '25%', paddingVertical: 6, paddingHorizontal: 4, alignItems: 'center', borderRightWidth: 1, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  microCellLastInRow: { borderRightWidth: 0 },
+  microCellK: { color: 'rgba(167,178,188,0.8)', fontSize: 9, fontWeight: '800', letterSpacing: 0.4, textAlign: 'center' },
+  microCellV: { color: '#EEF2F5', fontSize: 13, fontWeight: '800', fontFamily: Fonts.rounded, marginTop: 1 },
   dockMetricK: { color: 'rgba(167,178,188,0.8)', fontSize: 10, fontWeight: '800', letterSpacing: 0.8 },
   dockMetricV: { color: '#EEF2F5', fontSize: 15, fontWeight: '800', fontFamily: Fonts.rounded, marginTop: 1 },
   rescan: { paddingVertical: 8, paddingHorizontal: 12, marginTop: 6 },
@@ -1318,9 +1516,9 @@ const styles = StyleSheet.create({
   error: { color: Brand.danger, fontSize: 13, fontWeight: '600' },
   credit: { color: 'rgba(120,132,144,0.95)', fontSize: 11, lineHeight: 15, fontWeight: '500' },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth },
-  ghostBtn: { borderWidth: 1, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 16, minHeight: 50, alignItems: 'center', justifyContent: 'center' },
+  ghostBtn: { borderWidth: 1, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
   lockWrap: { flex: 1 },
-  lockBtn: { minHeight: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  lockBtn: { paddingVertical: 14, borderRadius: 14, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   lockSheen: { position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: 'rgba(255,255,255,0.45)' },
   lockText: { fontSize: 15, fontWeight: '800', letterSpacing: 0.4 },
   deleteText: { color: Brand.danger, fontSize: 13, fontWeight: '800' },

@@ -1275,8 +1275,10 @@ function MedalCard({ kit }: { kit: Kit }) {
   const achievement: ShareAchievement = data.achievement ?? { title: 'Your week', subtitle: '', tone: 'gold' };
   const status: ShareStatus = data.status ?? { label: 'Measured', tone: 'muted' };
   const best: ShareDataRow = data.best ?? { label: 'best run', value: '—' };
-  // The chrome owns the top area, so the header band's height is folded in.
-  const bareH = lay.mainH + lay.headerH + lay.gap;
+  // The chrome owns the top area, so the header band's height is folded in. The
+  // stacked card has no footer band (its QR sits in the identity strip), so the
+  // footer's height is folded in too — otherwise the bottom of the card is empty.
+  const bareH = lay.mainH + lay.headerH + lay.gap + (lay.footerH > 0 ? lay.footerH + lay.gap : 0);
 
   const decor = (
     <Decor cardId={`medal-${lay.baseWidth}x${lay.baseHeight}`}>
@@ -1306,7 +1308,7 @@ function MedalCard({ kit }: { kit: Kit }) {
       monogramSize={monogram}
       monogramLetter="C"
       name="calibrEAT"
-      detail="measured on device"
+      detail="on device"
       statLabel={stripStat.label}
       statValue={stripStat.value}
       qr={<QrCode size={qrSize} dark="#05080C" light="#FFFFFF" captionColor={palette.muted} />}
@@ -1369,8 +1371,10 @@ function MedalCard({ kit }: { kit: Kit }) {
     );
   }
 
-  const [chromeH, medalBlockH, metricH, stripH] = splitBudget(bareH, [11, 41, 18, 20]);
-  const barH = Math.max(16, Math.min(Math.round(chromeH * 0.62), Math.round(lay.baseWidth * 0.08)));
+  // Four stacked children need three gaps; budget the heights around them so the column fits its box.
+  const stackGap = Math.max(4, lay.gap * 0.6);
+  const [chromeH, medalBlockH, metricH, stripH] = splitBudget(bareH - 3 * stackGap, [11, 41, 18, 20]);
+  const barH = Math.min(chromeH, Math.max(16, Math.min(Math.round(chromeH * 0.62), Math.round(lay.baseWidth * 0.08))));
   const eyebrowSize = Math.max(7, Math.min(Math.round(chromeH * 0.26), lay.kicker + 1));
   const strapH = Math.round(medalBlockH * 0.24);
   const medalSize = Math.max(40, Math.min(medalBlockH - strapH, lay.mainW * 0.6));
@@ -1386,20 +1390,19 @@ function MedalCard({ kit }: { kit: Kit }) {
   return (
     <>
       {decor}
-      <Frame
-        lay={lay}
-        bare
-        main={
-          <View style={{ gap: Math.max(4, lay.gap * 0.6) }}>
-            <CardChrome
-              palette={palette}
-              eyebrow={data.eyebrow ?? 'Your week'}
-              height={barH}
-              markSize={Math.round(barH * 0.5)}
-              wordSize={Math.max(10, Math.round(barH * 0.46))}
-              eyebrowSize={eyebrowSize}
-              right={<EqualiserGlyph size={Math.round(barH * 0.5)} color={palette.accent} />}
-            />
+      <View style={{ height: bareH, overflow: 'hidden' }}>
+        <View style={{ height: bareH, gap: stackGap }}>
+            <View style={{ height: chromeH, justifyContent: 'center' }}>
+              <CardChrome
+                palette={palette}
+                eyebrow={data.eyebrow ?? 'Your week'}
+                height={barH}
+                markSize={Math.round(barH * 0.5)}
+                wordSize={Math.max(10, Math.round(barH * 0.46))}
+                eyebrowSize={eyebrowSize}
+                right={<EqualiserGlyph size={Math.round(barH * 0.5)} color={palette.accent} />}
+              />
+            </View>
             <View style={{ height: medalBlockH, alignItems: 'center', justifyContent: 'center' }}>
               <MedalAssembly
                 medalSize={medalSize}
@@ -1441,9 +1444,8 @@ function MedalCard({ kit }: { kit: Kit }) {
               </View>
             </View>
             <View style={{ height: stripH, justifyContent: 'flex-end' }}>{strip(monogram, qrSize)}</View>
-          </View>
-        }
-      />
+        </View>
+      </View>
     </>
   );
 }

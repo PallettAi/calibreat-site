@@ -12,12 +12,3 @@ export const SUPPLEMENT_OPTIONS = [
 ] as const;
 
 export type SupplementId = (typeof SUPPLEMENT_OPTIONS)[number]['id'];
-
-/** Normalise supplements selection: empty or ['none'] -> [] stored, deduped. */
-export function normaliseSupplements(ids: string[]): SupplementId[] {
-  const cleaned = ids.filter((id): id is SupplementId =>
-    SUPPLEMENT_OPTIONS.some((o) => o.id === id),
-  );
-  if (cleaned.includes('none') || cleaned.length === 0) return [];
-  return [...new Set(cleaned)];
-}

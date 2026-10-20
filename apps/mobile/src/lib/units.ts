@@ -167,3 +167,8 @@ export function waterToMl(value: number, unit: WaterUnit): number {
 export function formatWaterMl(ml: number, unit: WaterUnit): string {
   return unit === 'cups' ? `${Math.round((ml / CUP_ML) * 10) / 10} cups` : `${ml.toLocaleString()} ml`;
 }
+
+/** Daily water goal from body weight: ~35 ml/kg, clamped to 1500–4500 ml. */
+export function waterGoalMl(latestKg: number): number {
+  return Math.min(4500, Math.max(1500, Math.round(latestKg * 35)));
+}

@@ -1,10 +1,8 @@
 import { Redirect, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   Animated,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,8 +16,8 @@ import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop } from 'react-nativ
 import { BrandMark } from '@/components/brand-mark';
 import { CrispPress } from '@/components/crisp-press';
 import { EatTrainSwitch } from '@/components/eat-train-switch';
-import { HeaderGlyphButton, StreakFireMark, WaterDropMark } from '@/components/header-glyphs';
-import { LicenseSheet } from '@/components/license-sheet';
+import { HeaderGlyphButton, HeaderMenuButton, StreakFireMark, WaterDropMark } from '@/components/header-glyphs';
+import { AppTour } from '@/components/app-tour';
 import { MealLogSheet } from '@/components/meal-log-sheet';
 import { StreakSheet, WeekPips, type ShareSelection } from '@/components/streak-sheet';
 import { ThemedText } from '@/components/themed-text';
@@ -28,6 +26,7 @@ import { WaterSheet } from '@/components/water-sheet';
 import { Brand } from '@/constants/app';
 import { Fonts, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useKeyboardReveal } from '@/hooks/use-keyboard-reveal';
 import { useTheme } from '@/hooks/use-theme';
 import {
   addLogEntry,
@@ -44,6 +43,7 @@ import {
   getWaterForDay,
   getWeighIns,
   getWorkoutKcalForDay,
+  saveProfile,
   saveUnitPrefs,
   setWaterForDay,
   updateLogEntry,
@@ -53,26 +53,29 @@ import {
   type Profile,
   type RecentMeal,
 } from '@/lib/db';
-import { groupLogsByMeal, logDisplayName, MEAL_SLOTS, sumDayMacros } from '@/lib/diary';
+import { formatMacroSummary, groupLogsByMeal, logDisplayName, MEAL_SLOTS, sumDayMacros } from '@/lib/diary';
 import { buildShareCard, shareDateLabel } from '@/lib/share-card';
 import { buildDailyCard, recapDayKey, type DailyCard } from '@/lib/share-daily';
 import { loadRecapOfferedDayKey, saveRecapOfferedDayKey } from '@/lib/daily-recap-store';
+import { loadTourSeen, saveTourSeen } from '@/lib/tour-store';
 import { shareCardImage } from '@/lib/share-card-capture';
 import { DEFAULT_SHARE_FORMAT, DEFAULT_SHARE_TEMPLATE, type ShareFormatId } from '@/lib/share-templates';
 import { ShareCardPreview, ShareCardStage, type ShareCardProps } from '@/components/share-card';
 import { DailyShareCardStage } from '@/components/daily-share-card';
 import { DailyRecapSheet } from '@/components/daily-recap-sheet';
 import { hapticLight, hapticSelect } from '@/lib/haptics';
-import { adaptiveHistory, adaptiveTdee, calorieBudget, caloriesRemaining, detectPlateau } from '@/lib/nutrition';
+import { adaptiveHistory, adaptiveTdee, detectPlateau, recheckTargets } from '@/lib/nutrition';
+import { activityCopy, computeDayBudget, weekCopy } from '@/lib/day-budget';
+import { readDayActivity, type DayActivity } from '@/lib/health-connect';
+import { buildWidgetSnapshot } from '@/lib/widget-snapshot';
+import { saveWidgetSnapshot } from '@/lib/widget-snapshot-store';
 import { burnTrend, loggingCoverage } from '@/lib/trends';
 import { getCalorieOverride, getTrueBurnState, saveTrueBurnState, setCalorieOverride, shouldShowAdoptPrompt, type TrueBurnState } from '@/lib/trueburn';
-import { useLicense } from '@/lib/license-context';
-import { getVerifiedEmail } from '@/lib/license';
 import { claimStreak, emptyStreak, expireStreak, STREAK_CLAIM_MS, streakNeedsClaim, weekPips, type StreakState } from '@/lib/streak';
 import { loadStreak, saveStreak } from '@/lib/streak-store';
-import { emptyFastState, fastElapsedMs, formatElapsed, isFasting, nextFastMilestone, startFast, stopFast, type FastState } from '@/lib/fasting';
+import { emptyFastState, fastElapsedMs, fastProgress, formatElapsed, isFasting, nextFastMilestone, startFast, stopFast, type FastState } from '@/lib/fasting';
 import { loadFastState, saveFastState } from '@/lib/fasting-store';
-import { CUP_ML, formatWeightKg, normalizeDecimalNumber, parseWeightInput, waterToMl, type WaterUnit, type WeightUnit } from '@/lib/units';
+import { CUP_ML, formatWeightKg, normalizeDecimalNumber, parseWeightInput, waterGoalMl, waterToMl, type WaterUnit, type WeightUnit } from '@/lib/units';
 
 function formatISO(date: Date): string {
   const y = date.getFullYear();
@@ -93,10 +96,10 @@ function startOfMonth(d: Date): Date {
 }
 
 export default function HomeScreen() {
-  const { license, deactivate } = useLicense();
+  const keyboard = useKeyboardReveal();
   const router = useRouter();
   const scheme = useColorScheme();
-  const params = useLocalSearchParams<{ first?: string }>();
+  const params = useLocalSearchParams<{ first?: string; sheet?: string; tour?: string }>();
   const isDark = scheme === 'dark';
   const theme = useTheme();
 
@@ -117,27 +120,33 @@ export default function HomeScreen() {
   });
   const [showPicker, setShowPicker] = useState(false);
   const [pickerMonth, setPickerMonth] = useState(() => startOfMonth(new Date()));
-  const [showMenu, setShowMenu] = useState(false);
-  const [showLicense, setShowLicense] = useState(false);
-  const [showWater, setShowWater] = useState(false);
-  const [showStreak, setShowStreak] = useState(false);
-  const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
+  // Train's header buttons route here with ?sheet=water|streak|menu. Each push mounts a
+  // fresh Home, so the sheet opens from the initial state rather than an effect.
+  const [showMenu, setShowMenu] = useState(() => params?.sheet === 'menu');
+  const [showWater, setShowWater] = useState(() => params?.sheet === 'water');
+  const [showStreak, setShowStreak] = useState(() => params?.sheet === 'streak');
+  // The startup tour: due once after first-run setup unless already seen; replayed
+  // from Settings with ?tour=1.
+  const [tourDue, setTourDue] = useState(false);
+  const [tourReplay, setTourReplay] = useState(() => params?.tour === '1');
   const [streak, setStreak] = useState<StreakState>(emptyStreak);
   const [editWaterValue, setEditWaterValue] = useState('');
   const [savingWaterEdit, setSavingWaterEdit] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [recents, setRecents] = useState<RecentMeal[]>([]);
-  const [showLogSheet, setShowLogSheet] = useState(false);
+  const [showLogSheet, setShowLogSheet] = useState(() => params?.first === '1');
   const [editingLog, setEditingLog] = useState<LogEntry | null>(null);
-  const [firstScanOpen, setFirstScanOpen] = useState(false);
+  const [firstScanOpen] = useState(() => params?.first === '1');
   const [weighInInput, setWeighInInput] = useState('');
   const [addingWeighIn, setAddingWeighIn] = useState(false);
+  const [recalibratingGoals, setRecalibratingGoals] = useState(false);
   const [weighIns, setWeighIns] = useState<{ kg: number; measuredAt: string }[]>([]);
   // The very first weigh-in ever, which the 60-row window cannot report once a
   // user passes 60 entries. "Since the first" has to mean the first.
   const [firstWeighInKg, setFirstWeighInKg] = useState<number | null>(null);
   const [intakeHistory, setIntakeHistory] = useState<{ dayKey: string; kcal: number }[]>([]);
   const [workoutKcal, setWorkoutKcal] = useState(0);
+  const [hcDay, setHcDay] = useState<DayActivity | null>(null);
   const [trueBurnPersist, setTrueBurnPersist] = useState<TrueBurnState>({});
   const [overrideKcal, setOverrideKcal] = useState<number | null>(null);
   const [trueBurnActionBusy, setTrueBurnActionBusy] = useState(false);
@@ -161,30 +170,31 @@ export default function HomeScreen() {
 
   // First-session onboarding: setup finishes with ?first=1 and this screen
   // answers by opening the meal sheet straight onto the barcode viewfinder.
-  // Consumed once; the flag is cleared the moment the sheet closes so a later
-  // sheet open never re-triggers it.
+  // Clear the URL param once consumed so a reload does not re-open it.
   useEffect(() => {
-    const first = params?.first === '1';
-    if (first && !firstScanOpen) {
-      setFirstScanOpen(true);
-      setEditingLog(null);
-      setShowLogSheet(true);
+    if (params?.first === '1') {
       router.setParams({ first: undefined });
     }
-  }, [params?.first, firstScanOpen, router]);
+  }, [params?.first, router]);
+
+  // Clear the Train sheet param once consumed so returning to Home does not re-open it.
+  useEffect(() => {
+    if (params?.sheet) {
+      router.setParams({ sheet: undefined });
+    }
+  }, [params?.sheet, router]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [p, g, prefs, tb, ov, st, email, fs] = await Promise.all([
+        const [p, g, prefs, tb, ov, st, fs] = await Promise.all([
           getProfile(),
           getGoals(),
           getUnitPrefs(),
           getTrueBurnState(),
           getCalorieOverride(),
           loadStreak(),
-          getVerifiedEmail(),
           loadFastState(),
         ]);
         if (cancelled) return;
@@ -204,7 +214,6 @@ export default function HomeScreen() {
         setTrueBurnPersist(tb);
         setOverrideKcal(ov);
         setStreak(nextStreak);
-        setVerifiedEmail(email);
         setFast(fs);
         setLoadError(null);
       } catch {
@@ -218,6 +227,18 @@ export default function HomeScreen() {
     };
   }, [bootTick]);
 
+  // First-run tour: due once, until the user finishes or skips it.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const seen = await loadTourSeen();
+      if (!cancelled && !seen) setTourDue(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
@@ -229,7 +250,8 @@ export default function HomeScreen() {
         getFirstWeighIn(),
         getIntakeHistory(60),
         getWorkoutKcalForDay(selectedKey),
-      ]).then(([w, dayLogs, recentMeals, wi, first, ih, burn]) => {
+        readDayActivity(selectedKey),
+      ]).then(([w, dayLogs, recentMeals, wi, first, ih, burn, hc]) => {
         if (cancelled) return;
         setWaterMl(w);
         setLogs(dayLogs);
@@ -238,17 +260,13 @@ export default function HomeScreen() {
         setFirstWeighInKg(first?.kg ?? null);
         setIntakeHistory(ih);
         setWorkoutKcal(burn);
+        setHcDay(hc);
       });
       return () => {
         cancelled = true;
       };
     }, [selectedKey]),
   );
-
-  // keep picker month in sync when opening
-  useEffect(() => {
-    if (showPicker) setPickerMonth(startOfMonth(selectedDate));
-  }, [showPicker, selectedDate]);
 
   // ── The daily recap moment ──────────────────────────────────────────
   // Once per day, after load settles, offer yesterday's card: the day is
@@ -307,30 +325,69 @@ export default function HomeScreen() {
     const ms = active ? 1000 : 60_000;
     const id = setInterval(() => setNow(Date.now()), ms);
     return () => clearInterval(id);
-  }, [fast.startedAt]);
+  }, [fast]);
 
+  // Derive live streak state at render time so an expired window shows 0
+  // immediately without triggering a cascading setState inside an effect.
+  const activeStreak = expireStreak(streak, now);
   useEffect(() => {
-    const next = expireStreak(streak, now);
-    if (next.current === streak.current) return;
-    setStreak(next);
-    void saveStreak(next);
-  }, [now, streak]);
+    if (activeStreak.current === streak.current) return;
+    void saveStreak(activeStreak);
+  }, [activeStreak, streak]);
 
   // Wake exactly when the flame state flips: the claim window opening, or a
   // missed window zeroing the run. Re-armed every time the streak or the tick
   // changes; cleared on unmount and after a claim.
   useEffect(() => {
-    const last = streak.lastClaimedAt ? Date.parse(streak.lastClaimedAt) : null;
+    const last = activeStreak.lastClaimedAt ? Date.parse(activeStreak.lastClaimedAt) : null;
     if (last == null || !Number.isFinite(last)) return;
-    const flipAt = streakNeedsClaim(streak, now) ? last + STREAK_CLAIM_MS : last + STREAK_CLAIM_MS * 2;
+    const flipAt = streakNeedsClaim(activeStreak, now) ? last + STREAK_CLAIM_MS : last + STREAK_CLAIM_MS * 2;
     const wait = flipAt - now;
     if (wait <= 0) return;
     const id = setTimeout(() => setNow(Date.now()), wait);
     return () => clearTimeout(id);
-  }, [now, streak]);
+  }, [now, activeStreak]);
 
   // ── All hooks are above; only conditional rendering below. ──
-  if (!license) return <Redirect href="/" />;
+  // Widget snapshot for today. Above the early returns so hook order never changes.
+  // The fasting clock only refreshes when another input changes, which is acceptable
+  // for v1 (spec §4.1: a stale snapshot until the next open is fine).
+  useEffect(() => {
+    if (!loaded || profile === null || !goals) return;
+    const today = formatISO(new Date());
+    const onToday = selectedKey === today;
+    const foodByDay: Record<string, number> = Object.fromEntries(intakeHistory.map((d) => [d.dayKey, d.kcal]));
+    const base = overrideKcal ?? goals.calorieTarget ?? 2000;
+    const budget = computeDayBudget({
+      todayKey: today,
+      baseTarget: base,
+      goals: { tdee: goals.tdee, bmr: goals.bmr },
+      foodByDay,
+      activity: {
+        connected: onToday && hcDay != null,
+        hcActiveKcal: onToday ? (hcDay?.activeKcal ?? 0) : 0,
+        hcExerciseCount: onToday ? (hcDay?.exerciseCount ?? 0) : 0,
+        trainMetKcal: onToday ? workoutKcal : 0,
+      },
+    });
+    if (!budget) return;
+    const latestKg = weighIns.length ? weighIns[weighIns.length - 1]!.kg : profile.weightKg;
+    const nowMs = Date.now();
+    const fastSec = isFasting(fast, nowMs) ? Math.floor(fastElapsedMs(fast, nowMs) / 1000) : null;
+    void saveWidgetSnapshot(
+      buildWidgetSnapshot({
+        remaining: budget.remaining,
+        proteinG: onToday ? sumDayMacros(logs).proteinG : 0,
+        proteinGoalG: goals.proteinG,
+        waterMl: onToday ? waterMl : 0,
+        waterGoalMl: waterGoalMl(latestKg),
+        fastElapsedSec: fastSec,
+        sourceLabel: budget.sourceLabel,
+        now: new Date(nowMs),
+      }),
+    ).catch(() => {});
+  }, [loaded, profile, goals, intakeHistory, logs, waterMl, fast, hcDay, workoutKcal, overrideKcal, selectedKey, weighIns]);
+
   if (!loaded) return <ThemedView style={styles.container} />;
   if (loadError) {
     return (
@@ -361,9 +418,8 @@ export default function HomeScreen() {
   }
   if (profile === null) return <Redirect href="/setup" />;
 
-  // ~35 ml/kg is the common baseline; clamped to a sane 1500–4500 window
   const latestKg = weighIns.length ? weighIns[weighIns.length - 1]!.kg : profile.weightKg;
-  const waterGoal = Math.min(4500, Math.max(1500, Math.round(latestKg * 35)));
+  const waterGoal = waterGoalMl(latestKg);
 
   const adaptive = (() => {
     if (!goals || !profile) return null;
@@ -392,12 +448,36 @@ export default function HomeScreen() {
     return detectPlateau({ weighIns: weighIns.map((w) => ({ kg: w.kg, at: w.measuredAt })), intakeByDay: intakeHistory, adaptive });
   })();
 
+  const targetRecheck = (() => {
+    if (!profile || !goals) return null;
+    return recheckTargets({
+      profile,
+      stored: { ...goals, dailyAdjustment: goals.calorieTarget - goals.tdee },
+      weighIns: weighIns.map((w) => ({ kg: w.kg, at: w.measuredAt })),
+    });
+  })();
+
   const dayMacros = sumDayMacros(logs);
   const intakeKcal = dayMacros.kcal;
   // Adopted measured target overrides dial until profile is re-saved in setup.
   // Keep leaves the formula target on the dial — never auto-drive from True Burn.
   const dialTarget = overrideKcal ?? goals?.calorieTarget ?? 2000;
-  const budget = calorieBudget(dialTarget);
+  // The one remaining-calorie number: week bank + surplus eat-back (day-budget.ts).
+  const foodByDay: Record<string, number> = Object.fromEntries(intakeHistory.map((d) => [d.dayKey, d.kcal]));
+  foodByDay[selectedKey] = intakeKcal;
+  const dayBudget = computeDayBudget({
+    todayKey: selectedKey,
+    baseTarget: dialTarget,
+    goals: goals ? { tdee: goals.tdee, bmr: goals.bmr } : null,
+    foodByDay,
+    activity: {
+      connected: hcDay != null,
+      hcActiveKcal: hcDay?.activeKcal ?? 0,
+      hcExerciseCount: hcDay?.exerciseCount ?? 0,
+      trainMetKcal: workoutKcal,
+    },
+  });
+  const budget = dayBudget?.todayTarget ?? dialTarget;
   const dialMeasuredLabel = adaptive?.ready ? `Measured burn ${adaptive.measuredTdee?.toLocaleString()} kcal` : null;
   const showAdoptPrompt = !!adaptive?.ready && adaptive.suggestedTarget != null && overrideKcal == null && shouldShowAdoptPrompt(trueBurnPersist, adaptive.suggestedTarget);
 
@@ -477,7 +557,13 @@ export default function HomeScreen() {
     hapticLight();
     setAddingWeighIn(true);
     try {
-      await addWeighIn(kg, selectedDate);
+      // Stamp today's weigh-in at the current moment, and past days at local
+      // noon so a retroactive weigh-in never sorts before a morning weigh-in
+      // recorded on the same day.
+      const stamp = isToday(selectedDate)
+        ? new Date()
+        : new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 12, 0, 0, 0);
+      await addWeighIn(kg, stamp);
       const [wi, first] = await Promise.all([getWeighIns(60), getFirstWeighIn()]);
       setWeighIns(wi.map((x) => ({ kg: x.kg, measuredAt: x.measuredAt })));
       // Going from zero weigh-ins to one is the only add that changes which
@@ -486,6 +572,41 @@ export default function HomeScreen() {
       setWeighInInput('');
     } finally {
       setAddingWeighIn(false);
+    }
+  }
+
+  async function handleRecalibrateTargets() {
+    if (!profile || !targetRecheck?.stale || recalibratingGoals) return;
+    hapticSelect();
+    setRecalibratingGoals(true);
+    try {
+      const updatedProfile: Profile = {
+        ...profile,
+        weightKg: targetRecheck.weightBasisKg,
+      };
+      const nextGoals = await saveProfile(updatedProfile);
+      setProfile(updatedProfile);
+      setGoals(nextGoals);
+    } finally {
+      setRecalibratingGoals(false);
+    }
+  }
+
+  async function handleQuickAddWater(ml: number) {
+    if (addingWater || !Number.isFinite(ml) || ml <= 0) return;
+    hapticLight();
+    setAddingWater(true);
+    try {
+      await addWaterForDay(selectedKey, ml);
+      setWaterMl((current) => {
+        const next = current + ml;
+        setEditWaterValue(waterUnit === 'cups' ? String(Math.round((next / CUP_ML) * 10) / 10) : String(next));
+        return next;
+      });
+      waterPulse.setValue(1);
+      Animated.timing(waterPulse, { toValue: 0, duration: 420, useNativeDriver: true }).start();
+    } finally {
+      setAddingWater(false);
     }
   }
 
@@ -520,7 +641,7 @@ export default function HomeScreen() {
   }
 
   function handleClaimStreak() {
-    const next = claimStreak(streak, Date.now());
+    const next = claimStreak(activeStreak, Date.now());
     setStreak(next);
     void saveStreak(next);
   }
@@ -619,32 +740,6 @@ export default function HomeScreen() {
     }
   }
 
-  function confirmDeactivate() {
-    const message =
-      'Remove the license from this device? You can unlock on a new phone with the same email and code. Stay online so the slot actually frees.';
-    const doIt = () => {
-      void (async () => {
-        const result = await deactivate();
-        if (result.ok) return;
-        if (Platform.OS === 'web') {
-          const g = globalThis as typeof globalThis & { alert?: (msg: string) => void };
-          g.alert?.(result.message);
-          return;
-        }
-        Alert.alert("Couldn't deactivate", result.message);
-      })();
-    };
-    if (Platform.OS === 'web') {
-      const g = globalThis as typeof globalThis & { confirm?: (prompt: string) => boolean };
-      if (g.confirm?.(message) ?? true) doIt();
-    } else {
-      Alert.alert('Deactivate calibrEAT?', message, [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Deactivate', style: 'destructive', onPress: doIt },
-      ]);
-    }
-  }
-
   const accentText = isDark ? Brand.lime : Brand.primaryDeep;
   const accentSoft = isDark ? 'rgba(183,233,60,0.08)' : 'rgba(31,157,85,0.08)';
   const hairline = theme.line;
@@ -682,9 +777,8 @@ export default function HomeScreen() {
 
   // calendar math — build explicit week rows so columns stay aligned
   const todayKey = formatISO(new Date());
-  const fireLive = streakNeedsClaim(streak, now);
+  const fireLive = streakNeedsClaim(activeStreak, now);
   const fastActive = isFasting(fast, now);
-  const licenseEmail = license.customerEmail ?? verifiedEmail ?? '—';
   const year = pickerMonth.getFullYear();
   const month = pickerMonth.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -710,7 +804,7 @@ export default function HomeScreen() {
   // ── Weekly share card (content only — capture stage renders below) ──
   const coverage = loggingCoverage(intakeHistory);
   const burn = burnTrend(burnHistory);
-  const streakShareCard = buildShareCard({ streak, coverage, burn });
+  const streakShareCard = buildShareCard({ streak: activeStreak, coverage, burn });
 
   /**
    * Every field the card needs, assembled once.
@@ -732,7 +826,7 @@ export default function HomeScreen() {
         best: streakShareCard.best,
         progress: streakShareCard.progress,
         dateLabel: shareDateLabel(selectedDate),
-        litDays: weekPips(streak.current),
+        litDays: weekPips(activeStreak.current),
         // The Grid layout slices `loggedDays` 7 per row, but intakeHistory is a
         // dense 60-day array, so this rendered a 9-row calendar and a "12/60
         // LOGGED" header beside sibling layouts that assume a 7-day week.
@@ -769,6 +863,7 @@ export default function HomeScreen() {
         ) : null}
         {dailyRecap ? <DailyShareCardStage cardRef={dailyCardRef} card={dailyRecap.card} format={dailyFormat} /> : null}
         <ScrollView
+          {...keyboard.scrollProps}
           style={styles.flex}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -780,22 +875,12 @@ export default function HomeScreen() {
             </View>
             <View style={styles.headerRight}>
               <HeaderGlyphButton label="Daily streak" onPress={handleFirePress} borderColor={hairline} backgroundColor={cardBg}>
-                <StreakFireMark live={fireLive} count={streak.current} color={fireLive ? '#EA580C' : '#9A3412'} />
+                <StreakFireMark live={fireLive} count={activeStreak.current} color={fireLive ? '#EA580C' : '#9A3412'} />
               </HeaderGlyphButton>
               <HeaderGlyphButton label="Add water" onPress={openWater} borderColor={hairline} backgroundColor={cardBg}>
                 <WaterDropMark fill={waterPct} color={isDark ? '#38BDF8' : '#0284C7'} />
               </HeaderGlyphButton>
-              <Pressable
-              onPress={() => setShowMenu(true)}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Open menu"
-              style={({ pressed }) => [styles.menuBtn, { borderColor: hairline, backgroundColor: cardBg }, pressed && styles.pressed]}
-            >
-              <View style={[styles.menuLine, { backgroundColor: theme.text }]} />
-              <View style={[styles.menuLine, { backgroundColor: theme.text }]} />
-              <View style={[styles.menuLine, { backgroundColor: theme.text }]} />
-            </Pressable>
+              <HeaderMenuButton onPress={() => setShowMenu(true)} borderColor={hairline} backgroundColor={cardBg} lineColor={theme.text} />
             </View>
           </View>
 
@@ -809,7 +894,15 @@ export default function HomeScreen() {
 
           <View style={styles.dateRow}>
             <Pressable
-              onPress={() => setShowPicker((v) => !v)}
+              onPress={() => {
+                setShowPicker((v) => {
+                  const next = !v;
+                  if (next) setPickerMonth(startOfMonth(selectedDate));
+                  return next;
+                });
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Choose a date"
               style={({ pressed }) => [styles.datePress, pressed && styles.pressed]}
             >
               <View style={[styles.calendarIconWrap, { backgroundColor: accentSoft, borderColor: accentText }]}>
@@ -844,7 +937,7 @@ export default function HomeScreen() {
             </ThemedText>
             <View style={[styles.todayStripDot, { backgroundColor: theme.muted }]} />
             <WeekPips
-              lit={weekPips(streak.current)}
+              lit={weekPips(activeStreak.current)}
               color={accentText}
               dim={isDark ? 'rgba(255,255,255,0.14)' : 'rgba(13,21,30,0.12)'}
             />
@@ -863,6 +956,8 @@ export default function HomeScreen() {
                     <Pressable
                       onPress={() => setPickerMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
                       hitSlop={8}
+                      accessibilityRole="button"
+                      accessibilityLabel="Previous month"
                       style={({ pressed }) => [styles.calNav, pressed && styles.pressed]}
                     >
                       <Text style={[styles.calNavText, { color: accentText }]}>‹</Text>
@@ -877,6 +972,9 @@ export default function HomeScreen() {
                         <Pressable
                           disabled={!canGoNext}
                           hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel="Next month"
+                          accessibilityState={{ disabled: !canGoNext }}
                           onPress={() => canGoNext && setPickerMonth(new Date(year, month + 1, 1))}
                           style={[styles.calNav, !canGoNext && styles.calNavDisabled]}
                         >
@@ -910,6 +1008,9 @@ export default function HomeScreen() {
                             <Pressable
                               key={key}
                               disabled={isFuture}
+                              accessibilityRole="button"
+                              accessibilityLabel={d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+                              accessibilityState={{ selected: active, disabled: isFuture }}
                               onPress={() => {
                                 setSelectedDate(d);
                                 setShowPicker(false);
@@ -940,6 +1041,8 @@ export default function HomeScreen() {
                   </View>
                   <View style={styles.calFooter}>
                     <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Jump to today"
                       onPress={() => {
                         const t = new Date();
                         t.setHours(0, 0, 0, 0);
@@ -953,7 +1056,7 @@ export default function HomeScreen() {
                         Today
                       </ThemedText>
                     </Pressable>
-                    <Pressable onPress={() => setShowPicker(false)} style={({ pressed }) => [styles.pickerDone, pressed && styles.pressed]}>
+                    <Pressable onPress={() => setShowPicker(false)} accessibilityRole="button" accessibilityLabel="Close date picker" style={({ pressed }) => [styles.pickerDone, pressed && styles.pressed]}>
                       <ThemedText type="smallBold" style={{ color: accentText }}>
                         Done
                       </ThemedText>
@@ -1005,15 +1108,27 @@ export default function HomeScreen() {
               </View>
             </Pressable>
             {(() => {
-              const remain = caloriesRemaining({ target: dialTarget, foodKcal: intakeKcal });
+              const remain = dayBudget?.remaining ?? 0;
               return (
                 <>
                   <Text style={[styles.dialRemain, { color: remain < 0 ? Brand.danger : accentText }]}>
                     {remain >= 0 ? `${remain.toLocaleString()} left` : `${Math.abs(remain).toLocaleString()} over`}
                   </Text>
-                  {workoutKcal > 0 ? (
+                  {dayBudget ? (
                     <ThemedText type="small" themeColor="textSecondary" style={styles.dialFoot}>
-                      Trained {workoutKcal.toLocaleString()} kcal — already inside this target.
+                      {dayBudget.burnSource === 'none'
+                        ? 'Exercise: none logged yet · add a workout on Train'
+                        : `Exercise burned: ${dayBudget.measuredActiveKcal.toLocaleString()} kcal (${dayBudget.sourceLabel})`}
+                    </ThemedText>
+                  ) : null}
+                  {dayBudget && dayBudget.burnSource !== 'none' ? (
+                    <ThemedText type="small" themeColor="textSecondary" style={styles.dialFoot}>
+                      {activityCopy(dayBudget)}
+                    </ThemedText>
+                  ) : null}
+                  {dayBudget ? (
+                    <ThemedText type="small" themeColor="textSecondary" style={styles.dialFoot}>
+                      {weekCopy(dayBudget)}
                     </ThemedText>
                   ) : null}
                 </>
@@ -1049,12 +1164,29 @@ export default function HomeScreen() {
                   </ThemedText>
                 </View>
                 {(() => {
-                  const milestone = nextFastMilestone(fastElapsedMs(fast, now));
-                  if (!milestone) return null;
+                  const elapsed = fastElapsedMs(fast, now);
+                  const milestone = nextFastMilestone(elapsed);
+                  const prog = fastProgress(elapsed);
                   return (
-                    <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
-                      {milestone.hours}h milestone in {milestone.inLabel}
-                    </ThemedText>
+                    <View style={styles.fastProgressBlock}>
+                      <View style={[styles.burnBarTrack, { backgroundColor: mutedTrack, marginTop: 2 }]}>
+                        <View
+                          style={[
+                            styles.waterBarFill,
+                            { width: `${Math.max(3, Math.round(prog.pct * 100))}%`, backgroundColor: accentText },
+                          ]}
+                        />
+                      </View>
+                      {milestone ? (
+                        <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
+                          {milestone.hours}h milestone in {milestone.inLabel}
+                        </ThemedText>
+                      ) : (
+                        <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
+                          48h+ fast milestone reached
+                        </ThemedText>
+                      )}
+                    </View>
                   );
                 })()}
                 <CrispPress onPress={() => void handleStopFast()} innerStyle={[styles.fastStop, { borderColor: hairline }]}>
@@ -1091,25 +1223,46 @@ export default function HomeScreen() {
               {MEAL_SLOTS.map((slot) => {
                 const entries = groupLogsByMeal(logs)[slot.value];
                 if (!entries.length) return null;
+                const slotMacros = sumDayMacros(entries);
+                const slotMacroHint = formatMacroSummary({
+                  proteinG: slotMacros.proteinG || null,
+                  carbsG: slotMacros.carbsG || null,
+                  fatG: slotMacros.fatG || null,
+                });
                 return (
                   <View key={slot.value} style={styles.logMealBlock}>
-                    <ThemedText type="small" themeColor="textSecondary" style={styles.logMealLabel}>
-                      {slot.label}
-                    </ThemedText>
-                    {entries.map((entry) => (
-                      <Pressable
-                        key={entry.id}
-                        onPress={() => openEditLog(entry)}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Edit ${logDisplayName(entry)}`}
-                        style={({ pressed }) => [styles.logRow, { borderColor: hairline }, pressed && styles.pressed]}
-                      >
-                        <ThemedText type="smallBold" style={styles.logName} numberOfLines={1}>
-                          {logDisplayName(entry)}
-                        </ThemedText>
-                        <Text style={[styles.logKcal, { color: accentText }]}>{entry.kcal}</Text>
-                      </Pressable>
-                    ))}
+                    <View style={styles.logMealHeader}>
+                      <ThemedText type="small" themeColor="textSecondary" style={styles.logMealLabel}>
+                        {slot.label}
+                      </ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {slotMacros.kcal.toLocaleString()} kcal{slotMacroHint ? ` · ${slotMacroHint}` : ''}
+                      </ThemedText>
+                    </View>
+                    {entries.map((entry) => {
+                      const entryMacros = formatMacroSummary(entry);
+                      return (
+                        <Pressable
+                          key={entry.id}
+                          onPress={() => openEditLog(entry)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Edit ${logDisplayName(entry)}`}
+                          style={({ pressed }) => [styles.logRow, { borderColor: hairline }, pressed && styles.pressed]}
+                        >
+                          <View style={styles.logInfo}>
+                            <ThemedText type="smallBold" style={styles.logName} numberOfLines={1}>
+                              {logDisplayName(entry)}
+                            </ThemedText>
+                            {entryMacros ? (
+                              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                                {entryMacros}
+                              </ThemedText>
+                            ) : null}
+                          </View>
+                          <Text style={[styles.logKcal, { color: accentText }]}>{entry.kcal}</Text>
+                        </Pressable>
+                      );
+                    })}
                   </View>
                 );
               })}
@@ -1222,9 +1375,9 @@ export default function HomeScreen() {
                   </ThemedText>
                 </View>
                 <View style={styles.arcRow}>
-                  <ArcGauge label="Protein" grams={dayMacros.proteinG} target={goals.proteinG} pct={goals.proteinG ? Math.min(1, dayMacros.proteinG / goals.proteinG) : 0} color={accentText} isDark={isDark} track={mutedTrack} />
-                  <ArcGauge label="Carbs" grams={dayMacros.carbsG} target={goals.carbsG} pct={goals.carbsG ? Math.min(1, dayMacros.carbsG / goals.carbsG) : 0} color={accentText} isDark={isDark} track={mutedTrack} />
-                  <ArcGauge label="Fat" grams={dayMacros.fatG} target={goals.fatG} pct={goals.fatG ? Math.min(1, dayMacros.fatG / goals.fatG) : 0} color={accentText} isDark={isDark} track={mutedTrack} />
+                  <ArcGauge label="Protein" grams={dayMacros.proteinG} target={goals.proteinG} pct={goals.proteinG ? Math.min(1, dayMacros.proteinG / goals.proteinG) : 0} color={accentText} track={mutedTrack} />
+                  <ArcGauge label="Carbs" grams={dayMacros.carbsG} target={goals.carbsG} pct={goals.carbsG ? Math.min(1, dayMacros.carbsG / goals.carbsG) : 0} color={accentText} track={mutedTrack} />
+                  <ArcGauge label="Fat" grams={dayMacros.fatG} target={goals.fatG} pct={goals.fatG ? Math.min(1, dayMacros.fatG / goals.fatG) : 0} color={accentText} track={mutedTrack} />
                 </View>
               </View>
             </Pressable>
@@ -1243,6 +1396,7 @@ export default function HomeScreen() {
             </ThemedText>
             <View style={[styles.waterInputRowFull, { marginTop: 8 }]}>
               <TextInput
+                {...keyboard.field('weighIn')}
                 value={weighInInput}
                 onChangeText={(t) => setWeighInInput(t.replace(/[^0-9.,\s]/g, ''))}
                 placeholder={weightUnit === 'kg' ? 'kg' : weightUnit === 'lb' ? 'lb' : 'st lb'}
@@ -1256,6 +1410,28 @@ export default function HomeScreen() {
                 <Text style={[styles.waterAddText, { color: isDark ? '#0A1019' : '#fff' }]}>{addingWeighIn ? '…' : 'Weigh in'}</Text>
               </Pressable>
             </View>
+            {targetRecheck?.stale && goals ? (
+              <View style={[styles.recheckWrap, { borderColor: accentText, backgroundColor: accentSoft }]}>
+                <View style={styles.recheckCopy}>
+                  <ThemedText type="smallBold" style={{ color: accentText }}>
+                    Formula shift: {targetRecheck.deltaKcal > 0 ? '+' : ''}
+                    {targetRecheck.deltaKcal} kcal/day
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Your latest weigh-in moves your formula target from {goals.calorieTarget.toLocaleString()} to {targetRecheck.next.calorieTarget.toLocaleString()} kcal ({targetRecheck.next.proteinG}g P · {targetRecheck.next.carbsG}g C · {targetRecheck.next.fatG}g F).
+                  </ThemedText>
+                </View>
+                <CrispPress
+                  onPress={() => void handleRecalibrateTargets()}
+                  disabled={recalibratingGoals}
+                  innerStyle={[styles.adoptPrimary, { backgroundColor: accentText, flex: 0 }]}
+                >
+                  <Text style={[styles.adoptPrimaryText, { color: isDark ? '#0A1019' : '#fff' }]}>
+                    {recalibratingGoals ? '…' : 'Recalibrate'}
+                  </Text>
+                </CrispPress>
+              </View>
+            ) : null}
             <ThemedText type="small" themeColor="textSecondary" style={styles.cardHint}>
               {adaptive?.ready && latestWeighIn
                 ? `Latest weigh-in ${latestWeighInLabel} — this is what feeds True Burn above.`
@@ -1264,6 +1440,7 @@ export default function HomeScreen() {
                   : 'Log a weight to start the trend. True Burn switches on after 7 days plus 2 weigh-ins.'}
             </ThemedText>
           </View>
+          {keyboard.bottomInset > 0 ? <View style={{ height: keyboard.bottomInset }} /> : null}
         </ScrollView>
 
       </SafeAreaView>
@@ -1278,6 +1455,7 @@ export default function HomeScreen() {
             waterInput={waterInput}
             onWaterInput={(text) => setWaterInput(normalizeDecimalNumber(text).replace(/[^0-9.]/g, ''))}
             onAdd={() => void handleAddWater()}
+            onQuickAdd={(ml) => void handleQuickAddWater(ml)}
             adding={addingWater}
             onUnit={(unit) => {
               setWaterUnit(unit);
@@ -1308,28 +1486,11 @@ export default function HomeScreen() {
             cardBg={isDark ? '#131F2E' : '#FFFFFF'}
           />
 
-          <LicenseSheet
-            visible={showLicense}
-            onClose={() => setShowLicense(false)}
-            license={license}
-            email={licenseEmail}
-            onDeactivate={() => {
-              setShowLicense(false);
-              confirmDeactivate();
-            }}
-            isDark={isDark}
-            accentText={accentText}
-            hairline={hairline}
-            textColor={theme.text}
-            mutedColor={theme.muted}
-            cardBg={isDark ? '#131F2E' : '#FFFFFF'}
-          />
-
           <StreakSheet
             visible={showStreak}
             onClose={() => setShowStreak(false)}
             onClaim={handleClaimStreak}
-            streak={streak}
+            streak={activeStreak}
             isDark={isDark}
             accentText={accentText}
             hairline={hairline}
@@ -1390,6 +1551,20 @@ export default function HomeScreen() {
             />
           ) : null}
 
+          {loaded && !showLogSheet && (tourDue || tourReplay) ? (
+            <AppTour
+              onClose={() => {
+                setTourDue(false);
+                setTourReplay(false);
+                void saveTourSeen();
+              }}
+              isDark={isDark}
+              accentText={accentText}
+              cardBg={isDark ? '#131F2E' : '#FFFFFF'}
+              hairline={hairline}
+            />
+          ) : null}
+
           <Modal visible={showMenu} transparent animationType="fade" onRequestClose={() => setShowMenu(false)}>
             <Pressable style={styles.modalOverlay} onPress={() => setShowMenu(false)}>
               <View style={styles.menuSheetWrap}>
@@ -1447,16 +1622,6 @@ export default function HomeScreen() {
                     style={({ pressed }) => [styles.menuItem, { borderColor: hairline }, pressed && styles.pressed]}
                   >
                     <ThemedText type="smallBold">BMI</ThemedText>
-                    <Text style={[styles.menuChevron, { color: accentText }]}>›</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => {
-                      setShowMenu(false);
-                      setShowLicense(true);
-                    }}
-                    style={({ pressed }) => [styles.menuItem, { borderColor: hairline }, pressed && styles.pressed]}
-                  >
-                    <ThemedText type="smallBold">License</ThemedText>
                     <Text style={[styles.menuChevron, { color: accentText }]}>›</Text>
                   </Pressable>
                   <ThemedText type="small" themeColor="textSecondary" style={styles.menuNote}>
@@ -1557,7 +1722,6 @@ function ArcGauge({
   target,
   pct,
   color,
-  isDark,
   track,
 }: {
   label: string;
@@ -1565,7 +1729,6 @@ function ArcGauge({
   target: number;
   pct: number;
   color: string;
-  isDark: boolean;
   track: string;
 }) {
   const size = 88;
@@ -1755,6 +1918,7 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
   },
   logMealBlock: { gap: 6 },
+  logMealHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   logMealLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase' },
   logRow: {
     flexDirection: 'row',
@@ -1766,7 +1930,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
   },
-  logName: { flex: 1 },
+  logInfo: { flex: 1, gap: 2 },
+  logName: {},
   logKcal: { fontSize: 15, fontWeight: '800', fontFamily: Fonts.rounded },
   stripHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.two },
   stripTitle: { letterSpacing: 1.2, opacity: 0.75, fontSize: 11 },
@@ -1845,8 +2010,6 @@ const styles = StyleSheet.create({
   calIconTopSolid: { position: 'absolute', top: 0, left: 0, right: 0, height: 8 },
   calIconTextSolid: { marginTop: 8, fontSize: 12, fontWeight: '800', lineHeight: 12, fontFamily: Fonts.rounded, includeFontPadding: false as unknown as boolean },
   dateText: { fontSize: 14 },
-  menuBtn: { width: 38, height: 38, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  menuLine: { width: 16, height: 2, borderRadius: 99, opacity: 0.85 },
   menuSheetWrap: { width: '100%', maxWidth: 380, alignSelf: 'center' },
   menuSheet: { borderRadius: 22, borderWidth: 1, padding: Spacing.three, gap: Spacing.two, shadowOpacity: 0.35, shadowRadius: 36, shadowOffset: { width: 0, height: 18 }, elevation: 12, overflow: 'hidden' },
   menuTitle: { fontSize: 11, letterSpacing: 1.2, marginTop: Spacing.one },
@@ -1918,11 +2081,24 @@ const styles = StyleSheet.create({
   plateauWrap: { flexDirection: 'row', gap: 8, alignItems: 'flex-start', borderWidth: 1, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12, marginTop: 8 },
   plateauDot: { color: '#ef4444', fontSize: 9, lineHeight: 17, marginTop: 1 },
   fastReadout: { alignItems: 'center', gap: 2 },
+  fastProgressBlock: { gap: 6 },
   fastClock: { fontSize: 36, fontWeight: '800', letterSpacing: -1, fontFamily: Fonts.rounded },
-  fastStart: { flex: 1, borderRadius: 12, paddingVertical: 12, minHeight: 46, alignItems: 'center', justifyContent: 'center' },
+  fastStart: { flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
   fastStartText: { fontSize: 14, fontWeight: '800' },
   fastStop: { borderWidth: 1, borderRadius: 12, paddingVertical: 10, minHeight: 42, alignItems: 'center', justifyContent: 'center' },
   fastStopText: { fontSize: 13, fontWeight: '800' },
+  recheckWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 6,
+  },
+  recheckCopy: { flex: 1, gap: 2 },
   adoptRow: { flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 8 },
   adoptGhost: { borderWidth: 1, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 12, minHeight: 36, alignItems: 'center', justifyContent: 'center' },
   adoptGhostText: { fontSize: 12, fontWeight: '800' },
@@ -1931,6 +2107,5 @@ const styles = StyleSheet.create({
   footer: { alignItems: 'center', gap: Spacing.three, marginTop: Spacing.two },
   footerLink: { paddingVertical: Spacing.one },
   pressed: { opacity: 0.65 },
-  deactivateText: { color: Brand.danger },
   footerNote: { textAlign: 'center', marginTop: Spacing.two, paddingHorizontal: Spacing.three },
 });

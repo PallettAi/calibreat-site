@@ -1,4 +1,4 @@
-import { Redirect, useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,7 +14,6 @@ import { useTheme } from '@/hooks/use-theme';
 import { getIntakeHistory, getGoals, getProfile, getWeighIns, type Goals, type Profile } from '@/lib/db';
 import { adaptiveHistory, adaptiveTdee, detectPlateau } from '@/lib/nutrition';
 import { getCalorieOverride } from '@/lib/trueburn';
-import { useLicense } from '@/lib/license-context';
 import { burnTrend, loggingCoverage, movingAverage, slopePerWeek, weighSeries } from '@/lib/trends';
 import { buildShareCard, shareDateLabel } from '@/lib/share-card';
 import { loadStreak } from '@/lib/streak-store';
@@ -25,7 +24,6 @@ import { emptyStreak, weekPips, type StreakState } from '@/lib/streak';
 type Series = { t: number; value: number };
 
 export default function TrendsScreen() {
-  const { license } = useLicense();
   const router = useRouter();
   const isDark = useColorScheme() === 'dark';
   const theme = useTheme();
@@ -124,7 +122,6 @@ export default function TrendsScreen() {
     setShareState(result.ok ? 'idle' : 'error');
   };
 
-  if (!license) return <Redirect href="/" />;
   if (!loaded) return <ThemedView style={styles.container} />;
 
   return (

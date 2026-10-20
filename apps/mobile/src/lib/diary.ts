@@ -5,6 +5,8 @@
  * without SQLite. The DB layer stores these shapes and the dashboard sums them.
  */
 
+import { sumMicros, type Micros } from './micronutrients';
+
 export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 export const MEAL_SLOTS: { value: MealSlot; label: string }[] = [
@@ -23,6 +25,7 @@ export type LogMacros = {
   sugarG?: number | null;
   satFatG?: number | null;
   sodiumMg?: number | null;
+  micros?: Micros | null;
 };
 
 export type LogEntry = LogMacros & {
@@ -42,6 +45,7 @@ export type DayMacros = {
   sugarG: number;
   satFatG: number;
   sodiumMg: number;
+  micros: Micros;
 };
 
 export type RecentMeal = {
@@ -77,7 +81,8 @@ export function sumDayMacros(entries: LogMacros[]): DayMacros {
     if (entry.satFatG != null) satFatG += entry.satFatG;
     if (entry.sodiumMg != null) sodiumMg += entry.sodiumMg;
   }
-  return { kcal, proteinG, carbsG, fatG, fiberG, sugarG, satFatG, sodiumMg };
+  const micros = sumMicros(entries.map((entry) => entry.micros));
+  return { kcal, proteinG, carbsG, fatG, fiberG, sugarG, satFatG, sodiumMg, micros };
 }
 
 /**
@@ -164,3 +169,22 @@ export function logDisplayName(entry: Pick<LogEntry, 'name'>): string {
   const name = entry.name?.trim();
   return name && name.length > 0 ? name : 'Energy';
 }
+
+/**
+ * Compact summary for a meal slot header ("520 kcal · 42P · 48C · 14F") or an
+ * individual log row ("42P · 48C · 14F"). Omits macros that were left blank.
+ */
+export function formatMacroSummary(
+  entry: Pick<LogMacros, 'proteinG' | 'carbsG' | 'fatG'>,
+  includeKcal?: number,
+): string {
+  const parts: string[] = [];
+  if (includeKcal != null && Number.isFinite(includeKcal) && includeKcal > 0) {
+    parts.push(`${Math.round(includeKcal).toLocaleString()} kcal`);
+  }
+  if (entry.proteinG != null && entry.proteinG > 0) parts.push(`${Math.round(entry.proteinG)}P`);
+  if (entry.carbsG != null && entry.carbsG > 0) parts.push(`${Math.round(entry.carbsG)}C`);
+  if (entry.fatG != null && entry.fatG > 0) parts.push(`${Math.round(entry.fatG)}F`);
+  return parts.join(' · ');
+}
+

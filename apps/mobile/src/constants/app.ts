@@ -12,28 +12,6 @@ export const AppMeta = {
   supportEmail: 'support@calibreat.co.uk',
 } as const;
 
-export const LicenseConfig = {
-  /**
-   * Base URL of the license activation API (PLAN.md milestone M3).
-   * Set EXPO_PUBLIC_LICENSE_API_URL when building a release APK.
-   * When empty, activation falls back to the __DEV__-only local mode
-   * implemented in src/lib/license.ts.
-   */
-  apiBaseUrl: process.env.EXPO_PUBLIC_LICENSE_API_URL ?? '',
-  /**
-   * Where users buy a lifetime code. Defaults to the website's license page;
-   * the real store (hosted checkout) URL is wired up once it launches.
-   */
-  storeUrl: process.env.EXPO_PUBLIC_LICENSE_STORE_URL ?? `${AppMeta.websiteUrl}/license.html`,
-  /**
-   * Help / self-service page for existing license holders (recover a lost code,
-   * move devices, contact support). There is no customer portal yet — until the
-   * real one exists (PLAN.md M4 optional order-status page), this points at the
-   * license page's lost-code FAQ + support email.
-   */
-  licenseHelpUrl: process.env.EXPO_PUBLIC_LICENSE_HELP_URL ?? `${AppMeta.websiteUrl}/license.html#faq`,
-} as const;
-
 export const Brand = {
   /**
    * Primary brand green — accents, borders and fills. Deliberately NOT a

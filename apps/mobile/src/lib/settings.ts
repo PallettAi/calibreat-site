@@ -1,3 +1,4 @@
+import { Appearance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
@@ -9,6 +10,7 @@ import {
   parseFrequency,
   type WeighInFrequency,
 } from '@/lib/weigh-in-reminders';
+import { colorSchemeOverride, DEFAULT_THEME_MODE, parseThemeMode, type ThemeMode } from '@/lib/theme-mode';
 
 const SETTINGS_KEY = 'calibreat.settings.v1';
 
@@ -19,6 +21,7 @@ export type AppSettings = {
   weighInReminderHour: number;
   weighInReminderMinute: number;
   weighInReminderFrequency: WeighInFrequency;
+  themeMode: ThemeMode;
 };
 
 const DEFAULTS: AppSettings = {
@@ -28,7 +31,13 @@ const DEFAULTS: AppSettings = {
   weighInReminderHour: DEFAULT_WEIGH_IN_HOUR,
   weighInReminderMinute: DEFAULT_WEIGH_IN_MINUTE,
   weighInReminderFrequency: DEFAULT_WEIGH_IN_FREQUENCY,
+  themeMode: DEFAULT_THEME_MODE,
 };
+
+/** Forces the whole app to light or dark, or hands control back to the OS. */
+export function applyThemeMode(mode: ThemeMode): void {
+  Appearance.setColorScheme(colorSchemeOverride(mode));
+}
 
 let snapshot: AppSettings = { ...DEFAULTS };
 let hydrated = false;
@@ -57,6 +66,7 @@ export async function getSettings(): Promise<AppSettings> {
       weighInReminderHour: clampHour(parsed.weighInReminderHour),
       weighInReminderMinute: clampMinute(parsed.weighInReminderMinute),
       weighInReminderFrequency: parseFrequency(parsed.weighInReminderFrequency),
+      themeMode: parseThemeMode(parsed.themeMode),
     };
     hydrated = true;
     return snapshot;

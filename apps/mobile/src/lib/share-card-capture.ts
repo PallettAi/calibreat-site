@@ -38,6 +38,8 @@ export async function shareCardImage(
   const size = shareCardSize(options.format);
   let tmp: FileSystem.File | null = null;
   let named: FileSystem.File | null = null;
+  // The exact file handed to the share sheet. Cleanup must never touch this one.
+  let shared: string | null = null;
   try {
     const uri = await captureRef(cardRef, {
       format: 'png',
@@ -66,6 +68,7 @@ export async function shareCardImage(
       // Fall back to the unnamed capture file.
     }
 
+    shared = shareUri;
     await Sharing.shareAsync(shareUri, {
       mimeType: 'image/png',
       dialogTitle: 'Share your week',
@@ -75,10 +78,16 @@ export async function shareCardImage(
   } catch {
     return { ok: false, method: 'error', message: 'Could not open the share sheet. Try again.' };
   } finally {
-    // Best effort cleanup: the OS clears the cache directory anyway.
+    // Delete the scratch files, but never the one the share sheet was handed.
+    // Some Android share targets read the content:// URI lazily — after
+    // shareAsync resolves — so deleting it here turned a successful share into
+    // a blank image. The shared file is left for the OS to reclaim, and is
+    // overwritten on the next share of the same shape; the capture's own tmp
+    // file is still cleaned up unless it *is* the shared one (copy failed).
     for (const file of [named, tmp]) {
+      if (!file || file.uri === shared) continue;
       try {
-        if (file?.exists) file.delete();
+        if (file.exists) file.delete();
       } catch {
         // Nothing more we can do.
       }

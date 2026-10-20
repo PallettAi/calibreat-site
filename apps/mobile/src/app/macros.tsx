@@ -1,4 +1,4 @@
-import { Redirect, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,7 +11,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
 import { getGoals, getMacrosForDay, getProfile, dayKey, type Goals, type Profile } from '@/lib/db';
 import { type DayMacros } from '@/lib/diary';
-import { useLicense } from '@/lib/license-context';
+import { MICRO_DEFS, MICRO_NRV, formatMicroValue, type MicroDef } from '@/lib/micronutrients';
 import { getCalorieOverride } from '@/lib/trueburn';
 
 type MacroRow = {
@@ -21,10 +21,10 @@ type MacroRow = {
   unit: string;
   guidance: string;
   limit?: boolean;
+  valueText?: string;
 };
 
 export default function MacrosScreen() {
-  const { license } = useLicense();
   const router = useRouter();
   const { day } = useLocalSearchParams<{ day?: string | string[] }>();
   const dayParam = Array.isArray(day) ? day[0] : day;
@@ -45,6 +45,7 @@ export default function MacrosScreen() {
     sugarG: 0,
     satFatG: 0,
     sodiumMg: 0,
+    micros: {},
   });
 
   useFocusEffect(
@@ -80,14 +81,26 @@ export default function MacrosScreen() {
     { name: 'Fat', current: logged.fatG, target: goals?.fatG ?? null, unit: 'g', guidance: 'About 25% of calories' },
   ];
 
-  const basicMicros: MacroRow[] = [
+  const essentialRows: MacroRow[] = [
     { name: 'Fibre', current: logged.fiberG, target: isFemale ? 25 : 38, unit: 'g', guidance: isFemale ? 'Daily target for women' : 'Daily target for men' },
     { name: 'Sugars', current: logged.sugarG, target: Math.round((target * 0.1) / 4), unit: 'g', guidance: 'Under 10% of calories', limit: true },
     { name: 'Saturated fat', current: logged.satFatG, target: Math.round((target * 0.1) / 9), unit: 'g', guidance: 'Under 10% of calories', limit: true },
     { name: 'Sodium', current: logged.sodiumMg, target: 2300, unit: 'mg', guidance: 'Upper daily limit', limit: true },
   ];
 
-  if (!license) return <Redirect href="/" />;
+  const microRow = (def: MicroDef): MacroRow => {
+    const value = logged.micros[def.key] ?? null;
+    const reference = MICRO_NRV[def.key];
+    return {
+      name: def.label,
+      current: value ?? 0,
+      target: reference,
+      unit: def.unit,
+      guidance: value == null ? 'Not reported by the source' : `${Math.round((value / reference) * 100)}% of daily reference`,
+      valueText: formatMicroValue(value, def.unit),
+    };
+  };
+
   if (!loaded) {
     return <ThemedView style={styles.container} />;
   }
@@ -133,13 +146,14 @@ export default function MacrosScreen() {
               </ThemedText>
             </View>
             {mainMacros.map((row) => (
-              <NutrientRow key={row.name} row={row} accentText={accentText} theme={theme} />
+              <NutrientRow key={row.name} row={row} accentText={accentText} isDark={isDark} theme={theme} />
             ))}
           </ThemedView>
 
+          {/* ── Vitamins & minerals ───────────────────────────────── */}
           <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.line }]}>
             <ThemedText type="smallBold" style={styles.sectionLabel}>
-              BASIC MICRONUTRIENTS
+              MICRONUTRIENTS
             </ThemedText>
             <View style={styles.columnHead}>
               <ThemedText type="small" themeColor="textSecondary" style={styles.columnHeadText}>
@@ -149,14 +163,37 @@ export default function MacrosScreen() {
                 Target
               </ThemedText>
             </View>
-            {basicMicros.map((row) => (
-              <NutrientRow key={row.name} row={row} accentText={accentText} theme={theme} />
+            {(['vitamin', 'mineral'] as const).map((group) => (
+              <View key={group}>
+                <ThemedText type="smallBold" themeColor="textSecondary" style={styles.microGroupLabel}>
+                  {group === 'vitamin' ? 'Vitamins' : 'Minerals'}
+                </ThemedText>
+                {MICRO_DEFS.filter((def) => def.group === group).map((def) => (
+                  <NutrientRow
+                    key={def.key}
+                    row={microRow(def)}
+                    accentText={accentText}
+                    isDark={isDark}
+                    theme={theme}
+                  />
+                ))}
+              </View>
             ))}
+            <View>
+              <ThemedText type="smallBold" themeColor="textSecondary" style={styles.microGroupLabel}>
+                Other essentials
+              </ThemedText>
+              {essentialRows.map((row) => (
+                <NutrientRow key={row.name} row={row} accentText={accentText} isDark={isDark} theme={theme} />
+              ))}
+            </View>
           </ThemedView>
 
           <ThemedText type="small" themeColor="textSecondary" style={styles.footerNote}>
             Fibre, sugars, saturated fat and sodium fill from Open Food Facts when the pack lists
-            them. Manual quick-adds and missing labels stay blank. This is not a full vitamin panel.
+            them. Vitamins and minerals come from CoFID or Open Food Facts when the source
+            reports them. Blanks mean the source did not say. Percentages use EU daily reference
+            values for an average adult, not personal targets.
           </ThemedText>
         </ScrollView>
       </SafeAreaView>
@@ -167,29 +204,47 @@ export default function MacrosScreen() {
 function NutrientRow({
   row,
   accentText,
+  isDark,
   theme,
 }: {
   row: MacroRow;
   accentText: string;
+  isDark: boolean;
   theme: { line: string };
 }) {
   const targetLabel = row.target === null ? '—' : `${row.limit ? '≤' : '≥'} ${row.target}${row.unit}`;
+  const pct = row.target && row.target > 0 ? Math.max(0, Math.min(1, row.current / row.target)) : 0;
+  const overLimit = !!row.limit && row.target != null && row.current > row.target;
+  const barColor = overLimit ? Brand.danger : accentText;
+  const trackColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(13,21,30,0.08)';
   return (
     <View style={[styles.nutrientRow, { borderBottomColor: theme.line }]}>
-      <View style={styles.nutrientInfo}>
-        <ThemedText type="smallBold">{row.name}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {row.guidance}
-        </ThemedText>
+      <View style={styles.nutrientTop}>
+        <View style={styles.nutrientInfo}>
+          <ThemedText type="smallBold">{row.name}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {row.guidance}
+          </ThemedText>
+        </View>
+        <View style={styles.nutrientValues}>
+          <Text style={[styles.nutrientCurrent, { color: barColor }]}>
+            {row.valueText ?? `${Math.round(row.current)}${row.unit}`}
+          </Text>
+          <ThemedText type="small" themeColor="textSecondary">
+            {targetLabel}
+          </ThemedText>
+        </View>
       </View>
-      <View style={styles.nutrientValues}>
-        <Text style={[styles.nutrientCurrent, { color: accentText }]}>
-          {Math.round(row.current)}{row.unit}
-        </Text>
-        <ThemedText type="small" themeColor="textSecondary">
-          {targetLabel}
-        </ThemedText>
-      </View>
+      {row.target != null && row.target > 0 ? (
+        <View style={[styles.progressTrack, { backgroundColor: trackColor }]}>
+          <View
+            style={[
+              styles.progressFill,
+              { width: `${Math.round(pct * 100)}%`, backgroundColor: barColor },
+            ]}
+          />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -230,16 +285,29 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
   },
   sectionLabel: { textTransform: 'uppercase', letterSpacing: 1.2, opacity: 0.85, marginBottom: Spacing.one },
+  microGroupLabel: { marginTop: Spacing.two, letterSpacing: 0.8, opacity: 0.85 },
   nutrientRow: {
+    gap: 8,
+    paddingVertical: Spacing.two + 2,
+    borderBottomWidth: 1,
+  },
+  nutrientTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: Spacing.three,
-    paddingVertical: Spacing.two + 2,
-    borderBottomWidth: 1,
   },
   nutrientInfo: { flex: 1, gap: 2 },
   nutrientValues: { alignItems: 'flex-end', gap: 2 },
   nutrientCurrent: { fontSize: 15, fontWeight: '700', fontFamily: Fonts.mono },
+  progressTrack: {
+    height: 5,
+    borderRadius: 99,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 99,
+  },
   footerNote: { textAlign: 'center', lineHeight: 19, opacity: 0.85, marginTop: Spacing.two },
 });

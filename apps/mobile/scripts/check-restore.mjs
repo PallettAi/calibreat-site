@@ -8,11 +8,15 @@
  * duplicates (it has no runtime imports, so Node can load it) still agree with
  * the modules they mirror.
  */
-import { buildExportBundle, EXPORT_SCHEMA } from '../src/lib/export.ts';
-import { MEAL_SLOTS } from '../src/lib/diary.ts';
-import { SAVED_MEAL_LIMIT, SAVED_MEAL_MAX_ITEMS } from '../src/lib/saved-meals.ts';
-import { localDayKey } from '../src/lib/dates.ts';
-import {
+import { register } from 'node:module';
+
+// diary.ts imports its sibling micronutrients module without an extension, as Metro expects.
+register('./alias-hooks.mjs', import.meta.url);
+const { buildExportBundle, EXPORT_SCHEMA } = await import('../src/lib/export.ts');
+const { MEAL_SLOTS } = await import('../src/lib/diary.ts');
+const { SAVED_MEAL_LIMIT, SAVED_MEAL_MAX_ITEMS } = await import('../src/lib/saved-meals.ts');
+const { localDayKey } = await import('../src/lib/dates.ts');
+const {
   describePlan,
   describePlanNotes,
   describeRestored,
@@ -21,7 +25,7 @@ import {
   parseBackup,
   planRestore,
   RESTORE_MAX_BYTES,
-} from '../src/lib/restore.ts';
+} = await import('../src/lib/restore.ts');
 
 let fails = 0;
 const eq = (label, got, want) => {

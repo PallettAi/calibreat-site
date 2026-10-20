@@ -3,7 +3,8 @@
  * Independent literals: Mifflin BMR from check:math, Compendium MET × BMR × time.
  */
 import { bmr } from '../src/lib/nutrition.ts';
-import { sessionDurationSec, sessionKcal } from '../src/lib/workout.ts';
+import { EXERCISES } from '../src/lib/muscles.ts';
+import { WORKOUT_EFFORT, sessionDurationSec, sessionKcal } from '../src/lib/workout.ts';
 
 let fails = 0;
 const eq = (label, got, want) => {
@@ -58,6 +59,16 @@ eq('plank 3x10 male 30', sessionKcal({ bmr: male30, exerciseId: 'plank', sets: 3
 eq('chest-press 3x10 duration', sessionDurationSec('chest-press', 3, 10), 210);
 // 1780 × 3.5 × 210 / 86400 = 15.14 → 15
 eq('chest-press 3x10 male 30', sessionKcal({ bmr: male30, exerciseId: 'chest-press', sets: 3, reps: 10 }), 15);
+
+// Every catalogue lift must have an effort entry, or routines drop it and kcal reads 0.
+const missingEffort = EXERCISES.filter((ex) => !WORKOUT_EFFORT[ex.id]).map((ex) => ex.id);
+eq('every catalogue lift has a WORKOUT_EFFORT entry', missingEffort.join(',') || 'none', 'none');
+const zeroKcal = EXERCISES.filter((ex) => sessionKcal({ bmr: male30, exerciseId: ex.id, sets: 3, reps: 10 }) <= 0).map(
+  (ex) => ex.id,
+);
+eq('every catalogue lift burns nonzero kcal at 3x10', zeroKcal.join(',') || 'none', 'none');
+const orphanEffort = Object.keys(WORKOUT_EFFORT).filter((id) => !EXERCISES.some((ex) => ex.id === id));
+eq('no WORKOUT_EFFORT entry without a catalogue lift', orphanEffort.join(',') || 'none', 'none');
 
 if (fails) {
   console.log(`\n${fails} failed`);

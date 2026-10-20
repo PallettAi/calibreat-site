@@ -17,6 +17,7 @@
  */
 
 import type { MealSlot } from './diary';
+import type { Micros } from './micronutrients';
 
 /** Version tag for the JSON payload. Bump when the bundle shape changes. */
 export const EXPORT_SCHEMA = 'calibreat.export.v1';
@@ -37,6 +38,7 @@ export type ExportLogEntry = {
   sugarG?: number | null;
   satFatG?: number | null;
   sodiumMg?: number | null;
+  micros?: Micros | null;
   loggedAt: string;
 };
 

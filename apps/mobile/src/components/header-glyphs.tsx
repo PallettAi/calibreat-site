@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CrispPress } from '@/components/crisp-press';
 import { ACTIVE_FIRE, ACTIVE_WATER } from '@/components/glyph-data';
@@ -29,6 +29,33 @@ export function HeaderGlyphButton({
     >
       {children}
     </CrispPress>
+  );
+}
+
+/** Three-line menu button shared by the Home and Train headers. */
+export function HeaderMenuButton({
+  onPress,
+  borderColor,
+  backgroundColor,
+  lineColor,
+}: {
+  onPress: () => void;
+  borderColor: string;
+  backgroundColor: string;
+  lineColor: string;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel="Open menu"
+      style={({ pressed }) => [styles.menuBtn, { borderColor, backgroundColor }, pressed && styles.pressed]}
+    >
+      {[0, 1, 2].map((i) => (
+        <View key={i} style={[styles.menuLine, { backgroundColor: lineColor }]} />
+      ))}
+    </Pressable>
   );
 }
 
@@ -83,4 +110,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   countText: { color: '#FFF7ED', fontSize: 8, fontWeight: '800', lineHeight: 10 },
+  menuBtn: { width: 38, height: 38, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  menuLine: { width: 16, height: 2, borderRadius: 99, opacity: 0.85 },
+  pressed: { opacity: 0.65 },
 });

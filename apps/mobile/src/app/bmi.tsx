@@ -1,4 +1,4 @@
-import { Redirect, useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, type DimensionValue } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,9 +10,8 @@ import { Brand } from '@/constants/app';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
-import { getLatestWeighIn, getProfile, getWeighIns, type Profile, type WeighIn } from '@/lib/db';
+import { getFirstWeighIn, getLatestWeighIn, getProfile, type Profile, type WeighIn } from '@/lib/db';
 import { weightPosition, weightWindow, BMI_MAX, BMI_MIN, BMI_TICKS } from '@/lib/bmi-gauge';
-import { useLicense } from '@/lib/license-context';
 import { bmiBand, bodyMassIndex, healthyWeightRange, resolveBmiWeight } from '@/lib/nutrition';
 
 const BAND_LABEL: Record<string, string> = {
@@ -42,24 +41,27 @@ function formatWhen(iso: string | null): string | null {
 const FOOT = `The dial runs ${BMI_MIN} to ${BMI_MAX}, banded at ${BMI_TICKS.join(', ')}. BMI is a coarse index, not a diagnosis — muscle, bone and frame all move the number.`;
 
 export default function BmiScreen() {
-  const { license } = useLicense();
   const router = useRouter();
   const isDark = useColorScheme() === 'dark';
   const theme = useTheme();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [weighIns, setWeighIns] = useState<{ kg: number; measuredAt: string }[]>([]);
   const [latest, setLatest] = useState<WeighIn | null>(null);
+  const [first, setFirst] = useState<WeighIn | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
       (async () => {
-        const [p, w, latestWeighIn] = await Promise.all([getProfile(), getWeighIns(), getLatestWeighIn()]);
+        const [p, latestWeighIn, firstWeighIn] = await Promise.all([
+          getProfile(),
+          getLatestWeighIn(),
+          getFirstWeighIn(),
+        ]);
         if (cancelled) return;
         setProfile(p);
-        setWeighIns(w);
         setLatest(latestWeighIn);
+        setFirst(firstWeighIn);
         setLoaded(true);
       })();
       return () => {
@@ -67,8 +69,6 @@ export default function BmiScreen() {
       };
     }, []),
   );
-
-  if (!license) return <Redirect href="/" />;
 
   const accent = isDark ? Brand.lime : Brand.primaryDeep;
   const cardBg = isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF';
@@ -86,7 +86,10 @@ export default function BmiScreen() {
   const bmi = heightCm > 0 ? bodyMassIndex(resolved.kg, heightCm) : null;
   const band = bmi != null ? bmiBand(bmi) : null;
   const range = heightCm > 0 ? healthyWeightRange(heightCm) : null;
-  const firstKg = weighIns[0]?.kg ?? null;
+  // "Start" is the first weigh-in ever, not weighIns[0]. getWeighIns is a
+  // newest-60 window, so its first row is only the true start until someone
+  // passes 60 entries — the exact trap home.tsx asks getFirstWeighIn to avoid.
+  const firstKg = first?.kg ?? null;
   const startBmi = firstKg != null && heightCm > 0 ? bodyMassIndex(firstKg, heightCm) : null;
   const sourceDate = formatWhen(resolved.at);
   // The dial's idle bands and the bar's track are the same neutral, so the one
@@ -178,7 +181,7 @@ export default function BmiScreen() {
                 </View>
               ) : null}
 
-              {startBmi != null && bmi != null && weighIns.length > 0 && startBmi !== bmi ? (
+              {startBmi != null && bmi != null && first != null && startBmi !== bmi ? (
                 <ThemedText type="small" themeColor="textSecondary" style={styles.body}>
                   Start {startBmi} → now {bmi}
                 </ThemedText>

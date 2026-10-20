@@ -1,11 +1,14 @@
 /**
  * Name search: on-device UK CoFID first, Open Food Facts UK packs after.
+ * The world catalogue is never searched.
  *
  * CoFID is always available. OFF is best-effort — a downed or CORS-blocked
  * search must still return generic foods instead of a connection error.
  */
 
-export type FoodSource = 'cofid' | 'off' | 'usda';
+import type { Micros } from './micronutrients';
+
+export type FoodSource = 'cofid' | 'off';
 
 export type SearchFood = {
   barcode: string;
@@ -22,6 +25,7 @@ export type SearchFood = {
   portion: 'serving' | '100g';
   servingGrams: number | null;
   source: FoodSource;
+  micros?: Micros | null;
 };
 
 export type CofidFood = {
@@ -35,26 +39,18 @@ export type CofidFood = {
   sugarG: number | null;
   satFatG: number | null;
   sodiumMg: number | null;
+  micros?: Micros | null;
 };
 
 export type FoodSearchResult = {
   hits: SearchFood[];
   packsFailed: boolean;
-  /**
-   * USDA is a second source, consulted only when OFF comes back empty. When
-   * it went dark, an empty result list means "we could not ask", not "no such
-   * food" — a distinction the user is owed, because otherwise the app states
-   * as fact something it simply did not check.
-   */
-  usdaFailed: boolean;
 };
 
 type SearchDeps = {
   catalog?: CofidFood[];
   lookup?: (url: string) => Promise<unknown | null>;
   parseRemote?: (payload: unknown) => SearchFood[];
-  usdaLookup?: (query: string) => Promise<unknown | null>;
-  parseUsda?: (payload: unknown) => SearchFood[];
 };
 
 const SEARCH_LIMIT = 20;
@@ -90,6 +86,7 @@ export function cofidToFood(row: CofidFood): SearchFood {
     portion: '100g',
     servingGrams: 100,
     source: 'cofid',
+    micros: row.micros ?? null,
   };
 }
 
@@ -130,21 +127,19 @@ export function mergeFoodSearch(
   local: SearchFood[],
   remote: SearchFood[] | null,
   limit = SEARCH_LIMIT,
-  usdaFailed = false,
+  packsFailed = remote == null,
 ): FoodSearchResult {
-  const packsFailed = remote == null;
   const remoteHits = (remote ?? []).map((food) => ({ ...food, source: food.source ?? 'off' }));
-  // Reserve room for packs so a crowded CoFID hit list cannot hide them.
-  const remoteTake = packsFailed ? 0 : Math.min(remoteHits.length, Math.floor(limit / 2));
+  // Reserve room for remote hits so a crowded CoFID list cannot hide them.
+  const remoteTake = Math.min(remoteHits.length, Math.floor(limit / 2));
   const localTake = limit - remoteTake;
   return {
     hits: [...local.slice(0, localTake), ...remoteHits.slice(0, remoteTake)],
     packsFailed,
-    usdaFailed,
   };
 }
 
-function ukSearchUrl(query: string): string {
+function offSearchUrl(query: string): string {
   const params = `search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=12`;
   return `https://uk.openfoodfacts.org/cgi/search.pl?${params}`;
 }
@@ -153,36 +148,23 @@ export async function searchFoods(raw: string, deps: SearchDeps = {}): Promise<F
   const query = raw.trim();
   const catalog = deps.catalog ?? [];
   const local = searchCofid(query, catalog);
-  if (query.length < 2) return { hits: local, packsFailed: false, usdaFailed: false };
+  if (query.length < 2) return { hits: local, packsFailed: false };
 
   const lookup = deps.lookup;
   const parseRemote = deps.parseRemote ?? (() => []);
+  // No lookup means the launch probe found OFF unreachable: CoFID only, and that
+  // is not a pack failure. A lookup that was asked and failed is one.
   let remote: SearchFood[] | null = null;
   if (lookup) {
     // Single attempt on purpose: OFF failures are network-down, CORS or
-    // rate-limiting — an immediate second try loses every time.
-    const payload = await lookup(ukSearchUrl(query));
+    // rate-limiting — an immediate retry loses every time. UK only: the world
+    // catalogue mixes in non-UK food, so it is never asked here.
+    const payload = await lookup(offSearchUrl(query));
     remote = payload == null ? null : parseRemote(payload);
   }
 
-  // USDA is an open government dataset and a useful second source for common
-  // foods. Only use it when OFF did not produce results, avoiding duplicate
-  // results and an extra request for the normal path.
-  let usdaFailed = false;
-  if ((!remote || remote.length === 0) && deps.usdaLookup && deps.parseUsda) {
-    const payload = await deps.usdaLookup(query);
-    if (payload == null) {
-      // OFF answered (or was not consulted) and then this second source went
-      // dark. The empty list is now inconclusive, not a finding.
-      usdaFailed = true;
-    } else {
-      const usdaHits = deps.parseUsda(payload);
-      if (usdaHits.length) remote = [...(remote ?? []), ...usdaHits];
-    }
-  }
-
-  return mergeFoodSearch(local, remote, SEARCH_LIMIT, usdaFailed);
+  return mergeFoodSearch(local, remote, SEARCH_LIMIT, lookup != null && remote == null);
 }
 
 export const COFID_CREDIT =
-  'Generic foods: McCance and Widdowson’s Composition of Foods Integrated Dataset, Public Health England, Open Government Licence. Packaged products: Open Food Facts contributors.';
+  'Generic foods: McCance and Widdowson’s Composition of Foods Integrated Dataset 2021 (CoFID), published by Public Health England on GOV.UK under the Open Government Licence v3.0. Packaged products: contains data from Open Food Facts, available under the Open Database Licence (ODbL).';

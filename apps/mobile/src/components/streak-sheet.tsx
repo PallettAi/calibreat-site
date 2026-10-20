@@ -84,9 +84,13 @@ export function StreakSheet({
   const selection: ShareSelection = { format: shareFormat, template: shareTemplate };
   useEffect(() => {
     if (!visible) return;
-    setNow(Date.now());
-    const id = setInterval(() => setNow(Date.now()), 15000);
-    return () => clearInterval(id);
+    const tick = () => setNow(Date.now());
+    const initId = setTimeout(tick, 0);
+    const id = setInterval(tick, 15000);
+    return () => {
+      clearTimeout(initId);
+      clearInterval(id);
+    };
   }, [visible]);
 
   const lit = weekPips(streak.current);

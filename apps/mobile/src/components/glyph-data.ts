@@ -156,10 +156,12 @@ const W3_DROP =
 const W4_VESSEL =
   'M6.6 3.4L17.4 3.4L16.2 20.2C16.1 21.5 15.2 22.4 13.9 22.4L10.1 22.4C8.8 22.4 7.9 21.5 7.8 20.2Z';
 
+// Drop centred on x=11 and kept inside the 24 px box (bottom arc ends at y≈21.6,
+// so the stroke is never clipped). Satellite sits in the top-right corner.
 const W5_DROP =
-  'M10.4 6.6C10.4 6.6 4.4 13.4 4.4 17.4a6 6 0 0 0 12 0C16.4 13.4 10.4 6.6 10.4 6.6Z';
+  'M11 4C11 4 4.8 11.2 4.8 15.4a6.2 6.2 0 0 0 12.4 0C17.2 11.2 11 4 11 4Z';
 const W5_SATELLITE =
-  'M18.2 2.6C18.2 2.6 15.4 5.9 15.4 7.9a2.8 2.8 0 0 0 5.6 0C21 5.9 18.2 2.6 18.2 2.6Z';
+  'M19.2 1.8C19.2 1.8 16.6 4.8 16.6 6.6a2.6 2.6 0 0 0 5.2 0C21.8 4.8 19.2 1.8 19.2 1.8Z';
 
 export const WATER_VARIANTS: GlyphVariant[] = [
   {
@@ -225,7 +227,7 @@ export const WATER_VARIANTS: GlyphVariant[] = [
     note: 'A drop with a satellite drop trailing it — motion, so a topped-up day feels like something is pouring rather than filling.',
     viewBox: { w: 24, h: 24 },
     clip: W5_DROP,
-    reservoir: { top: 6.8, bottom: 23.4 },
+    reservoir: { top: 4, bottom: 21.6 },
     shapes: [
       { t: 'path', d: W5_DROP, fill: 'soft', opacity: 0.14 },
       { t: 'rise', fill: 'color' },

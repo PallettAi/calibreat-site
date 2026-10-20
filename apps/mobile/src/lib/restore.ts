@@ -488,9 +488,18 @@ export function validateRestoreRows(source: Record<string, unknown>): RestorePar
  *
  * The separator is a literal NUL byte, not a space — food names contain
  * spaces, so a space-separated fingerprint could alias two different rows into
- * one and silently drop a meal from a merge. NUL cannot appear in a CSV cell
- * or a food name. (It is invisible in most editors, which is why it is
- * commented.) */
+ * one and silently drop a meal from a merge. (It is invisible in most editors,
+ * which is why it is commented.)
+ *
+ * Note the separator is belt to a pair of braces rather than the only thing
+ * making this safe: every fingerprint takes a fixed number of fields and its
+ * last is always a strict ISO timestamp, so no field boundary can shift even
+ * with a space. That is worth stating because the NUL cannot be assumed —
+ * a CSV cell or a name from a food database may carry a control byte, and
+ * cleanName only trims. Adding a field to a fingerprint is the change that
+ * could actually make this fragile, so check-input-safety.mjs pins the
+ * resulting property (distinct rows, distinct fingerprints) rather than the
+ * separator itself. */
 
 const SEP = ' ';
 

@@ -1,7 +1,11 @@
 /**
  * Accuracy checks for Open Food Facts → log-entry mapping (npm run check:barcode).
  */
-import { lookupBarcode, parseOffProduct, scaleFood } from '../src/lib/barcode.ts';
+import { register } from 'node:module';
+
+// barcode.ts imports its sibling modules without extensions, as Metro expects.
+register('./alias-hooks.mjs', import.meta.url);
+const { lookupBarcode, parseOffProduct, scaleFood } = await import('../src/lib/barcode.ts');
 
 let fails = 0;
 const eq = (label, got, want) => {

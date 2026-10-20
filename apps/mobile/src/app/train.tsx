@@ -1,17 +1,20 @@
-import { Redirect, useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
+import { BrandMark } from '@/components/brand-mark';
 import { CrispPress } from '@/components/crisp-press';
 import { EatTrainSwitch } from '@/components/eat-train-switch';
+import { HeaderGlyphButton, HeaderMenuButton, StreakFireMark, WaterDropMark } from '@/components/header-glyphs';
 import { MuscleFigures } from '@/components/muscle-figures';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand } from '@/constants/app';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useKeyboardReveal, type KeyboardFieldProps } from '@/hooks/use-keyboard-reveal';
 import { useTheme } from '@/hooks/use-theme';
 import {
   addWorkoutSession,
@@ -20,12 +23,14 @@ import {
   getAllWorkouts,
   getProfile,
   getUnitPrefs,
+  getWaterForDay,
   getWeighIns,
   getWorkoutSessionsForDay,
   type Profile,
   type WorkoutSession,
 } from '@/lib/db';
-import { useLicense } from '@/lib/license-context';
+import { ROUTINE_NAME_MAX, addRoutine, isE1RMPR, isWeightPRAtReps, prefillFromLast, weeklyVolumeByExercise, type Routine } from '@/lib/routines';
+import { loadRoutines, saveRoutines } from '@/lib/routines-store';
 import {
   exercisesForMuscleAndEquipment,
   exercisesGrouped,
@@ -38,7 +43,9 @@ import {
   type MuscleSlug,
 } from '@/lib/muscles';
 import { bmr, resolveBmiWeight } from '@/lib/nutrition';
-import { formatWeightKg, parseWeightInput, type WeightUnit } from '@/lib/units';
+import { expireStreak, streakNeedsClaim } from '@/lib/streak';
+import { loadStreak } from '@/lib/streak-store';
+import { formatWeightKg, parseWeightInput, waterGoalMl, weightFromKg, type WeightUnit } from '@/lib/units';
 import {
   clampReps,
   clampSets,
@@ -55,7 +62,7 @@ import {
 const REST_TICK_MS = 1000;
 
 export default function TrainScreen() {
-  const { license } = useLicense();
+  const keyboard = useKeyboardReveal();
   const router = useRouter();
   const isDark = useColorScheme() === 'dark';
   const theme = useTheme();
@@ -72,22 +79,42 @@ export default function TrainScreen() {
   /** Full history for the volume/e1RM sparkline (filtered to selected lift). */
   const [history, setHistory] = useState<WorkoutSession[]>([]);
   const [loaded, setLoaded] = useState(false);
+  /** Header glyphs mirror Home's streak and water so the buttons read the same. */
+  const [headerStreak, setHeaderStreak] = useState({ count: 0, live: false });
+  const [waterPct, setWaterPct] = useState(0);
   const [logging, setLogging] = useState(false);
   /** Floating rest countdown: seconds remaining after last Add. */
   const [restLeft, setRestLeft] = useState<number | null>(null);
+  /** Saved routines (Train v2), loaded from local storage. */
+  const [routines, setRoutines] = useState<Routine[]>([]);
+  const [activeRoutineId, setActiveRoutineId] = useState<string | null>(null);
+  const [routineName, setRoutineName] = useState('');
+  const [routineError, setRoutineError] = useState<string | null>(null);
+  /** Shown after a per-set log when the set beats earlier history. */
+  const [prNote, setPrNote] = useState<string | null>(null);
 
   const todayKey = dayKey();
 
   const reloadDay = useCallback(async () => {
-    const [p, w, daySessions, prefs, all] = await Promise.all([
+    const [p, w, daySessions, prefs, all, saved, streakSaved, waterMl] = await Promise.all([
       getProfile(),
       getWeighIns(),
       getWorkoutSessionsForDay(todayKey),
       getUnitPrefs(),
       getAllWorkouts(),
+      loadRoutines(),
+      loadStreak(),
+      getWaterForDay(todayKey),
     ]);
+    setRoutines(saved);
     setProfile(p);
     setWeighIns(w);
+    const now = Date.now();
+    const activeStreak = expireStreak(streakSaved, now);
+    setHeaderStreak({ count: activeStreak.current, live: streakNeedsClaim(activeStreak, now) });
+    const latestKg = w.length ? w[w.length - 1]!.kg : p?.weightKg;
+    const goal = latestKg ? waterGoalMl(latestKg) : 0;
+    setWaterPct(goal ? Math.min(1, waterMl / goal) : 0);
     setSessions(daySessions);
     setHistory(all);
     setWeightUnit(prefs.weight);
@@ -131,6 +158,9 @@ export default function TrainScreen() {
   const accent = isDark ? Brand.lime : Brand.primaryDeep;
   const cardBg = isDark ? '#131D2D' : '#FFFFFF';
   const hairline = theme.line;
+  const glyphBg = isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF';
+  /** Home owns the water and streak sheets, so these buttons route there with a sheet param. */
+  const openHomeSheet = (sheet: 'water' | 'streak' | 'menu') => router.push({ pathname: '/home', params: { sheet } });
   const picked = hasPickedExercise(exerciseId);
   const exercise = picked ? getExercise(exerciseId) : undefined;
   const listed = picked ? listedMuscles(exerciseId) : [];
@@ -152,6 +182,15 @@ export default function TrainScreen() {
   const previewE1 = picked && weightKg > 0 ? epleyE1RM(weightKg, reps) : 0;
   const todayKcal = sessions.reduce((sum, s) => sum + s.kcal, 0);
   const canLog = picked && Boolean(profile) && sets > 0 && reps > 0 && !logging;
+  // One set doesn't use the Sets field, so a blank Sets box must not disable it.
+  const canLogOne = picked && sessionBmr != null && reps > 0 && !logging;
+  /** The most recent logged set for this lift; null until the lift has history. */
+  const lastLiftSet = useMemo(() => {
+    if (!picked) return null;
+    return prefillFromLast(
+      history.filter((s) => s.exerciseId === exerciseId).map((s) => ({ weightKg: s.weightKg ?? 0, reps: s.reps })),
+    );
+  }, [history, picked, exerciseId]);
 
   // History for the sparkline: only the selected lift, oldest → newest, max 24 points.
   const liftHistory = useMemo(() => {
@@ -160,6 +199,17 @@ export default function TrainScreen() {
   }, [history, picked, exerciseId]);
   const volumePoints = useMemo(() => liftHistory.map((s) => s.volumeKg), [liftHistory]);
   const hasVolumeSignal = volumePoints.some((v) => v > 0);
+
+  // Weekly (Mon–Sun) volume for the selected lift, from the per-set rows.
+  const weekVolumeKg = useMemo(() => {
+    if (!picked) return 0;
+    const byLift = weeklyVolumeByExercise(
+      history.map((s) => ({ dayKey: s.dayKey, exerciseId: s.exerciseId, sets: s.sets, reps: s.reps, weightKg: s.weightKg ?? 0 })),
+      todayKey,
+    );
+    return byLift[exerciseId ?? ''] ?? 0;
+  }, [history, picked, exerciseId, todayKey]);
+  const activeRoutine = routines.find((r) => r.id === activeRoutineId) ?? null;
 
   // Exercise list: when muscleFilter set, show only lifts that hit that muscle.
   const groupedExercises = useMemo(() => {
@@ -176,13 +226,6 @@ export default function TrainScreen() {
     return exercisesGrouped(equipment);
   }, [equipment, muscleFilter]);
   const muscleFilterLabel = muscleFilter ? muscleLabel(muscleFilter) : null;
-
-  // Every hook must run before any early return. `license` can flip to null
-  // mid-session (periodic revalidation, AppState resume, or the device being
-  // displaced), and returning above the useMemos below skipped three of them —
-  // React throws "Rendered fewer hooks than expected" and the root
-  // ErrorBoundary blanks the entire app, not just this screen.
-  if (!license) return <Redirect href="/" />;
 
   async function logSession() {
     if (!profile || !canLog || !picked) return;
@@ -203,6 +246,89 @@ export default function TrainScreen() {
     } finally {
       setLogging(false);
     }
+  }
+
+  /** One set at a time: the set's own kcal (one extra set, including the rest after it). */
+  async function logOneSet() {
+    if (!profile || !picked || logging || sessionBmr == null || reps <= 0) return;
+    setLogging(true);
+    setPrNote(null);
+    try {
+      const prior = history
+        .filter((s) => s.exerciseId === exerciseId)
+        .map((s) => ({ weightKg: s.weightKg ?? 0, reps: s.reps }));
+      const candidate = { weightKg, reps };
+      const setKcal =
+        sessionKcal({ bmr: sessionBmr, exerciseId, sets: 2, reps }) -
+        sessionKcal({ bmr: sessionBmr, exerciseId, sets: 1, reps });
+      await addWorkoutSession({
+        dayKey: todayKey,
+        exerciseId,
+        sets: 1,
+        reps,
+        kcal: setKcal,
+        weightKg,
+        volumeKg: sessionVolumeKg({ sets: 1, reps, weightKg }),
+        e1RMKg: epleyE1RM(weightKg, reps),
+      });
+      if (isWeightPRAtReps(prior, candidate)) setPrNote(`New PR · heaviest at ${reps} reps`);
+      else if (isE1RMPR(prior, candidate)) setPrNote('New PR · best estimated 1RM');
+      setRestLeft(restSec);
+      await reloadDay();
+    } finally {
+      setLogging(false);
+    }
+  }
+
+  /** Fills weight and reps from the last set logged for this lift. */
+  function repeatLastSet() {
+    if (!lastLiftSet) return;
+    if (lastLiftSet.weightKg > 0) {
+      // Stone is typed as "stones,pounds" (see the placeholder), not a single number.
+      const w = weightFromKg(lastLiftSet.weightKg, weightUnit);
+      setWeightText(weightUnit === 'st' ? `${w.stones},${w.pounds}` : String(w.value));
+    } else {
+      // Bodyweight last time: clear the field so an old weight isn't kept.
+      setWeightText('');
+    }
+    setRepsText(String(lastLiftSet.reps));
+  }
+
+  function selectRoutineItem(id: string, defaultSets: number) {
+    const ex = getExercise(id as ExerciseId);
+    if (!ex) return;
+    setEquipment(ex.equipment);
+    setExerciseId(id as ExerciseId);
+    setSetsText(String(defaultSets));
+    setMuscleFilter(null);
+    setPrNote(null);
+  }
+
+  function startRoutine(r: Routine) {
+    const first = r.items[0];
+    if (!first) return;
+    setActiveRoutineId(r.id);
+    selectRoutineItem(first.exerciseId, first.defaultSets);
+  }
+
+  /** Saves today's lifts; each exercise's default sets is the number of sets logged today. */
+  async function saveTodayAsRoutine() {
+    const setsByExercise = new Map<string, number>();
+    for (const s of sessions) setsByExercise.set(s.exerciseId, (setsByExercise.get(s.exerciseId) ?? 0) + s.sets);
+    const result = addRoutine(routines, {
+      id: `r${Date.now().toString(36)}`,
+      name: routineName,
+      createdAt: new Date().toISOString(),
+      items: [...setsByExercise.entries()].map(([exerciseId, defaultSets]) => ({ exerciseId, defaultSets })),
+    });
+    if (!result.ok) {
+      setRoutineError(result.error);
+      return;
+    }
+    await saveRoutines(result.routines);
+    setRoutines(result.routines);
+    setRoutineName('');
+    setRoutineError(null);
   }
 
   async function removeSession(id: number) {
@@ -229,7 +355,7 @@ export default function TrainScreen() {
       <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
         {/* Floating rest pill — anchored above the tab switch, stays visible across scroll. */}
         {restLeft != null ? (
-          <View style={[styles.restPillWrap, { pointerEvents: 'box-none' }]}>
+          <View pointerEvents="box-none" style={styles.restPillWrap}>
             <View
               style={[
                 styles.restPill,
@@ -255,7 +381,20 @@ export default function TrainScreen() {
           </View>
         ) : null}
 
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        {/* Pinned header: logo + Eat/Train switch stay visible while the workout list scrolls. */}
+        <View style={styles.pinned}>
+          <View style={styles.header}>
+            <BrandMark size={28} />
+            <View style={styles.headerRight}>
+              <HeaderGlyphButton label="Daily streak" onPress={() => openHomeSheet('streak')} borderColor={hairline} backgroundColor={glyphBg}>
+                <StreakFireMark live={headerStreak.live} count={headerStreak.count} color={headerStreak.live ? '#EA580C' : '#9A3412'} />
+              </HeaderGlyphButton>
+              <HeaderGlyphButton label="Add water" onPress={() => openHomeSheet('water')} borderColor={hairline} backgroundColor={glyphBg}>
+                <WaterDropMark fill={waterPct} color={isDark ? '#38BDF8' : '#0284C7'} />
+              </HeaderGlyphButton>
+              <HeaderMenuButton onPress={() => openHomeSheet('menu')} borderColor={hairline} backgroundColor={glyphBg} lineColor={theme.text} />
+            </View>
+          </View>
           <EatTrainSwitch
             value="train"
             isDark={isDark}
@@ -263,7 +402,9 @@ export default function TrainScreen() {
               if (mode === 'eat') router.replace('/home');
             }}
           />
+        </View>
 
+        <ScrollView {...keyboard.scrollProps} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           {!picked ? (
             <ThemedText type="small" themeColor="textSecondary">
               Pick a workout to see the muscles it uses. {muscleFilterLabel ? `Showing ${muscleFilterLabel} lifts.` : 'Or tap a muscle on the figure below.'}
@@ -396,6 +537,7 @@ export default function TrainScreen() {
                     onBump={(d) => bump('sets', d)}
                     accent={accent}
                     theme={theme}
+                    inputProps={keyboard.field('sets')}
                   />
                   <CountStepper
                     label="Reps"
@@ -404,6 +546,7 @@ export default function TrainScreen() {
                     onBump={(d) => bump('reps', d)}
                     accent={accent}
                     theme={theme}
+                    inputProps={keyboard.field('reps')}
                   />
                 </View>
 
@@ -414,6 +557,7 @@ export default function TrainScreen() {
                   </ThemedText>
                   <View style={styles.weightControls}>
                     <TextInput
+                      {...keyboard.field('weight')}
                       value={weightText}
                       onChangeText={(text) => setWeightText(text.replace(/[^0-9.,]/g, ''))}
                       placeholder={weightUnit === 'kg' ? 'e.g. 40' : weightUnit === 'lb' ? 'e.g. 88' : 'e.g. 9,6'}
@@ -471,8 +615,8 @@ export default function TrainScreen() {
                     </View>
                     <ThemedText type="small" themeColor="textSecondary">
                       {exerciseId === 'plank'
-                        ? `${sets} × ${reps} · each rep is ~20s hold · ${formatDurationSec(durationSec)} · ${restSec}s rest · from your profile. Add it to raise Eat remaining today.`
-                        : `${sets} × ${reps}${weightKg > 0 ? ` @ ${displayWeightFor(weightKg)}` : ''} · ${formatDurationSec(durationSec)} · ${restSec}s rest · from your profile (age, sex, height, weight). Add it to raise Eat remaining today.`}
+                        ? `${sets} × ${reps} · each rep is ~20s hold · ${formatDurationSec(durationSec)} · ${restSec}s rest · from your profile. Tracked alongside your daily intake.`
+                        : `${sets} × ${reps}${weightKg > 0 ? ` @ ${displayWeightFor(weightKg)}` : ''} · ${formatDurationSec(durationSec)} · ${restSec}s rest · from your profile (age, sex, height, weight). Tracked alongside your daily intake.`}
                     </ThemedText>
                   </View>
                 )}
@@ -487,6 +631,37 @@ export default function TrainScreen() {
                     {logging ? 'Adding…' : 'Add to tracker'}
                   </Text>
                 </CrispPress>
+
+                <View style={styles.setRow}>
+                  <CrispPress
+                    onPress={repeatLastSet}
+                    disabled={!lastLiftSet}
+                    style={styles.setButtonSlot}
+                    innerStyle={[styles.setButton, { borderColor: accent }]}
+                    accessibilityLabel="Repeat your last set"
+                  >
+                    <Text style={[styles.setButtonText, { color: accent }]}>Repeat last set</Text>
+                  </CrispPress>
+                  <CrispPress
+                    onPress={logOneSet}
+                    disabled={!canLogOne}
+                    style={styles.setButtonSlot}
+                    innerStyle={[styles.setButton, { borderColor: accent, backgroundColor: accent }]}
+                    accessibilityLabel="Log one set"
+                  >
+                    <Text style={[styles.setButtonText, { color: isDark ? '#0A1019' : '#FFFFFF' }]}>Log one set</Text>
+                  </CrispPress>
+                </View>
+                {prNote ? (
+                  <ThemedText type="smallBold" style={{ color: accent }}>
+                    {prNote}
+                  </ThemedText>
+                ) : null}
+                {weekVolumeKg > 0 ? (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    This week · {weekVolumeKg.toLocaleString()} kg volume
+                  </ThemedText>
+                ) : null}
 
                 {/* Volume / e1RM sparkline for this lift — same visual language as True Burn. */}
                 {liftHistory.length >= 2 ? (
@@ -503,7 +678,6 @@ export default function TrainScreen() {
                       points={hasVolumeSignal ? volumePoints : liftHistory.map((s) => s.e1RMKg)}
                       accent={accent}
                       accentText={accent}
-                      track={theme.muted}
                       unit=" kg"
                     />
                     <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
@@ -522,7 +696,76 @@ export default function TrainScreen() {
           ) : null}
 
           <ThemedText type="smallBold" style={[styles.section, { color: theme.muted }]}>
-            Today · {todayKcal} kcal on Eat remaining
+            Routines
+          </ThemedText>
+          {activeRoutine ? (
+            <View style={styles.chipRow}>
+              {activeRoutine.items.map((item) => {
+                const name = getExercise(item.exerciseId as ExerciseId)?.name ?? item.exerciseId;
+                return (
+                  <Pressable
+                    key={item.exerciseId}
+                    onPress={() => selectRoutineItem(item.exerciseId, item.defaultSets)}
+                    style={[styles.chip, { borderColor: accent }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Go to ${name}`}
+                  >
+                    <Text style={[styles.chipText, { color: accent }]}>{name}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
+          {routines.length === 0 ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              Save the lifts you log today as a routine, then start it in one tap next time.
+            </ThemedText>
+          ) : (
+            <View style={styles.chipRow}>
+              {routines.map((r) => (
+                <Pressable
+                  key={r.id}
+                  onPress={() => startRoutine(r)}
+                  style={[styles.chip, { borderColor: accent }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Start routine ${r.name}`}
+                >
+                  <Text style={[styles.chipText, { color: accent }]}>{r.name}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+          {sessions.length > 0 ? (
+            <View style={styles.saveRoutineRow}>
+              <TextInput
+                {...keyboard.field('routineName')}
+                value={routineName}
+                onChangeText={(t) => {
+                  setRoutineName(t);
+                  setRoutineError(null);
+                }}
+                placeholder="Routine name"
+                placeholderTextColor={theme.muted}
+                maxLength={ROUTINE_NAME_MAX}
+                style={[styles.routineInput, { color: theme.text, borderColor: hairline }]}
+              />
+              <CrispPress
+                onPress={saveTodayAsRoutine}
+                innerStyle={[styles.setButton, { borderColor: accent, backgroundColor: accent }]}
+                accessibilityLabel="Save today's lifts as a routine"
+              >
+                <Text style={[styles.setButtonText, { color: isDark ? '#0A1019' : '#FFFFFF' }]}>Save</Text>
+              </CrispPress>
+            </View>
+          ) : null}
+          {routineError ? (
+            <ThemedText type="small" style={{ color: Brand.danger }}>
+              {routineError}
+            </ThemedText>
+          ) : null}
+
+          <ThemedText type="smallBold" style={[styles.section, { color: theme.muted }]}>
+            Today · {todayKcal} kcal trained
           </ThemedText>
           {sessions.length === 0 ? (
             <ThemedText type="small" themeColor="textSecondary">
@@ -557,6 +800,7 @@ export default function TrainScreen() {
               );
             })
           )}
+          {keyboard.bottomInset > 0 ? <View style={{ height: keyboard.bottomInset }} /> : null}
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -567,13 +811,11 @@ function VolumeChart({
   points,
   accent,
   accentText,
-  track,
   unit,
 }: {
   points: number[];
   accent: string;
   accentText: string;
-  track: string;
   unit: string;
 }) {
   const w = 300;
@@ -664,6 +906,7 @@ function CountStepper({
   onBump,
   accent,
   theme,
+  inputProps,
 }: {
   label: string;
   value: string;
@@ -671,6 +914,7 @@ function CountStepper({
   onBump: (delta: number) => void;
   accent: string;
   theme: { text: string; muted: string; inputBackground: string; lineStrong: string };
+  inputProps: KeyboardFieldProps;
 }) {
   return (
     <View style={styles.stepper}>
@@ -687,6 +931,7 @@ function CountStepper({
           <Text style={[styles.stepBtnText, { color: accent }]}>−</Text>
         </Pressable>
         <TextInput
+          {...inputProps}
           value={value}
           onChangeText={(text) => onChange(text.replace(/[^0-9]/g, ''))}
           keyboardType="number-pad"
@@ -722,6 +967,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingBottom: Spacing.five,
     gap: Spacing.two,
+    maxWidth: MaxContentWidth,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.two },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  pinned: {
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.two,
     maxWidth: MaxContentWidth,
     width: '100%',
     alignSelf: 'center',
@@ -853,6 +1109,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logButtonText: { fontSize: 15, fontWeight: '800' },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  chip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: Spacing.three, paddingVertical: Spacing.one },
+  chipText: { fontSize: 14, fontWeight: '600' },
+  saveRoutineRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  routineInput: { flex: 1, borderWidth: StyleSheet.hairlineWidth, borderRadius: 10, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, fontSize: 16 },
+  setRow: { flexDirection: 'row', gap: Spacing.two },
+  setButtonSlot: { flex: 1 },
+  setButton: { flex: 1, borderWidth: 1, borderRadius: 999, alignItems: 'center', paddingVertical: Spacing.two },
+  setButtonText: { fontSize: 15, fontWeight: '700' },
   chartBlock: { gap: Spacing.two, paddingTop: Spacing.one, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(128,138,148,0.2)' },
   chartHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   chartLabel: { fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase' },

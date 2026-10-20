@@ -22,41 +22,104 @@ export type Equipment = 'free' | 'machine';
 
 export type ExerciseId =
   | 'ab-crunch-machine'
+  | 'arm-circle'
+  | 'assisted-dip'
+  | 'assisted-pull-up'
+  | 'back-extension'
+  | 'back-extension-machine'
   | 'bench-press'
   | 'bent-over-row'
   | 'bicep-curl'
+  | 'bicycle-crunch'
   | 'bulgarian-split-squat'
+  | 'burpee'
+  | 'cable-crunch'
+  | 'cable-curl'
+  | 'cable-fly'
+  | 'cable-lateral-raise'
   | 'cable-pushdown'
+  | 'cable-woodchop'
   | 'calf-raise'
   | 'chest-press'
+  | 'chest-supported-row'
   | 'chin-up'
+  | 'concentration-curl'
+  | 'crunch'
+  | 'dead-bug'
   | 'deadlift'
+  | 'decline-chest-press'
+  | 'decline-push-up'
+  | 'diamond-push-up'
+  | 'donkey-kick'
+  | 'doorway-row'
+  | 'dumbbell-fly'
+  | 'dumbbell-row'
   | 'face-pull'
+  | 'fire-hydrant'
+  | 'front-raise'
+  | 'glute-bridge'
+  | 'glute-kickback-machine'
+  | 'goblet-squat'
+  | 'good-morning'
+  | 'hack-squat'
   | 'hammer-curl'
   | 'hip-abduction'
+  | 'hip-adduction'
   | 'hip-thrust'
   | 'incline-bench'
+  | 'incline-chest-press'
+  | 'jump-squat'
+  | 'jumping-jack'
   | 'lat-pulldown'
+  | 'lateral-lunge'
   | 'lateral-raise'
+  | 'lateral-raise-machine'
   | 'leg-extension'
   | 'leg-press'
+  | 'leg-raise'
   | 'lunge'
   | 'lying-leg-curl'
+  | 'mountain-climber'
   | 'overhead-press'
+  | 'overhead-triceps-extension'
   | 'pec-deck'
+  | 'pike-push-up'
   | 'plank'
   | 'preacher-curl'
   | 'pull-up'
   | 'push-up'
+  | 'reverse-crunch'
+  | 'reverse-fly'
+  | 'reverse-hyperextension'
+  | 'reverse-lunge'
+  | 'reverse-pec-deck'
   | 'romanian-deadlift'
+  | 'rotary-torso'
   | 'russian-twist'
   | 'seated-calf-raise'
+  | 'seated-leg-curl'
   | 'seated-row'
   | 'shoulder-press-machine'
+  | 'shoulder-tap'
+  | 'side-plank'
+  | 'single-leg-calf-raise'
+  | 'single-leg-glute-bridge'
+  | 'single-leg-romanian-deadlift'
   | 'sit-up'
+  | 'skipping'
   | 'skull-crusher'
+  | 'smith-bench-press'
+  | 'smith-shoulder-press'
+  | 'smith-squat'
   | 'squat'
-  | 'tricep-dip';
+  | 'standing-calf-raise-machine'
+  | 'step-up'
+  | 'sumo-squat'
+  | 'superman'
+  | 'tricep-dip'
+  | 't-bar-row'
+  | 'triceps-press-machine'
+  | 'wall-sit';
 
 export type MusclePlate = 'front' | 'back';
 
@@ -168,6 +231,70 @@ export const EXERCISES: ExerciseDef[] = [
   { id: 'lying-leg-curl', name: 'Lying leg curl', ...MACHINE, primary: ['hamstring'], assisting: [] },
   { id: 'hip-abduction', name: 'Hip abduction', ...MACHINE, primary: ['gluteal'], assisting: [] },
   { id: 'seated-calf-raise', name: 'Seated calf raise', ...MACHINE, primary: ['calves'], assisting: [] },
+  { id: 'incline-chest-press', name: 'Incline chest press', ...MACHINE, primary: ['chest'], assisting: ['triceps', 'deltoids'] },
+  { id: 'decline-chest-press', name: 'Decline chest press', ...MACHINE, primary: ['chest'], assisting: ['triceps'] },
+  { id: 'smith-bench-press', name: 'Smith bench press', ...MACHINE, primary: ['chest'], assisting: ['triceps', 'deltoids'] },
+  { id: 'cable-fly', name: 'Cable fly', ...MACHINE, primary: ['chest'], assisting: ['deltoids'] },
+  { id: 'chest-supported-row', name: 'Chest-supported row', ...MACHINE, primary: ['upper-back'], assisting: ['biceps'] },
+  { id: 't-bar-row', name: 'T-bar row', ...MACHINE, primary: ['upper-back'], assisting: ['biceps', 'lower-back'] },
+  { id: 'assisted-pull-up', name: 'Assisted pull-up', ...MACHINE, primary: ['upper-back'], assisting: ['biceps'] },
+  { id: 'assisted-dip', name: 'Assisted dip', ...MACHINE, primary: ['triceps'], assisting: ['chest', 'deltoids'] },
+  { id: 'reverse-pec-deck', name: 'Reverse pec deck', ...MACHINE, primary: ['deltoids'], assisting: ['upper-back'] },
+  { id: 'lateral-raise-machine', name: 'Lateral raise machine', ...MACHINE, primary: ['deltoids'], assisting: [] },
+  { id: 'cable-lateral-raise', name: 'Cable lateral raise', ...MACHINE, primary: ['deltoids'], assisting: [] },
+  { id: 'smith-shoulder-press', name: 'Smith shoulder press', ...MACHINE, primary: ['deltoids'], assisting: ['triceps'] },
+  { id: 'triceps-press-machine', name: 'Triceps press machine', ...MACHINE, primary: ['triceps'], assisting: [] },
+  { id: 'cable-curl', name: 'Cable curl', ...MACHINE, primary: ['biceps'], assisting: ['forearm'] },
+  { id: 'smith-squat', name: 'Smith squat', ...MACHINE, primary: ['quadriceps', 'gluteal'], assisting: ['hamstring', 'lower-back'] },
+  { id: 'hack-squat', name: 'Hack squat', ...MACHINE, primary: ['quadriceps'], assisting: ['gluteal', 'hamstring'] },
+  { id: 'hip-adduction', name: 'Hip adduction', ...MACHINE, primary: ['adductors'], assisting: [] },
+  { id: 'glute-kickback-machine', name: 'Glute kickback machine', ...MACHINE, primary: ['gluteal'], assisting: ['hamstring'] },
+  { id: 'reverse-hyperextension', name: 'Reverse hyperextension', ...MACHINE, primary: ['gluteal'], assisting: ['lower-back', 'hamstring'] },
+  { id: 'seated-leg-curl', name: 'Seated leg curl', ...MACHINE, primary: ['hamstring'], assisting: [] },
+  { id: 'standing-calf-raise-machine', name: 'Standing calf raise machine', ...MACHINE, primary: ['calves'], assisting: [] },
+  { id: 'back-extension-machine', name: 'Back extension machine', ...MACHINE, primary: ['lower-back'], assisting: ['gluteal', 'hamstring'] },
+  { id: 'rotary-torso', name: 'Rotary torso', ...MACHINE, primary: ['obliques'], assisting: ['abs'] },
+  { id: 'cable-crunch', name: 'Cable crunch', ...MACHINE, primary: ['abs'], assisting: ['obliques'] },
+  { id: 'cable-woodchop', name: 'Cable woodchop', ...MACHINE, primary: ['obliques'], assisting: ['abs', 'deltoids'] },
+  // Home and free-weight additions: bodyweight first, then dumbbells.
+  { id: 'decline-push-up', name: 'Decline push-up', ...FREE, primary: ['chest'], assisting: ['triceps', 'deltoids'] },
+  { id: 'diamond-push-up', name: 'Diamond push-up', ...FREE, primary: ['triceps'], assisting: ['chest', 'deltoids'] },
+  { id: 'dumbbell-fly', name: 'Dumbbell fly', ...FREE, primary: ['chest'], assisting: ['deltoids'] },
+  { id: 'overhead-triceps-extension', name: 'Overhead triceps extension', ...FREE, primary: ['triceps'], assisting: [] },
+  { id: 'superman', name: 'Superman', ...FREE, primary: ['lower-back'], assisting: ['gluteal', 'upper-back'] },
+  { id: 'back-extension', name: 'Back extension', ...FREE, primary: ['lower-back'], assisting: ['gluteal', 'hamstring'] },
+  { id: 'good-morning', name: 'Good morning', ...FREE, primary: ['lower-back'], assisting: ['hamstring', 'gluteal'] },
+  { id: 'dumbbell-row', name: 'Dumbbell row', ...FREE, primary: ['upper-back'], assisting: ['biceps'] },
+  { id: 'doorway-row', name: 'Doorway row', ...FREE, primary: ['upper-back'], assisting: ['biceps'] },
+  { id: 'reverse-fly', name: 'Reverse fly', ...FREE, primary: ['upper-back'], assisting: ['deltoids'] },
+  { id: 'pike-push-up', name: 'Pike push-up', ...FREE, primary: ['deltoids'], assisting: ['triceps', 'chest'] },
+  { id: 'front-raise', name: 'Front raise', ...FREE, primary: ['deltoids'], assisting: ['chest'] },
+  { id: 'arm-circle', name: 'Arm circles', ...FREE, primary: ['deltoids'], assisting: [] },
+  { id: 'jumping-jack', name: 'Jumping jacks', ...FREE, primary: ['deltoids'], assisting: ['calves', 'adductors'] },
+  { id: 'concentration-curl', name: 'Concentration curl', ...FREE, primary: ['biceps'], assisting: ['forearm'] },
+  { id: 'crunch', name: 'Crunch', ...FREE, primary: ['abs'], assisting: ['obliques'] },
+  { id: 'reverse-crunch', name: 'Reverse crunch', ...FREE, primary: ['abs'], assisting: ['obliques'] },
+  { id: 'dead-bug', name: 'Dead bug', ...FREE, primary: ['abs'], assisting: ['obliques'] },
+  { id: 'leg-raise', name: 'Leg raise', ...FREE, primary: ['abs'], assisting: [] },
+  { id: 'mountain-climber', name: 'Mountain climber', ...FREE, primary: ['abs'], assisting: ['deltoids', 'quadriceps'] },
+  { id: 'shoulder-tap', name: 'Shoulder tap', ...FREE, primary: ['abs'], assisting: ['deltoids', 'obliques'] },
+  { id: 'bicycle-crunch', name: 'Bicycle crunch', ...FREE, primary: ['obliques'], assisting: ['abs'] },
+  { id: 'side-plank', name: 'Side plank', ...FREE, primary: ['obliques'], assisting: ['abs'] },
+  { id: 'jump-squat', name: 'Jump squat', ...FREE, primary: ['quadriceps', 'gluteal'], assisting: ['hamstring', 'calves'] },
+  { id: 'wall-sit', name: 'Wall sit', ...FREE, primary: ['quadriceps'], assisting: ['gluteal'] },
+  { id: 'step-up', name: 'Step-up', ...FREE, primary: ['quadriceps', 'gluteal'], assisting: ['hamstring'] },
+  { id: 'reverse-lunge', name: 'Reverse lunge', ...FREE, primary: ['quadriceps', 'gluteal'], assisting: ['hamstring'] },
+  { id: 'lateral-lunge', name: 'Lateral lunge', ...FREE, primary: ['quadriceps', 'gluteal'], assisting: ['adductors', 'hamstring'] },
+  { id: 'sumo-squat', name: 'Sumo squat', ...FREE, primary: ['quadriceps', 'gluteal'], assisting: ['adductors', 'hamstring'] },
+  { id: 'goblet-squat', name: 'Goblet squat', ...FREE, primary: ['quadriceps', 'gluteal'], assisting: ['lower-back'] },
+  { id: 'burpee', name: 'Burpee', ...FREE, primary: ['quadriceps'], assisting: ['chest', 'triceps', 'deltoids', 'abs'] },
+  { id: 'glute-bridge', name: 'Glute bridge', ...FREE, primary: ['gluteal'], assisting: ['hamstring', 'lower-back'] },
+  { id: 'single-leg-glute-bridge', name: 'Single-leg glute bridge', ...FREE, primary: ['gluteal'], assisting: ['hamstring'] },
+  { id: 'donkey-kick', name: 'Donkey kick', ...FREE, primary: ['gluteal'], assisting: ['lower-back'] },
+  { id: 'fire-hydrant', name: 'Fire hydrant', ...FREE, primary: ['gluteal'], assisting: ['adductors'] },
+  { id: 'single-leg-romanian-deadlift', name: 'Single-leg Romanian deadlift', ...FREE, primary: ['hamstring'], assisting: ['gluteal', 'lower-back'] },
+  { id: 'single-leg-calf-raise', name: 'Single-leg calf raise', ...FREE, primary: ['calves'], assisting: [] },
+  { id: 'skipping', name: 'Skipping', ...FREE, primary: ['calves'], assisting: ['quadriceps', 'deltoids'] },
 ];
 
 export function getExercise(id: string): ExerciseDef | undefined {

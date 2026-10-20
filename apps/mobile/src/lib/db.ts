@@ -19,6 +19,7 @@ import {
   type SavedMealItem,
 } from '@/lib/saved-meals';
 import { localCutoffDayKey, localDayKey } from '@/lib/dates';
+import { parseMicros, serializeMicros, type Micros } from '@/lib/micronutrients';
 import type { RestorePlan } from '@/lib/restore';
 import { computeGoals, type ActivityLevel, type GoalDirection, type Sex } from '@/lib/nutrition';
 import type { HeightUnit, WaterUnit, WeightUnit } from '@/lib/units';
@@ -30,8 +31,8 @@ export type { SavedMeal, SavedMealItem };
  * calibrEAT local-first data layer (M1).
  *
  * Everything the user logs lives in a single on-device SQLite database —
- * no account, no server storage (the only network call in the app remains
- * license validation). All queries are small and day-scoped so the schema
+ * no account, no server storage (the app makes no network calls of its own).
+ * All queries are small and day-scoped so the schema
  * stays simple: a single profile row, a single computed-goals row, and
  * append-only water/weigh-in logs.
  */
@@ -218,6 +219,7 @@ function getDb(): Promise<SQLiteDatabase> {
         'ALTER TABLE log_entries ADD COLUMN sugar_g INTEGER',
         'ALTER TABLE log_entries ADD COLUMN sat_fat_g INTEGER',
         'ALTER TABLE log_entries ADD COLUMN sodium_mg INTEGER',
+        'ALTER TABLE log_entries ADD COLUMN micros_json TEXT',
       ]) {
         try {
           await db.execAsync(column);
@@ -260,6 +262,7 @@ type LogRow = {
   sugar_g: number | null;
   sat_fat_g: number | null;
   sodium_mg: number | null;
+  micros_json: string | null;
   logged_at: string;
 };
 
@@ -282,6 +285,7 @@ function mapLogRow(row: LogRow): LogEntry {
     sugarG: row.sugar_g,
     satFatG: row.sat_fat_g,
     sodiumMg: row.sodium_mg,
+    micros: parseMicros(row.micros_json),
     loggedAt: row.logged_at,
   };
 }
@@ -320,6 +324,7 @@ export type LogInput = {
   sugarG?: number | null;
   satFatG?: number | null;
   sodiumMg?: number | null;
+  micros?: Micros | null;
 };
 
 function cleanName(name?: string | null): string | null {
@@ -603,9 +608,10 @@ export async function getFirstWeighIn(): Promise<WeighIn | null> {
 export async function addLogEntry(input: LogInput): Promise<LogEntry> {
   const db = await getDb();
   const kcal = Math.max(0, Math.round(input.kcal));
+  const microsJson = serializeMicros(input.micros);
   const result = await db.runAsync(
-    `INSERT INTO log_entries (day_key, meal, name, kcal, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sat_fat_g, sodium_mg, logged_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO log_entries (day_key, meal, name, kcal, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sat_fat_g, sodium_mg, micros_json, logged_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.dayKey,
       input.meal,
@@ -618,6 +624,7 @@ export async function addLogEntry(input: LogInput): Promise<LogEntry> {
       input.sugarG ?? null,
       input.satFatG ?? null,
       input.sodiumMg ?? null,
+      microsJson,
       new Date().toISOString(),
     ],
   );
@@ -634,6 +641,7 @@ export async function addLogEntry(input: LogInput): Promise<LogEntry> {
     sugarG: input.sugarG ?? null,
     satFatG: input.satFatG ?? null,
     sodiumMg: input.sodiumMg ?? null,
+    micros: parseMicros(microsJson),
     loggedAt: new Date().toISOString(),
   };
 }
@@ -643,16 +651,16 @@ export async function updateLogEntry(id: number, input: Omit<LogInput, 'dayKey'>
   const kcal = Math.max(0, Math.round(input.kcal));
   if (input.dayKey) {
     await db.runAsync(
-      `UPDATE log_entries SET day_key = ?, meal = ?, name = ?, kcal = ?, protein_g = ?, carbs_g = ?, fat_g = ?, fiber_g = ?, sugar_g = ?, sat_fat_g = ?, sodium_mg = ?
+      `UPDATE log_entries SET day_key = ?, meal = ?, name = ?, kcal = ?, protein_g = ?, carbs_g = ?, fat_g = ?, fiber_g = ?, sugar_g = ?, sat_fat_g = ?, sodium_mg = ?, micros_json = ?
        WHERE id = ?`,
-      [input.dayKey, input.meal, cleanName(input.name), kcal, input.proteinG ?? null, input.carbsG ?? null, input.fatG ?? null, input.fiberG ?? null, input.sugarG ?? null, input.satFatG ?? null, input.sodiumMg ?? null, id],
+      [input.dayKey, input.meal, cleanName(input.name), kcal, input.proteinG ?? null, input.carbsG ?? null, input.fatG ?? null, input.fiberG ?? null, input.sugarG ?? null, input.satFatG ?? null, input.sodiumMg ?? null, serializeMicros(input.micros), id],
     );
     return;
   }
   await db.runAsync(
-    `UPDATE log_entries SET meal = ?, name = ?, kcal = ?, protein_g = ?, carbs_g = ?, fat_g = ?, fiber_g = ?, sugar_g = ?, sat_fat_g = ?, sodium_mg = ?
+    `UPDATE log_entries SET meal = ?, name = ?, kcal = ?, protein_g = ?, carbs_g = ?, fat_g = ?, fiber_g = ?, sugar_g = ?, sat_fat_g = ?, sodium_mg = ?, micros_json = ?
      WHERE id = ?`,
-    [input.meal, cleanName(input.name), kcal, input.proteinG ?? null, input.carbsG ?? null, input.fatG ?? null, input.fiberG ?? null, input.sugarG ?? null, input.satFatG ?? null, input.sodiumMg ?? null, id],
+    [input.meal, cleanName(input.name), kcal, input.proteinG ?? null, input.carbsG ?? null, input.fatG ?? null, input.fiberG ?? null, input.sugarG ?? null, input.satFatG ?? null, input.sodiumMg ?? null, serializeMicros(input.micros), id],
   );
 }
 
@@ -664,7 +672,7 @@ export async function deleteLogEntry(id: number): Promise<void> {
 export async function getLogsForDay(dayKeyValue: string): Promise<LogEntry[]> {
   const db = await getDb();
   const rows = await db.getAllAsync<LogRow>(
-    'SELECT id, day_key, meal, name, kcal, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sat_fat_g, sodium_mg, logged_at FROM log_entries WHERE day_key = ? ORDER BY logged_at ASC, id ASC',
+    'SELECT id, day_key, meal, name, kcal, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sat_fat_g, sodium_mg, micros_json, logged_at FROM log_entries WHERE day_key = ? ORDER BY logged_at ASC, id ASC',
     [dayKeyValue],
   );
   return rows.map(mapLogRow);
@@ -673,7 +681,7 @@ export async function getLogsForDay(dayKeyValue: string): Promise<LogEntry[]> {
 export async function getRecentLogs(limit = 40): Promise<LogEntry[]> {
   const db = await getDb();
   const rows = await db.getAllAsync<LogRow>(
-    'SELECT id, day_key, meal, name, kcal, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sat_fat_g, sodium_mg, logged_at FROM log_entries ORDER BY logged_at DESC, id DESC LIMIT ?',
+    'SELECT id, day_key, meal, name, kcal, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sat_fat_g, sodium_mg, micros_json, logged_at FROM log_entries ORDER BY logged_at DESC, id DESC LIMIT ?',
     [limit],
   );
   return rows.map(mapLogRow);
@@ -937,7 +945,7 @@ export async function deleteSavedMeal(id: number): Promise<void> {
 export async function getAllLogs(): Promise<LogEntry[]> {
   const db = await getDb();
   const rows = await db.getAllAsync<LogRow>(
-    'SELECT id, day_key, meal, name, kcal, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sat_fat_g, sodium_mg, logged_at FROM log_entries ORDER BY logged_at ASC, id ASC',
+    'SELECT id, day_key, meal, name, kcal, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sat_fat_g, sodium_mg, micros_json, logged_at FROM log_entries ORDER BY logged_at ASC, id ASC',
   );
   return rows.map(mapLogRow);
 }
@@ -1036,8 +1044,8 @@ export async function applyRestore(plan: RestorePlan): Promise<RestoreApplied> {
 
     for (const entry of plan.logEntries) {
       await db.runAsync(
-        `INSERT INTO log_entries (day_key, meal, name, kcal, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sat_fat_g, sodium_mg, logged_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO log_entries (day_key, meal, name, kcal, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sat_fat_g, sodium_mg, micros_json, logged_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           entry.dayKey,
           entry.meal,
@@ -1050,6 +1058,7 @@ export async function applyRestore(plan: RestorePlan): Promise<RestoreApplied> {
           entry.sugarG,
           entry.satFatG,
           entry.sodiumMg,
+          serializeMicros(entry.micros),
           entry.loggedAt,
         ],
       );

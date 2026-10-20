@@ -22,8 +22,8 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    // No crash reporter on purpose — the only network call the app makes is
-    // licence validation. The console is the record.
+    // No crash reporter on purpose: the app makes no network calls of its own.
+    // The console is the record.
     console.error('calibrEAT screen error', error, info.componentStack);
   }
 

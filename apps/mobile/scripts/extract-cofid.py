@@ -106,6 +106,7 @@ def main() -> int:
         strings = load_strings(zf)
         prox = read_sheet(zf, strings, sheet_target(zf, "1.3 Proximates"))
         inorg = read_sheet(zf, strings, sheet_target(zf, "1.4 Inorganics"))
+        vits = read_sheet(zf, strings, sheet_target(zf, "1.5 Vitamins"))
 
     sodium_by_code: dict[str, int | None] = {}
     for row_n, cols in inorg.items():
@@ -115,6 +116,44 @@ def main() -> int:
         if not code:
             continue
         sodium_by_code[code] = round_or_none(parse_number(cols.get("H")))
+
+    # Output key -> workbook column. Units match micronutrients.ts: vitamin A is
+    # retinol equivalents (RETEQU), niacin is niacin equivalents (NIACEQU).
+    mineral_cols = {
+        "potassium": "I",
+        "calcium": "J",
+        "magnesium": "K",
+        "phosphorus": "L",
+        "iron": "M",
+        "zinc": "O",
+        "selenium": "R",
+        "iodine": "S",
+    }
+    vitamin_cols = {
+        "vitaminA": "J",
+        "vitaminD": "K",
+        "vitaminE": "L",
+        "vitaminK": "M",
+        "vitaminC": "X",
+        "thiamin": "N",
+        "riboflavin": "O",
+        "niacin": "R",
+        "vitaminB6": "S",
+        "vitaminB12": "T",
+        "folate": "U",
+    }
+    micros_by_code: dict[str, dict[str, float | None]] = {}
+    for sheet, col_map in ((inorg, mineral_cols), (vits, vitamin_cols)):
+        for row_n, cols in sheet.items():
+            if row_n < 4:
+                continue
+            code = (cols.get("A") or "").strip()
+            if not code:
+                continue
+            entry = micros_by_code.setdefault(code, {})
+            for key, letter in col_map.items():
+                value = parse_number(cols.get(letter))
+                entry[key] = None if value is None else round(value, 2)
 
     foods = []
     for row_n, cols in prox.items():
@@ -140,6 +179,7 @@ def main() -> int:
                 "sugarG": round_or_none(parse_number(cols.get("Q"))),
                 "satFatG": round_or_none(parse_number(cols.get("AB"))),
                 "sodiumMg": sodium_by_code.get(code),
+                "micros": micros_by_code.get(code, {}),
             }
         )
 

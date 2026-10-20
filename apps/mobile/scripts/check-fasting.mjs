@@ -4,6 +4,7 @@
 import {
   emptyFastState,
   fastElapsedMs,
+  fastProgress,
   formatElapsed,
   isFasting,
   nextFastMilestone,
@@ -70,6 +71,13 @@ eq('milestone at 16h is 18', nextFastMilestone(16 * H)?.hours, 18);
 eq('milestone past 48h is null', nextFastMilestone(50 * H), null);
 eq('milestone in label 4h', nextFastMilestone(12 * H)?.inLabel, '4h 00m');
 eq('milestone in label 55m', nextFastMilestone(11 * H + 5 * 60000)?.inLabel, '55m');
+
+// progress
+eq('progress at 0h is 0', fastProgress(0).pct, 0);
+eq('progress at 6h is 0.5 toward 12h', fastProgress(6 * H).pct, 0.5);
+eq('progress at 14h is 14/16 toward 16h', fastProgress(14 * H).pct, 14 / 16);
+eq('progress completed milestones at 14h', fastProgress(14 * H).completedMilestones.length, 1);
+eq('progress past 48h is 1', fastProgress(50 * H).pct, 1);
 
 console.log(fails === 0 ? '\nALL CHECKS PASSED' : `\n${fails} CHECK(S) FAILED`);
 process.exit(fails === 0 ? 0 : 1);

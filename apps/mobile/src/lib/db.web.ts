@@ -7,6 +7,7 @@ import {
   type MealSlot,
   type RecentMeal,
 } from '@/lib/diary';
+import type { Micros } from '@/lib/micronutrients';
 import { localDayKey } from '@/lib/dates';
 import type { RestorePlan } from '@/lib/restore';
 import {
@@ -232,6 +233,7 @@ export type LogInput = {
   sugarG?: number | null;
   satFatG?: number | null;
   sodiumMg?: number | null;
+  micros?: Micros | null;
 };
 
 function cleanName(name?: string | null): string | null {
@@ -286,6 +288,7 @@ function readLogs(): LogEntry[] {
       sugarG: row.sugarG ?? null,
       satFatG: row.satFatG ?? null,
       sodiumMg: row.sodiumMg ?? null,
+      micros: row.micros ?? null,
       loggedAt: String(row.loggedAt ?? ''),
     }));
   } catch {
@@ -371,6 +374,7 @@ export async function addLogEntry(input: LogInput): Promise<LogEntry> {
     sugarG: input.sugarG ?? null,
     satFatG: input.satFatG ?? null,
     sodiumMg: input.sodiumMg ?? null,
+    micros: input.micros ?? null,
     loggedAt: new Date().toISOString(),
   };
   list.push(entry);
@@ -396,6 +400,7 @@ export async function updateLogEntry(id: number, input: Omit<LogInput, 'dayKey'>
     sugarG: input.sugarG ?? null,
     satFatG: input.satFatG ?? null,
     sodiumMg: input.sodiumMg ?? null,
+    micros: input.micros ?? null,
   };
   writeLogs(list);
 }
@@ -677,6 +682,7 @@ export async function applyRestore(plan: RestorePlan): Promise<RestoreApplied> {
       sugarG: entry.sugarG,
       satFatG: entry.satFatG,
       sodiumMg: entry.sodiumMg,
+      micros: entry.micros ?? null,
       loggedAt: entry.loggedAt,
     });
   }

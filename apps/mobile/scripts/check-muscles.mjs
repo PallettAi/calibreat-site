@@ -4,7 +4,14 @@
  * Curl must light biceps (primary) and forearm (assisting).
  * Squat must light quads + glutes primary, hammies / adductors / erectors assisting.
  */
-import { exercisesGrouped, getExercise, hasPickedExercise, highlightForExercise, muscleRole } from '../src/lib/muscles.ts';
+import {
+  EXERCISES,
+  exercisesGrouped,
+  getExercise,
+  hasPickedExercise,
+  highlightForExercise,
+  muscleRole,
+} from '../src/lib/muscles.ts';
 
 let fails = 0;
 const eq = (label, got, want) => {
@@ -56,41 +63,113 @@ eq(
   ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'abs', 'quads', 'glutes', 'hamstrings', 'calves'],
 );
 eq(
-  'abs lists sit-up, twist, plank',
+  'abs lists sit-up, twist, plank and home core moves',
   groups.find((g) => g.id === 'abs')?.exercises.map((e) => e.id),
-  ['sit-up', 'russian-twist', 'plank'],
+  [
+    'sit-up',
+    'russian-twist',
+    'plank',
+    'crunch',
+    'reverse-crunch',
+    'dead-bug',
+    'leg-raise',
+    'mountain-climber',
+    'shoulder-tap',
+    'bicycle-crunch',
+    'side-plank',
+  ],
 );
 eq(
-  'free chest lists push-up, bench, incline',
+  'free chest lists push-up, bench, incline, decline, fly',
   groups.find((g) => g.id === 'chest')?.exercises.map((e) => e.id),
-  ['push-up', 'bench-press', 'incline-bench'],
+  ['push-up', 'bench-press', 'incline-bench', 'decline-push-up', 'dumbbell-fly'],
 );
 eq(
-  'free back lists pull-up, chin-up, row, deadlift',
+  'free back lists pull-up, chin-up, row, deadlift and home back moves',
   groups.find((g) => g.id === 'back')?.exercises.map((e) => e.id),
-  ['pull-up', 'chin-up', 'bent-over-row', 'deadlift'],
+  [
+    'pull-up',
+    'chin-up',
+    'bent-over-row',
+    'deadlift',
+    'superman',
+    'back-extension',
+    'good-morning',
+    'dumbbell-row',
+    'doorway-row',
+    'reverse-fly',
+  ],
 );
 eq(
-  'free biceps lists curl and hammer',
+  'free shoulders lists press, raises and home shoulder moves',
+  groups.find((g) => g.id === 'shoulders')?.exercises.map((e) => e.id),
+  ['overhead-press', 'lateral-raise', 'face-pull', 'pike-push-up', 'front-raise', 'arm-circle', 'jumping-jack'],
+);
+eq(
+  'free biceps lists curl, hammer and concentration',
   groups.find((g) => g.id === 'biceps')?.exercises.map((e) => e.id),
-  ['bicep-curl', 'hammer-curl'],
+  ['bicep-curl', 'hammer-curl', 'concentration-curl'],
 );
 eq(
-  'quads lists squat, lunge, split squat',
+  'free triceps lists dip, skull crusher and push-up variants',
+  groups.find((g) => g.id === 'triceps')?.exercises.map((e) => e.id),
+  ['tricep-dip', 'skull-crusher', 'diamond-push-up', 'overhead-triceps-extension'],
+);
+eq(
+  'quads lists squat, lunge, split squat and home leg moves',
   groups.find((g) => g.id === 'quads')?.exercises.map((e) => e.id),
-  ['squat', 'lunge', 'bulgarian-split-squat'],
+  [
+    'squat',
+    'lunge',
+    'bulgarian-split-squat',
+    'jump-squat',
+    'wall-sit',
+    'step-up',
+    'reverse-lunge',
+    'lateral-lunge',
+    'sumo-squat',
+    'goblet-squat',
+    'burpee',
+  ],
 );
 eq(
-  'glutes lists squat family plus hip thrust and RDL',
+  'glutes lists squat family, hip thrust, RDL and home glute moves',
   groups.find((g) => g.id === 'glutes')?.exercises.map((e) => e.id),
-  ['squat', 'lunge', 'deadlift', 'hip-thrust', 'bulgarian-split-squat', 'romanian-deadlift'],
+  [
+    'squat',
+    'lunge',
+    'deadlift',
+    'hip-thrust',
+    'bulgarian-split-squat',
+    'romanian-deadlift',
+    'jump-squat',
+    'step-up',
+    'reverse-lunge',
+    'lateral-lunge',
+    'sumo-squat',
+    'goblet-squat',
+    'glute-bridge',
+    'single-leg-glute-bridge',
+    'donkey-kick',
+    'fire-hydrant',
+  ],
+);
+eq(
+  'free hamstrings lists deadlifts',
+  groups.find((g) => g.id === 'hamstrings')?.exercises.map((e) => e.id),
+  ['deadlift', 'romanian-deadlift', 'single-leg-romanian-deadlift'],
+);
+eq(
+  'free calves lists raises and skipping',
+  groups.find((g) => g.id === 'calves')?.exercises.map((e) => e.id),
+  ['calf-raise', 'single-leg-calf-raise', 'skipping'],
 );
 
 const machines = exercisesGrouped('machine');
 eq(
-  'machine chest is press and pec deck',
+  'machine chest is press, pec deck and chest machine variants',
   machines.find((g) => g.id === 'chest')?.exercises.map((e) => e.id),
-  ['chest-press', 'pec-deck'],
+  ['chest-press', 'pec-deck', 'incline-chest-press', 'decline-chest-press', 'smith-bench-press', 'cable-fly'],
 );
 eq(
   'machines omit push-up',
@@ -125,6 +204,28 @@ eq('no lift picked hides the figure', hasPickedExercise(null) ? 1 : 0, 0);
 eq('sit-up is a picked lift', hasPickedExercise('sit-up') ? 1 : 0, 1);
 eq('unknown lift is not picked', hasPickedExercise('kettlebell-swing') ? 1 : 0, 0);
 eq('sit-up still exists', getExercise('sit-up')?.id ?? '', 'sit-up');
+
+// Home and free-weight additions: spot-check the primary muscle of each new family.
+eq('superman primary erectors', muscleRole('superman', 'lower-back'), 'primary');
+eq('dumbbell fly primary chest', muscleRole('dumbbell-fly', 'chest'), 'primary');
+eq('burpee primary quads', muscleRole('burpee', 'quadriceps'), 'primary');
+eq('crunch primary abs', muscleRole('crunch', 'abs'), 'primary');
+eq('side plank primary obliques', muscleRole('side-plank', 'obliques'), 'primary');
+eq('glute bridge primary glutes', muscleRole('glute-bridge', 'gluteal'), 'primary');
+eq('skipping primary calves', muscleRole('skipping', 'calves'), 'primary');
+eq('diamond push-up primary triceps', muscleRole('diamond-push-up', 'triceps'), 'primary');
+eq('push-up is free equipment', getExercise('push-up')?.equipment ?? '', 'free');
+eq(
+  'every catalogue id is unique',
+  new Set(EXERCISES.map((e) => e.id)).size === EXERCISES.length ? 1 : 0,
+  1,
+);
+eq(
+  'every catalogue name is unique',
+  new Set(EXERCISES.map((e) => e.name)).size === EXERCISES.length ? 1 : 0,
+  1,
+);
+eq('catalogue has 99 exercises (74 original plus 25 machine additions)', EXERCISES.length, 99);
 
 if (fails) {
   console.log(`\n${fails} failed`);

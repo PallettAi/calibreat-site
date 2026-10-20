@@ -80,3 +80,44 @@ export function nextFastMilestone(elapsedMs: number): { hours: number; inLabel: 
   }
   return null;
 }
+
+export type FastProgress = {
+  /** Fraction [0..1] toward `targetHours` (or 1 once past 48h). */
+  pct: number;
+  /** The milestone hour at the left of the current segment (0 for the first 12h). */
+  prevHours: number;
+  /** The milestone hour being approached (48 once past 48h). */
+  targetHours: number;
+  /** Completed milestone hours so far. */
+  completedMilestones: number[];
+};
+
+/**
+ * Progress of a running fast across the milestone ladder.
+ *
+ * Uses overall progress toward the next milestone (0 → targetHours) clamped to
+ * [0..1] so a 6h fast toward 12h shows 50%, and a 15h fast toward 16h shows
+ * 93.75% — matching how someone reading "16h milestone in 1h" pictures the bar.
+ */
+export function fastProgress(elapsedMs: number): FastProgress {
+  const safeMs = Math.max(0, Number.isFinite(elapsedMs) ? elapsedMs : 0);
+  const completedMilestones: number[] = [];
+  let prevHours = 0;
+  for (const m of FAST_MILESTONE_HOURS) {
+    const atMs = m * 3600000;
+    if (safeMs >= atMs) {
+      completedMilestones.push(m);
+      prevHours = m;
+    } else {
+      const pct = Math.max(0, Math.min(1, safeMs / atMs));
+      return { pct, prevHours, targetHours: m, completedMilestones };
+    }
+  }
+  return {
+    pct: 1,
+    prevHours: FAST_MILESTONE_HOURS[FAST_MILESTONE_HOURS.length - 1],
+    targetHours: FAST_MILESTONE_HOURS[FAST_MILESTONE_HOURS.length - 1],
+    completedMilestones,
+  };
+}
+

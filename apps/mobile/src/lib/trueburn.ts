@@ -44,8 +44,19 @@ function storage(): Storage | null {
   }
 }
 
-let cachedState: TrueBurnState | null = null;
-let hydrated = false;
+/**
+ * Normalises a parsed storage blob into a TrueBurnState.
+ *
+ * `JSON.parse` happily returns null, a string, a number or an array, and this
+ * value is read during render — callers dereference `state.decision` without
+ * a guard. So a blob that is not a plain object becomes "no opinion" rather
+ * than a null that throws three lines later. Anything we cannot recognise is
+ * treated as absent, which is always safe: the worst case is one extra prompt.
+ */
+function asState(parsed: unknown): TrueBurnState {
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+  return parsed as TrueBurnState;
+}
 
 export async function getTrueBurnState(): Promise<TrueBurnState> {
   // On native, AsyncStorage; on web, localStorage. Use the sync localStorage
@@ -53,19 +64,10 @@ export async function getTrueBurnState(): Promise<TrueBurnState> {
   const s = storage();
   if (s) {
     const raw = s.getItem(KEY_STATE);
-    if (!raw) {
-      cachedState = {};
-      hydrated = true;
-      return {};
-    }
+    if (!raw) return {};
     try {
-      const parsed = JSON.parse(raw) as TrueBurnState;
-      cachedState = parsed;
-      hydrated = true;
-      return parsed;
+      return asState(JSON.parse(raw));
     } catch {
-      cachedState = {};
-      hydrated = true;
       return {};
     }
   }
@@ -73,25 +75,14 @@ export async function getTrueBurnState(): Promise<TrueBurnState> {
   try {
     const { default: AsyncStorage } = await import('@react-native-async-storage/async-storage');
     const raw = await AsyncStorage.getItem(KEY_STATE);
-    if (!raw) {
-      cachedState = {};
-      hydrated = true;
-      return {};
-    }
-    const parsed = JSON.parse(raw) as TrueBurnState;
-    cachedState = parsed;
-    hydrated = true;
-    return parsed;
+    if (!raw) return {};
+    return asState(JSON.parse(raw));
   } catch {
-    cachedState = {};
-    hydrated = true;
     return {};
   }
 }
 
 export async function saveTrueBurnState(next: TrueBurnState): Promise<void> {
-  cachedState = next;
-  hydrated = true;
   const s = storage();
   const json = JSON.stringify(next);
   if (s) {
@@ -104,11 +95,6 @@ export async function saveTrueBurnState(next: TrueBurnState): Promise<void> {
   } catch {
     // best effort
   }
-}
-
-export function peekTrueBurnState(): TrueBurnState {
-  void hydrated;
-  return cachedState ?? {};
 }
 
 export async function getCalorieOverride(): Promise<CalorieOverride> {
@@ -153,9 +139,14 @@ export function shouldShowAdoptPrompt(state: TrueBurnState, suggested: number | 
   if (!suggested) return false;
   if (state.decision === 'adopt' && state.adoptedSuggested === suggested) return false;
   if (state.decision === 'keep' && state.lastSeenSuggested === suggested) {
-    if (!state.dismissedAt) return false;
-    const t = Date.parse(state.dismissedAt);
-    if (Number.isFinite(t) && Date.now() - t < 7 * 86400000) return false;
+    // A keep with no usable timestamp cannot start its own 7-day cooldown, so
+    // there is nothing to suppress *yet*: show the prompt rather than let a
+    // malformed record silence it permanently. `dismissedAt` is written on
+    // every keep, so this is a corrupt-record path, not a normal one — and
+    // re-asking is the recoverable direction.
+    const t = state.dismissedAt ? Date.parse(state.dismissedAt) : NaN;
+    if (!Number.isFinite(t)) return true;
+    if (Date.now() - t < 7 * 86400000) return false;
   }
   return true;
 }
