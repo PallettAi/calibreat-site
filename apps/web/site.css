@@ -491,7 +491,7 @@ section { padding: clamp(56px, 7vw, 88px) 0; }
 .closing p:last-child { margin: 0; }
 .cta-strip { margin: 24px 0 0; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 
-/* ── Download page ─────────────────────────────────────────────────────── */
+/* ── Status page ───────────────────────────────────────────────────────── */
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
 .chip-row .chip { font-size: 12px; color: var(--text-2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 5px 10px; }
 /* Two cards, so two columns. At three, a whole third of the 1120px wrap sat

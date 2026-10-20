@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Status | calibrEAT</title>
+<meta name="description" content="Where calibrEAT is in its build, and what changed in each beta. Updated when a build ships." />
+<meta property="og:site_name" content="calibrEAT" />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="en_GB" />
+<meta property="og:title" content="Status | calibrEAT" />
+<meta property="og:description" content="Where calibrEAT is in its build, and what changed in each beta. Updated when a build ships." />
+<meta property="og:url" content="https://calibreat.co.uk/status.html" />
+<meta property="og:image" content="https://calibreat.co.uk/assets/og-image.png" />
+<meta property="og:image:secure_url" content="https://calibreat.co.uk/assets/og-image.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="calibrEAT: build status and update notes." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Status | calibrEAT" />
+<meta name="twitter:description" content="Where calibrEAT is in its build, and what changed in each beta. Updated when a build ships." />
+<meta name="twitter:image" content="https://calibreat.co.uk/assets/og-image.png" />
+<meta name="twitter:image:alt" content="calibrEAT: build status and update notes." />
+<meta name="theme-color" content="#0B0F0C" />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
+<meta http-equiv="X-Content-Type-Options" content="nosniff" />
+<link rel="canonical" href="https://calibreat.co.uk/status.html" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" href="/favicon.png" sizes="32x32" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="site.css" />
+<link rel="stylesheet" href="polish.css" />
+<link rel="stylesheet" href="visual-refresh.css" />
+<script>
+  (function () {
+    try {
+      if (localStorage.getItem('calibreat-theme') === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    } catch (e) {}
+  })();
+</script>
+
+</head>
+<body>
+
+<header class="site-nav" id="site-nav">
+  <nav class="nav-inner">
+    <a class="brand" href="index.html">
+      <img data-mark alt="calibrEAT mark" />
+      <span>calibr<span class="e">EAT</span></span>
+    </a>
+    <div class="nav-links">
+      <a class="link" href="index.html#features">Features</a>
+      <a class="link" href="status.html" aria-current="page">Status</a>
+      <a class="link" href="about.html">About</a>
+      <a class="link" href="index.html#faq">FAQ</a>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg>
+      </button>
+    </div>
+    <button class="nav-burger" id="nav-burger" aria-label="Menu" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><g class="ico-burger"><path d="M4 7h16M4 12h16M4 17h16"/></g><g class="ico-x"><path d="M6 6l12 12M18 6 6 18"/></g></svg>
+    </button>
+  </nav>
+</header>
+
+<main id="top">
+
+  <section class="reveal hero hero-centered">
+    <div class="hero-grid-bg"></div>
+    <div class="wrap">
+      <h1>Build <span class="lime">status</span></h1>
+      <p class="lede">Where calibrEAT is in its build, and what changed in each beta. This page is updated when a build ships.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary btn-lg" href="#current">Current build <span class="arr">→</span></a>
+        <a class="btn btn-dark btn-lg" href="#updates">Update notes</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal" id="current" style="padding-bottom:0;">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <span class="kicker">Right now</span>
+        <h2>Current build</h2>
+        <p>There is no public download yet. The app will be paid for through the app stores, and that payment flow is still being built.</p>
+      </div>
+      <div class="guide-grid">
+        <div class="guide-card reveal">
+          <h3>Latest release</h3>
+          <p class="g-sub">beta v0.0.4 · versionCode 5</p>
+          <ul class="guide-steps">
+            <li><span>Logging without the friction: saved meals, copy yesterday’s meal, photo labels, recipe import and fasting.</span></li>
+          </ul>
+          <div class="chip-row"><span class="chip">Released</span><span class="chip">Android</span></div>
+        </div>
+        <div class="guide-card reveal" style="transition-delay:.06s;">
+          <h3>Next build</h3>
+          <p class="g-sub">beta v0.0.5 · versionCode 6</p>
+          <ul class="guide-steps">
+            <li><span>Written, not yet built. Import from MyFitnessPal or Cronometer, backup restore, and a training fix to the daily target.</span></li>
+          </ul>
+          <div class="chip-row"><span class="chip">In progress</span><span class="chip">Not yet built</span></div>
+        </div>
+        <div class="guide-card reveal" style="transition-delay:.12s;">
+          <h3>Platforms</h3>
+          <p class="g-sub">Beta, sideloaded builds only</p>
+          <ul class="guide-steps">
+            <li><span><b>Android:</b> beta builds in progress. No public download yet.</span></li>
+            <li><span><b>App stores:</b> store listings and paid access are not live yet.</span></li>
+            <li><span>Questions? Email <a href="mailto:support@calibreat.co.uk" style="text-decoration:underline; color:var(--green);">support@calibreat.co.uk</a> or <a href="mailto:calibreat@proton.me" style="text-decoration:underline; color:var(--green);">calibreat@proton.me</a>.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal" id="updates">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <span class="kicker">Changelog</span>
+        <h2>Update notes</h2>
+        <p>What changed in each beta, newest first. The full build journal lives in the project’s CHANGELOG.</p>
+      </div>
+
+      <div class="guide-grid">
+
+        <div class="guide-card reveal" id="v005">
+          <h3>beta v0.0.5 <span class="g-ic"></span></h3>
+          <p class="g-sub">Your data can leave the phone, and come back · Next build, not yet released</p>
+          <ul class="guide-steps">
+            <li><span><b>Import your diary</b> from MyFitnessPal or Cronometer. It adds days to your diary and never replaces it. Importing the same file twice adds nothing.</span></li>
+            <li><span><b>Restore from a backup.</b> The preview shows exactly what will change before anything is written.</span></li>
+            <li><span><b>The target stops moving when you train.</b> A session is still recorded and shown, but it is no longer added on top of your budget.</span></li>
+            <li><span><b>Daily recap card</b> “yesterday, calibrated”, and a weekly share card from Trends.</span></li>
+            <li><span><b>First-scan onboarding.</b> Finishing setup lands on Home with the meal log ready.</span></li>
+            <li><span><b>Food search is UK-only.</b> Generic foods come from the bundled CoFID 2021 dataset, and packaged products from Open Food Facts UK.</span></li>
+            <li><span><b>Licence system removed</b> from the app and website while store payments are built.</span></li>
+          </ul>
+        </div>
+
+        <div class="guide-card reveal" style="transition-delay:.06s;" id="v004">
+          <h3>beta v0.0.4 <span class="g-ic"></span></h3>
+          <p class="g-sub">Logging without the friction · Released</p>
+          <ul class="guide-steps">
+            <li><span><b>Half the download.</b> The APK now builds for the two CPU types real phones use, cutting it from 179 MB to 95 MB.</span></li>
+            <li><span><b>Fasting timer</b> on Home, started when you finish eating.</span></li>
+            <li><span><b>True Burn trends screen</b> with the dashboard card as the headline.</span></li>
+            <li><span><b>Recipe URL importer</b> and <b>photo label logging</b> in the meal log sheet.</span></li>
+            <li><span><b>Saved meals</b> and <b>copy yesterday’s meal</b>, so repeat meals take one tap.</span></li>
+            <li><span><b>Data export</b> to a JSON backup, and a barcode-miss cache so failed lookups aren’t retried each time.</span></li>
+            <li><span><b>Performance pass</b> on the Home streak ticker and lists.</span></li>
+          </ul>
+        </div>
+
+        <div class="guide-card reveal" style="transition-delay:.12s;" id="v003">
+          <h3>beta v0.0.3 <span class="g-ic"></span></h3>
+          <p class="g-sub">True Burn Learning · Released</p>
+          <ul class="guide-steps">
+            <li><span><b>True Burn Learning.</b> Your burn is estimated from your weigh-ins and intake, and the estimate improves each week.</span></li>
+            <li><span><b>Supplement picker</b> in setup, with a hydration hint for creatine.</span></li>
+            <li><span><b>Fixed water goal</b> of 4,000 ml a day for everyone.</span></li>
+            <li><span><b>Editable water total</b>, and a Settings sheet with reminder and haptics toggles.</span></li>
+          </ul>
+        </div>
+
+        <div class="guide-card reveal" style="transition-delay:.18s;" id="v002">
+          <h3>beta v0.0.2 <span class="g-ic"></span></h3>
+          <p class="g-sub">Instrument dashboard · Released</p>
+          <ul class="guide-steps">
+            <li><span><b>Home rebuilt</b> as a calibration panel: a daily dial, macro gauges, a water tube and a weight horizon.</span></li>
+            <li><span><b>Calendar</b> polished, with a Monday start and future dates dimmed.</span></li>
+          </ul>
+        </div>
+
+        <div class="guide-card reveal" style="transition-delay:.24s;" id="v001">
+          <h3>beta v0.0.1 <span class="g-ic"></span></h3>
+          <p class="g-sub">Locked foundation · Released</p>
+          <ul class="guide-steps">
+            <li><span><b>First build:</b> the app scaffold, dark and light themes, the brand, and the profile and goals setup.</span></li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="index.html">
+          <img data-mark alt="calibrEAT mark" style="width:27px; height:27px;" />
+          <span>calibr<span class="e">EAT</span></span>
+        </a>
+        <p class="foot-copy">Calibrate your eating lifestyle. Your data stays on your phone.</p>
+        <div class="foot-trust"><span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No ads</span><span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No subscriptions</span><span class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg> No tracking</span></div>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="status.html">Status</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="index.html#features">Features</a></li>
+          <li><a href="index.html#faq">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Support</h4>
+        <ul>
+          <li><a href="support.html">Contact</a></li>
+          <li><a href="privacy.html">Privacy policy</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>The app</h4>
+        <ul>
+          <li><a href="status.html#current">Current build</a></li>
+          <li><a href="status.html#updates">Update notes</a></li>
+          <li><a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open food database</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© <span id="year">2026</span> calibrEAT · All rights reserved.</span>
+      <span>Made with <span class="heart">🥦</span> and a kitchen scale.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js" defer></script>
+<script src="analytics.js" defer></script>
+</body>
+</html>
