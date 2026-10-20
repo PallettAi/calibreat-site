@@ -1,7 +1,6 @@
 /**
- * calibrEAT uptime pinger — a tiny scheduled Worker that watches the license
- * API and the marketing site, and emails (via Resend) only when something
- * changes state. Self-hosted on the same Cloudflare account as the API.
+ * calibrEAT uptime pinger — a tiny scheduled Worker that watches the marketing
+ * site and emails (via Resend) only when it changes state.
  *
  * State (last-seen UP/DOWN per target) lives in the existing backup R2 bucket
  * under uptime/state.json. The email is sent BEFORE state is persisted, so a
@@ -23,27 +22,13 @@ import {
 
 export interface Env {
   BACKUP_BUCKET: R2Bucket;
-  /** Service binding to the license worker — same-account checks bypass the
-   * workers.dev URL entirely (Cloudflare blocks same-account workers.dev subrequests). */
-  LICENSE: { fetch: (url: string, init?: RequestInit) => Promise<Response> };
   RESEND_API_KEY: string;
   ALERT_TO: string;
   ALERT_FROM: string;
   ADMIN_TOKEN: string;
 }
 
-type CheckTarget = Target & { /** Check via the LICENSE service binding instead of public HTTP. */ viaBinding?: boolean };
-
-const TARGETS: CheckTarget[] = [
-  {
-    name: 'license API',
-    // Host is irrelevant for a service binding; the path is what matters.
-    url: 'https://license.internal/health',
-    bodyKeyword: 'calibreat-license',
-    viaBinding: true,
-  },
-  { name: 'website', url: 'https://calibreat.co.uk' },
-];
+const TARGETS: Target[] = [{ name: 'website', url: 'https://calibreat.co.uk' }];
 
 const STATE_KEY = 'uptime/state.json';
 const DO_NOT_REPLY = '[automated uptime pinger — do not reply]';
@@ -91,7 +76,7 @@ export async function runCycle(
   env: Env,
 ): Promise<{ results: TargetResult[]; alert: 'none' | 'down' | 'up' }> {
   const results = await Promise.all(
-    TARGETS.map((t) => checkTarget(t, t.viaBinding ? env.LICENSE.fetch.bind(env.LICENSE) : fetch)),
+    TARGETS.map((t) => checkTarget(t, fetch)),
   );
   const decision = decideAlert(results, await loadState(env));
 

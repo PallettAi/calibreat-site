@@ -1,7 +1,7 @@
 /** Pure check + state-transition logic for the uptime pinger (no I/O here). */
 
 export type Target = {
-  /** Human name used in alert subjects, e.g. "license API". */
+  /** Human name used in alert subjects, e.g. "website". */
   name: string;
   url: string;
   /** Extra substring the body must contain for a 200 to count as healthy. */
@@ -113,7 +113,6 @@ export function upEmailSubject(): string {
 export function upEmailBody(): string {
   return [
     'All monitored targets are answering again:',
-    '• license API',
     '• website',
     '',
     `Checked at ${new Date().toISOString()}.`,

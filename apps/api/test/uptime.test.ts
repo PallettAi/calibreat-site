@@ -13,9 +13,9 @@ import {
 } from '../src/pinger.ts';
 
 const apiTarget: Target = {
-  name: 'license API',
+  name: 'marketing site',
   url: 'https://example.test/health',
-  bodyKeyword: 'calibreat-license',
+  bodyKeyword: 'calibreat',
 };
 const siteTarget: Target = { name: 'website', url: 'https://example.test/' };
 
@@ -31,7 +31,7 @@ function fetchThrowing(message: string): FetchFn {
 
 describe('checkTarget', () => {
   it('healthy: 200 + keyword present → up', async () => {
-    const r = await checkTarget(apiTarget, fetchReturning(200, '{"ok":true,"service":"calibreat-license"}'));
+    const r = await checkTarget(apiTarget, fetchReturning(200, '{"ok":true,"service":"calibreat"}'));
     assert.equal(r.up, true);
     assert.equal(r.status, 200);
   });
@@ -59,7 +59,7 @@ describe('checkAll', () => {
   it('checks every target and reports per-target results', async () => {
     const fetchFn = (input: string) =>
       input.includes('/health')
-        ? Promise.resolve(new Response('{"service":"calibreat-license"}'))
+        ? Promise.resolve(new Response('{"service":"calibreat"}'))
         : Promise.resolve(new Response('', { status: 503 }));
     const results = await checkAll([apiTarget, siteTarget], fetchFn as unknown as FetchFn);
     assert.equal(results[0]!.up, true);
@@ -68,8 +68,8 @@ describe('checkAll', () => {
 });
 
 describe('decideAlert', () => {
-  const up = [{ name: 'license API', url: 'u', up: true }];
-  const down = [{ name: 'license API', url: 'u', up: false, detail: 'HTTP 500' }];
+  const up = [{ name: 'marketing site', url: 'u', up: true }];
+  const down = [{ name: 'marketing site', url: 'u', up: false, detail: 'HTTP 500' }];
 
   it('first cycle, all up → silent', () => {
     assert.deepEqual(decideAlert(up, undefined), { kind: 'none' });
@@ -80,19 +80,19 @@ describe('decideAlert', () => {
   });
 
   it('up → down transition alerts', () => {
-    assert.deepEqual(decideAlert(down, { 'license API': true }), { kind: 'down', downTargets: down });
+    assert.deepEqual(decideAlert(down, { 'marketing site': true }), { kind: 'down', downTargets: down });
   });
 
   it('down → up transition alerts', () => {
-    assert.deepEqual(decideAlert(up, { 'license API': false }), { kind: 'up' });
+    assert.deepEqual(decideAlert(up, { 'marketing site': false }), { kind: 'up' });
   });
 
   it('steady down → silent (no spam)', () => {
-    assert.deepEqual(decideAlert(down, { 'license API': false }), { kind: 'none' });
+    assert.deepEqual(decideAlert(down, { 'marketing site': false }), { kind: 'none' });
   });
 
   it('steady up → silent', () => {
-    assert.deepEqual(decideAlert(up, { 'license API': true }), { kind: 'none' });
+    assert.deepEqual(decideAlert(up, { 'marketing site': true }), { kind: 'none' });
   });
 });
 

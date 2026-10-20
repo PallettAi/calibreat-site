@@ -3,19 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "calibrEAT license service — Cloudflare Worker + Durable Object (email verification + lifetime-code activation)",
+  "description": "calibrEAT uptime pinger — a scheduled Worker that emails when the marketing site goes up or down",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
     "deploy:uptime": "wrangler deploy -c wrangler.uptime.toml",
     "test": "node --experimental-strip-types --test 'test/*.test.ts'",
     "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "svix": "^1.44.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260907.0",
