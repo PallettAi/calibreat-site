@@ -25,6 +25,13 @@
         "buildType": "apk"
       },
       "channel": "production"
+    },
+    "play": {
+      "distribution": "store",
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "channel": "play"
     }
   }
 }
