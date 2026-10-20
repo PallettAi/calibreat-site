@@ -1,7 +1,7 @@
 name: Checks
 
 # Everything the repo can verify without a device: the app's logic suites,
-# lint and types, the license API's tests, and the static site's integrity.
+# lint and types, the uptime pinger's tests, and the static site's integrity.
 # The site deploy workflow only cares about apps/web — this one guards main.
 
 on:
@@ -28,14 +28,13 @@ jobs:
           node-version: '22'
       - name: Static site checks
         run: node scripts/check-site.mjs
-      # Guards the APK build config and the download page's link to it. No
-      # network: the live /health probe is opt-in via --online, since a
-      # Cloudflare blip should not fail a pull request.
+      # Guards the release build config (APK). No network access, so a
+      # hosting blip cannot fail a pull request.
       - name: Release config checks
         run: node scripts/check-release.mjs
 
   api:
-    name: License API
+    name: Uptime pinger
     runs-on: ubuntu-latest
     defaults:
       run:

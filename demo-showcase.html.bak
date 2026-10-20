@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>calibrEAT Redesign Showcase</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<style>
+  .demo-section { padding: 4rem 0; }
+  .demo-header { text-align: center; margin-bottom 2rem; }
+  .demo-header h1 { font-size: clamp(2rem, 4vw, 3rem); }
+  .demo-header p { color: var(--text-2); max-width: 40ch; margin: 0 auto; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="demo-header">
+      <h1>calibrEAT Redesign Showcase</h1>
+      <p>A quick preview of the redesigned website using the new design system</p>
+    </header>
+
+    <section class="demo-section">
+      <div class="sec-head center">
+        <span class="kicker">Hero Section</span>
+        <h2>Your eating, precisely calibrated.</h2>
+        <p class="lede">
+          calibrEAT is a tracker for meals, water and weight — with a barcode scanner,
+          label photo scanning and recipe import. One lifetime purchase, <b>yours forever</b>.
+          No subscription. No ads. No data sharing.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-primary btn-lg" href="#">Get lifetime access <span class="arr">→</span></a>
+          <a class="btn btn-dark btn-lg" href="#">Download</a>
+        </div>
+        <p class="hero-note">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="m8 10 2.5 2.5L16 8"/></svg>
+          <span class="note-text"><b>One-time payment.</b> Your permanent activation code arrives by email instantly.</span>
+        </p>
+        <p class="hero-math">
+          The big-name trackers charge up to <b>£191.88 a year</b>. calibrEAT is <span class="lime-num">£4.99 once</span>.
+        </p>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <div class="sec-head center">
+        <span class="kicker">Features</span>
+        <h2>Everything to calibrate your eating</h2>
+        <p>Built for anyone dialing in their eating lifestyle — no accounts, no clutter.</p>
+      </div>
+      <div class="features">
+        <div class="feature">
+          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.4 14.2c-2.1 1.1-3.6 2.8-3.6 4.7 0 1.7 1.8 2.6 7.2 2.6s7.2-.9 7.2-2.6c0-1.9-1.5-3.6-3.6-4.7"/><path d="M12 3.5c1.8 2.4 4.2 5.1 4.2 7.4a4.2 4.2 0 0 1-8.4 0C7.8 8.6 10.2 5.9 12 3.5Z"/><path d="M12 8.2v2.8"/></svg></div>
+          <h3>True Burn Learning</h3>
+          <p>Weigh-ins plus what you actually eat nudge your daily burn — so the dial tracks you, not a static formula.</p>
+        </div>
+        <div class="feature">
+          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="12" height="15" rx="2.5"/><path d="M9.5 5V3.2h5V5"/><path d="M8.6 11h6.8M8.6 14.2h6.8M8.6 17.4h4"/></svg></div>
+          <h3>Food diary</h3>
+          <p>Log meals and snacks by meal slot with calories &amp; macros. Save meals you eat on repeat and log them again in two taps.</p>
+        </div>
+        <div class="feature">
+          <div class="ftile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5.6A1.6 1.6 0 0 1 5.6 4H8M16 4h2.4A1.6 1.6 0 0 1 20 5.6V8M20 16v2.4a1.6 1.6 0 0 1-1.6 1.6H16M8 20H5.6A1.6 1.6 0 0 1 4 18.4V16"/><path d="M8.6 10v4M11.4 10v4.8M14.2 10v4M17 10v3" stroke-width="2.2"/></svg></div>
+          <h3>Barcode scanner</h3>
+          <p>Scan packaged foods straight from Open Food Facts, the free open food database — and search the built-in offline UK food tables when you have no signal.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <div class="sec-head center">
+        <span class="kicker">Pricing</span>
+        <h2>The whole app. £4.99. For life.</h2>
+        <p>One payment unlocks the food diary, barcode and label scanning, recipe import, water, weight, workouts, fasting tools and True Burn — including every update we ship.</p>
+        <div class="pricing">
+          <div class="pricing-left">
+            <ul class="pricing-list">
+              <li><span class="ck"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span> VAT included · no monthly fees</li>
+              <li><span class="ck"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span> Code by email, then unlock this device</li>
+              <li><span class="ck"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span> <a href="refunds.html" style="color:inherit;text-decoration:underline;">Refunds</a> if it isn’t as described</li>
+            </ul>
+          </div>
+          <div class="buy-card">
+            <span class="buy-tag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> Lifetime license</span>
+            <h3>calibrEAT — full unlock</h3>
+            <p class="prod-sub">Everything in the app, on this device, forever.</p>
+            <div class="buy-rows">
+              <div class="buy-row"><span>Delivery</span><span class="val"><span class="ok">✓</span> <b>Instant email</b></span></div>
+              <div class="buy-row"><span>Renewals</span><span class="val"><span class="ok">✓</span> <b>None — ever</b></span></div>
+              <div class="buy-row"><span>Devices</span><span class="val"><b>One at a time</b></span></div>
+              <div class="buy-row"><span>Updates</span><span class="val"><b>Included for life</b></span></div>
+            </div>
+            <div class="buy-price">
+              <div class="big"><small>£</small>4.99</div>
+              <p>Inc VAT · one-time payment</p>
+              <p class="save-line">£78.89 less than year one of the cheapest tracker above.</p>
+            </div>
+            <a class="btn btn-lime btn-lg btn-block" href="#">Get lifetime access <span class="arr">→</span></a>
+            <p class="buy-fine">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="M3 10h18"/></svg>
+              Secure checkout · code by email · <a href="refunds.html" style="color:inherit;text-decoration:underline;">Refunds</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

@@ -3,9 +3,9 @@
 The runbook for turning this repo into an installable Android build:
 **build → test on a device → publish → point the website at it.**
 
-The APK is the app's only delivery channel (PLAN.md §2: sideload from the
-website, no store). Until this runbook has run once, the download page has nothing
-to install. Treat the release as the milestone it is.
+The public release goes through the app stores (paid), so this runbook produces
+the builds that testers and the store upload start from. Until it has run once,
+there is no build to hand anyone. Treat the release as the milestone it is.
 
 `scripts/check-release.mjs` encodes most of what follows, so you can ask the repo
 whether it is ready instead of re-reading this page:
@@ -28,8 +28,9 @@ node scripts/check-release.mjs            # config invariants (runs in CI)
   Expo's default `minSdkVersion` is 24, so such a device *would* otherwise have
   been eligible. Re-adding `"armeabi-v7a"` to that array restores it and costs
   the size back — do that deliberately, not by accident.
-- **No APK exists yet.** `apps/web/download.html` says so honestly, and
-  `check-release.mjs` prints the exact one-line edit that ships it.
+- **No APK is published yet.** The website no longer has a download page (the app
+  will be paid through the app stores). `apps/web/status.html` shows the build status
+  and update notes instead.
 
 ## Part 1 — one-time setup
 
@@ -152,27 +153,12 @@ is inherited from a library and lands on the user's install screen,which matters
    ~30 MB binary out of the repo and the deployed site, and gives a stable URL):
    tag `v0.0.3`, asset `calibrEAT-0.0.3.apk`,
    → `https://github.com/PallettAi/calibreat-site/releases/download/v0.0.3/calibrEAT-0.0.3.apk`
-4. **Point the site at it** — one constant in `apps/web/download.html`:
-
-   ```js
-   const APK_URL = "https://github.com/PallettAi/calibreat-site/releases/download/v0.0.3/calibrEAT-0.0.3.apk";
-   ```
-
-   That page has two states and picks between them from this one constant: the button,
-   the "In progress"/"Available" chip, the meta line, the hero CTA **and every line of
-   status copy on the page** switch together, so a live download can never sit under a
-   heading that still says "isn't ready to download yet". That covers everything
-   *on* the page. The three `<head>` tags do not — JS cannot rewrite a meta tag, so
-   they are step 5's business.
-5. **Update the copy that lives elsewhere** — shorter now, but this is the step that gets
-   forgotten, and stale "in progress" text is exactly the honesty problem this project
-   keeps fixing:
-   - `apps/web/download.html`: the `<head>` `description`, `og:description` and
-     `twitter:description` (lines 7, 12, 22). Listed first because step 4 has just
-     told you this file is handled — it isn't. JS cannot rewrite a meta tag, so all
-     three keep saying "the APK is a build in progress" and ship that to search
-     results and to every social share card the link is ever pasted into. Drop the
-     clause, keep the sentence; the three must stay identical to each other.
+4. **Update the status page** — `apps/web/status.html`. Move the new version from
+   "Next build" to "Latest release" and add its entry to the update notes. The page
+   is the only place the site talks about builds, so keep it honest about what is
+   actually downloadable.
+5. **Update the copy that lives elsewhere** — this is the step that gets forgotten, and
+   stale "in progress" text is exactly the honesty problem this project keeps fixing:
    - `apps/web/index.html`: the FAQ answer (both the visible copy *and* the matching
      `FAQPage` JSON-LD answer near the top of the file — they must stay identical).
    - `apps/web/privacy.html`: "Android (APK sideload; build in progress)".
@@ -181,11 +167,11 @@ is inherited from a library and lands on the user's install screen,which matters
 
    ```bash
    node scripts/check-site.mjs
-   node scripts/check-release.mjs --online
+   node scripts/check-release.mjs
    ```
 
-   `check-release.mjs` will now require `APK_URL` to be https, end in `.apk`, and
-   contain the app version — so the hosted file and the build cannot silently diverge.
+   `check-release.mjs` checks the build profiles and the version agreement between
+   `app.json` and `package.json`, so the build cannot silently diverge from its version.
    Deploying is automatic once `apps/web` lands on `main` — `deploy-site.yml` publishes
    to the live host (GitHub Pages). A move to Cloudflare Pages was measured and parked;
    see `docs/site-hosting.md`.

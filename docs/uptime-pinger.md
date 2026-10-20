@@ -1,8 +1,6 @@
 # calibrEAT uptime pinger
 
-Self-hosted watchdog for the two live dependencies: the license Worker and the
-marketing site. Runs as a scheduled Cloudflare Worker (every 5 min) in the same
-account as the API — no third-party monitor, no new vendor, no free-tier quirks.
+Self-hosted watchdog for the marketing site. Runs as a scheduled Cloudflare Worker (every 5 min) in the Cloudflare account — no third-party monitor, no new vendor, no free-tier quirks.
 
 - `apps/api/src/pinger.ts` — pure check + transition logic (unit-tested)
 - `apps/api/src/uptime-worker.ts` — cron entrypoint, HTTP routes, email
@@ -12,7 +10,6 @@ account as the API — no third-party monitor, no new vendor, no free-tier quirk
 
 | Target | URL | Healthy means |
 | --- | --- | --- |
-| license API | `https://api.calibreat.co.uk/health` (checked via the service binding — see below) | HTTP 200 **and** body contains `calibreat-license` |
 | website | `https://calibreat.co.uk` | HTTP 200 |
 
 ## Alerting (via Resend)
@@ -47,7 +44,7 @@ Both exist so the pipeline can be verified without waiting for a real outage.
 cd apps/api
 npx wrangler secret put ALERT_TO      # e.g. coreypallett20@gmail.com
 npx wrangler secret put ALERT_FROM    # must be a Resend-verified sender
-npx wrangler secret put ADMIN_TOKEN   # same token as the license API
+npx wrangler secret put ADMIN_TOKEN   # admin token for the /run and /test-alert routes
 npm run deploy:uptime                 # deploys the pinger worker
 ```
 

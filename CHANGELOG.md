@@ -14,6 +14,12 @@ A backup you can read back, a diary you can bring with you from the app you
 left, and a day or a week you can show someone — all without an account, and
 all on the device. And one number stops counting the same workout twice.
 
+**Also in this build:**
+- Removed the licence system: the lock screen, activation, email verification, the licence API and the licence web pages. The app is free for now; store payments are not built yet.
+- Split `apps/api` down to the uptime pinger, which now watches only the marketing site.
+- Food search is UK-only: the USDA FoodData Central fallback is gone. Generic foods come from the bundled CoFID 2021 dataset (offline, Public Health England / GOV.UK, OGL v3.0); packaged products come from Open Food Facts UK (ODbL). Name search never falls back to the world catalogue. Open Food Facts is probed once per launch: if it is unreachable at start, name search stays on CoFID until the app is reopened. Barcode scans still ask the world mirror when the UK one misses.
+- Removed the `licence` checks from `check-release` and `check-site`, and dropped the widget's licence-only `locked` flag.
+
 - **Import your diary from MyFitnessPal or Cronometer** — the last barrier to
   buying a *lifetime* tracker instead of subscribing to another one. Everyone
   arriving here is coming from somewhere, usually with a year of history in it,

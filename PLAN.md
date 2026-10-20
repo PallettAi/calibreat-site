@@ -1,5 +1,7 @@
 # calibrEAT — Product & Engineering Plan
 
+> **Superseded (2026-10):** the app is now free with no licence gate, no activation codes and no licence API. Sections 2, 4 and the licensing parts of M0/M3/M4 describe the removed design and are kept only as history. The current state is in the root `README.md`.
+
 A calorie-tracking app for **Android (APK sideload first)** and **iOS (later)** that helps anyone
 *calibrate their eating lifestyle*: log food, scan barcodes, track water and weight, and adapt
 goals as you progress.
@@ -23,7 +25,7 @@ simple to build: one app binary, one gate, one license.
 | Area | What it includes |
 | --- | --- |
 | Food logging | Meals (breakfast / lunch / dinner / snacks), quick-add by calories, recent items, edit & delete |
-| Food search | Search a free food database (Open Food Facts / USDA FoodData Central), **barcode scanning** |
+| Food search | Search UK food databases (CoFID / Open Food Facts), **barcode scanning** |
 | Goals | Target calories & macro split; TDEE/BMR estimate from profile; recalculates as weight changes |
 | Hydration | Daily water log with goal |
 | Weight | Weigh-ins with trend |
@@ -284,7 +286,7 @@ Derived views: daily totals per `day_key`, rolling 7/30-day averages for trends.
       (`src/data/cofid-foods.json`, searched by `src/lib/food-search.ts`)
 - [x] **Open Food Facts** (free, open API) — UK barcode scanning for packaged products with
       a session cache and timeout; nutrients wherever the product label lists them
-- [x] **USDA FoodData Central** (free API) — graceful name-search fallback when Open Food Facts has no results; uses the public `DEMO_KEY` by default and supports `EXPO_PUBLIC_USDA_API_KEY` for production rate limits
+- [x] ~~USDA FoodData Central~~ — removed; the app is UK-only (CoFID + Open Food Facts UK/world)
 - [x] Barcode scan via the camera (`expo-camera`) → product lookup → log
 - [x] Search UI with recents
 - [x] **Photo label OCR** — "Label" tab in the log sheet: photograph the

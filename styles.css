@@ -1,0 +1,437 @@
+/*
+ * Shared polish layer for calibreat.co.uk — behaviour is in site.js.
+ * Everything here is additive: pages look complete without JS, and all
+ * motion is disabled under prefers-reduced-motion.
+ */
+
+/* Scroll reveals — see site.js. Stagger optional via --reveal-delay. */
+.reveal.pre-reveal.revealed {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal.pre-reveal:not(.revealed) {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+/* Card hover lift — opt-in via .lift where a section has no hover of its own. */
+.lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+@media (hover: hover) {
+  .lift:hover,
+  .lift:focus-within {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md, 0 14px 34px -14px rgba(0, 0, 0, 0.25));
+  }
+}
+
+/* Full stop for reduced motion, whatever the entry path. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal.pre-reveal,
+  .reveal.pre-reveal.revealed {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .lift,
+  .lift:hover,
+  .lift:focus-within {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* iPhone demo animations */
+.phone-screen {
+  position: relative;
+  overflow: hidden;
+  /* Base styles for phone screen */
+  min-height: 400px;
+  background: linear-gradient(to bottom, #f8f9fa, #ffffff);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  transition: all 0.8s ease;
+}
+
+/* Different screen states for each feature */
+.phone-screen.screen-burn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(to bottom, #4CAF50, #8BC34A);
+  opacity: 0.9;
+  animation: burnPulse 3s ease-in-out infinite;
+}
+.phone-screen.screen-burn::after {
+  content: "True Burn Learning";
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  width: 80%;
+}
+
+.phone-screen.screen-diary::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      #ffffff,
+      #ffffff 10px,
+      #f0f0f0 10px,
+      #f0f0f0 20px
+    );
+}
+.phone-screen.screen-diary::after {
+  content: "Food Diary";
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #333;
+  font-weight: bold;
+  text-align: center;
+  width: 80%;
+}
+
+.phone-screen.screen-barcode::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(90deg,
+      #ffffff 0%,
+      #ffffff 40%,
+      #e0e0e0 40%,
+      #e0e0e0 42%,
+      #ffffff 42%,
+      #ffffff 44%,
+      #e0e0e0 44%,
+      #e0e0e0 46%,
+      #ffffff 46%,
+      #ffffff 48%,
+      #e0e0e0 48%,
+      #e0e0e0 50%,
+      #ffffff 50%,
+      #ffffff 52%,
+      #e0e0e0 52%,
+      #e0e0e0 54%,
+      #ffffff 54%,
+      #ffffff 56%,
+      #e0e0e0 56%,
+      #e0e0e0 58%,
+      #ffffff 58%,
+      #ffffff 60%,
+      #e0e0e0 60%,
+      #e0e0e0 62%,
+      #ffffff 62%,
+      #ffffff 64%,
+      #e0e0e0 64%,
+      #e0e0e0 66%,
+      #ffffff 66%,
+      #ffffff 68%,
+      #e0e0e0 68%,
+      #e0e0e0 70%,
+      #ffffff 70%,
+      #ffffff 72%,
+      #e0e0e0 72%,
+      #e0e0e0 74%,
+      #ffffff 74%,
+      #ffffff 76%,
+      #e0e0e0 76%,
+      #e0e0e0 78%,
+      #ffffff 78%,
+      #ffffff 80%,
+      #e0e0e0 80%,
+      #e0e0e0 82%,
+      #ffffff 82%,
+      #ffffff 84%,
+      #e0e0e0 84%,
+      #e0e0e0 86%,
+      #ffffff 86%,
+      #ffffff 88%,
+      #e0e0e0 88%,
+      #e0e0e0 90%,
+      #ffffff 90%,
+      #ffffff 92%,
+      #e0e0e0 92%,
+      #e0e0e0 94%,
+      #ffffff 94%,
+      #ffffff 96%,
+      #e0e0e0 96%,
+      #e0e0e0 98%,
+      #ffffff 98%,
+      #ffffff 100%
+    );
+  background-size: 200% 100%;
+  animation: barcodeScan 4s linear infinite;
+}
+.phone-screen.screen-barcode::after {
+  content: "Barcode Scanner";
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #333;
+  font-weight: bold;
+  text-align: center;
+  width: 80%;
+}
+
+.phone-screen.screen-label::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(135deg, #fff9c4 0%, #fbc02d 50%, #ffea00 100%);
+}
+.phone-screen.screen-label::after {
+  content: "Label & Recipe Import";
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #333;
+  font-weight: bold;
+  text-align: center;
+  width: 80%;
+}
+
+.phone-screen.screen-weight::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at center, #e3f2fd 0%, #bbdefb 100%);
+}
+.phone-screen.screen-weight::after {
+  content: "Weight & Goals";
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #333;
+  font-weight: bold;
+  text-align: center;
+  width: 80%;
+}
+
+.phone-screen.screen-water::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(to bottom, #e3f2fd 0%, #90caf9 100%);
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.3) 0px,
+      rgba(255,255,255,0.3) 2px,
+      transparent 2px,
+      transparent 8px
+    );
+}
+.phone-screen.screen-water::after {
+  content: "Water Tracker";
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #333;
+  font-weight: bold;
+  text-align: center;
+  width: 80%;
+}
+
+.phone-screen.screen-workout::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(45deg, #ffebee 0%, #f8bbd0 33%, #f48fb1 66%, #f06292 100%);
+}
+.phone-screen.screen-workout::after {
+  content: "Workout Logging";
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #333;
+  font-weight: bold;
+  text-align: center;
+  width: 80%;
+}
+
+.phone-screen.screen-fasting::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      #fff3e0,
+      #fff3e0 10px,
+      #ffe0b2 10px,
+      #ffe0b2 20px
+    );
+}
+.phone-screen.screen-fasting::after {
+  content: "Fasting Timer";
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #333;
+  font-weight: bold;
+  text-align: center;
+  width: 80%;
+}
+
+.phone-screen.screen-macros::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(to right, #c8e6c9 0%, #a5d6a7 50%, #81c784 100%);
+}
+.phone-screen.screen-macros::after {
+  content: "Macros & Nutrients";
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #333;
+  font-weight: bold;
+  text-align: center;
+  width: 80%;
+}
+
+.phone-screen.screen-export::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(45deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%);
+}
+.phone-screen.screen-export::after {
+  content: "Export Your Data";
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #333;
+  font-weight: bold;
+  text-align: center;
+  width: 80%;
+}
+
+.phone-screen.screen-privacy::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(to bottom, #ffebee 0%, #f8bbd0 50%, #f48fb1 100%);
+}
+.phone-screen.screen-privacy::after {
+  content: "Private by Design";
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #333;
+  font-weight: bold;
+  text-align: center;
+  width: 80%;
+}
+
+.phone-screen.screen-streaks::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      #fff8e1,
+      #fff8e1 10px,
+      #ffecb3 10px,
+      #ffecb3 20px
+    );
+}
+.phone-screen.screen-streaks::after {
+  content: "Streaks & Reminders";
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #333;
+  font-weight: bold;
+  text-align: center;
+  width: 80%;
+}
+
+/* Animations */
+@keyframes burnPulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+@keyframes barcodeScan {
+  0% { background-position: 0% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Reduced motion fallback */
+@media (prefers-reduced-motion: reduce) {
+  .phone-screen::before,
+  .phone-screen::after {
+    animation: none !important;
+  }
+  .phone-screen {
+    transition: none !important;
+  }
+}
