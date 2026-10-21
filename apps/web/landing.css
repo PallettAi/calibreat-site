@@ -98,7 +98,9 @@ body::after { display: none; }
   opacity: 1;
   box-shadow: 0 10px 22px rgba(16,34,25,.12), inset 0 1px rgba(255,255,255,.12);
 }
-.store-button:disabled { opacity: 1; }
+.store-button:disabled { background: #5d6b61; border-color: #5d6b61; box-shadow: none; }
+.store-button:disabled .store-overline { color: rgba(255,255,255,.85); }
+.store-button:disabled .store-soon { color: #fff; border-color: rgba(255,255,255,.4); background: rgba(255,255,255,.14); }
 .store-icon { width: 27px; height: 27px; flex: none; }
 .store-icon.play-icon { width: 25px; height: 25px; }
 .store-copy { display: grid; gap: 3px; min-width: 90px; }

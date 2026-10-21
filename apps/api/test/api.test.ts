@@ -866,7 +866,7 @@ test('notify stores the address; re-signups are idempotent', async () => {
   const email = 'waitlist@example.com';
   const first = await api('POST', '/v1/notify', { email, source: 'download' });
   assert.equal(first.status, 200);
-  assert.match(first.body.message, /on the list/i);
+  assert.match(String(first.body.message), /on the list/i);
   const rec = await store.getNotify(email);
   assert.ok(rec, 'signup must be stored');
   assert.equal(rec.source, 'download');
@@ -877,6 +877,7 @@ test('notify stores the address; re-signups are idempotent', async () => {
   const again = await api('POST', '/v1/notify', { email });
   assert.equal(again.status, 200);
   const after = await store.getNotify(email);
+  assert.ok(after, 're-signup must keep the stored record');
   assert.equal(after.createdAt, rec.createdAt, 're-signup keeps the original createdAt');
   assert.equal(after.source, 'download', 're-signup keeps the original source');
   assert.deepEqual(await store.listNotify(), [rec], 'still exactly one row');
