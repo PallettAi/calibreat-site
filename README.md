@@ -1,6 +1,6 @@
 # calibrEAT
 
-Calibrate your eating lifestyle. A free, cross-platform calorie tracker with a
+Calibrate your eating lifestyle. A cross-platform calorie tracker with a
 one-time lifetime unlock — no subscriptions, no in-app purchases, no ads.
 
 ## Repository layout
