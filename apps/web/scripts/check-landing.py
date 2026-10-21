@@ -54,7 +54,7 @@ def main():
         check(source.count("Coming soon</span>") == 4, "each visible store button says Coming soon"),
         check("No in-app purchases" in source and "No subscriptions" in source, "homepage explicitly commits to no in-app purchases or subscriptions"),
         check("CHECKOUT_URL" not in source and "dodopayments.com" not in source and "£4.99" not in source, "old checkout and website price removed"),
-        check(not any(link.endswith(".html") and link not in {"download.html", "privacy.html", "support.html"} for link in html_links), "no navigation to old marketing pages"),
+        check(not any(link.endswith(".html") and link not in {"privacy.html", "support.html"} for link in html_links), "no navigation to old marketing pages"),
         check({"privacy.html"}.issubset(set(html_links)), "privacy policy remains available from the footer"),
         check('href="support.html"' in source, "support contact routes to the dedicated support page"),
         check("data-mark" in source and "site.js" in source, "existing calibrEAT logo injection is retained"),

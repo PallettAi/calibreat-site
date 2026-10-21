@@ -1,11 +1,11 @@
 /**
  * Release-config checks (node scripts/check-release.mjs [--online]).
  *
- * The Android APK is built from two files that must agree with the repo around
- * them: `apps/mobile/eas.json` (what gets baked in) and `apps/web/download.html`
- * (where the released file is offered). Neither is typechecked, and a mistake
- * in either one only shows up after a ~15 minute cloud build — or, worse, after
- * a customer has paid. So the invariants live here, and CI runs them.
+ * The Android APK is built from `apps/mobile/eas.json` (what gets baked in).
+ * It is not typechecked, and a mistake only shows up after a ~15 minute cloud
+ * build — or, worse, after a customer has paid. So the invariants live here,
+ * and CI runs them. The website no longer offers the APK (its download page was
+ * removed), so the APK-hosting checks that used to live here were dropped too.
  *
  * Checks:
  *  1. eas.json builds an APK (an .aab cannot be sideloaded from the website),
@@ -13,13 +13,7 @@
  *  2. That URL's host is bound to the Worker as a custom domain in
  *     apps/api/wrangler.toml, so a re-deploy can't silently orphan the app.
  *  3. app.json and package.json agree on the version, and versionCode is real.
- *  4. download.html defines APK_URL exactly once and pairs it with #apk-btn —
- *     the site used to wire a button that did not exist, so this asserts the
- *     page could actually serve the download.
- *  5. Once APK_URL points at a hosted file, it must be https, an .apk, and
- *     named after the app version (no release whose file disagrees with the
- *     build). While it is still the placeholder that is a NOTICE, not a FAIL.
- *  6. Build output can never be committed.
+ *  4. Build output can never be committed.
  *
  * `--online` additionally probes {API}/health, which CI skips so a Cloudflare
  * hiccup can't fail a pull request. Run it before a release build.
@@ -34,7 +28,6 @@ const read = (...p) => readFileSync(join(ROOT, ...p), 'utf8');
 const json = (...p) => JSON.parse(read(...p));
 
 const ONLINE = process.argv.includes('--online');
-const PLACEHOLDER = '#apk-coming-soon';
 
 let fails = 0;
 const pass = (label) => console.log(`PASS    ${label}`);
@@ -48,7 +41,6 @@ const check = (label, condition, detail) => (condition ? pass(label) : fail(labe
 const eas = json('apps', 'mobile', 'eas.json');
 const app = json('apps', 'mobile', 'app.json').expo;
 const pkg = json('apps', 'mobile', 'package.json');
-const html = read('apps', 'web', 'download.html');
 const wrangler = read('apps', 'api', 'wrangler.toml');
 
 // ── 1. the build produces something a phone can install ────────────────────
@@ -130,28 +122,7 @@ if (iosIcon && !existsSync(join(ROOT, 'apps', 'mobile', iosIcon))) {
   notice(`ios.icon "${iosIcon}" does not exist — Android builds are unaffected, but iOS will fail`);
 }
 
-// ── 4/5. the download page can actually serve it ──────────────────────────
-console.log('\n── download page ──');
-
-const apkUrlMatches = [...html.matchAll(/const APK_URL = "([^"]*)"/g)].map((m) => m[1]);
-check('APK_URL is defined exactly once', apkUrlMatches.length === 1, `found ${apkUrlMatches.length}`);
-check('the Android card has an #apk-btn for APK_URL to drive',
-  html.includes('id="apk-btn"'),
-  'APK_URL is inert without it — this is the bug the check exists to stop');
-
-const apkUrl = apkUrlMatches[0] ?? '';
-if (apkUrl === PLACEHOLDER) {
-  notice(`APK_URL is still the placeholder — the site honestly says "in progress".
-        After the build, upload the .apk and set:
-          const APK_URL = "<hosted url>/calibrEAT-${app.version}.apk";`);
-} else {
-  check('APK_URL is https', apkUrl.startsWith('https://'), apkUrl);
-  check('APK_URL is an .apk', apkUrl.split('?')[0].endsWith('.apk'), apkUrl);
-  check('APK_URL names this app version', apkUrl.includes(app.version),
-    `${apkUrl} does not contain ${app.version} — the hosted file and the build would disagree`);
-}
-
-// ── 6. build output stays out of git ──────────────────────────────────────
+// ── 4. build output stays out of git ──────────────────────────────────────
 console.log('\n── build output ──');
 
 // Ask git rather than pattern-matching a file, so nested .gitignore files count —
@@ -207,7 +178,7 @@ if (ONLINE) {
 
 console.log(
   fails === 0
-    ? `\nAll release checks passed${apkUrl === PLACEHOLDER ? ' (APK not published yet — see the notice above)' : ''}.`
+    ? '\nAll release checks passed.'
     : `\n${fails} release check${fails === 1 ? '' : 's'} failed.`,
 );
 
