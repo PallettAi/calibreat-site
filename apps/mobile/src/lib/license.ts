@@ -17,7 +17,7 @@ import { isWellFormedCode, normalizeCode } from '@/lib/license-code';
 /**
  * calibrEAT license + activation.
  *
- * Business model (see PLAN.md at the repo root): every build is free to
+ * Business model: every build is free to
  * install but gated behind a one-time lifetime activation code sold on the
  * calibrEAT website and emailed to the buyer. This module owns code
  * normalization, the activation handshake, and local persistence of the
@@ -424,7 +424,7 @@ export async function clearVerifiedEmail(): Promise<void> {
 /**
  * Stable per-install identifier, generated once and persisted. Sent to the
  * activation server so a single code can only be bound to a limited number
- * of devices (activation-limit policy lives server-side, see PLAN.md).
+ * of devices (activation-limit policy lives server-side).
  */
 export async function getInstallId(): Promise<string> {
   const existing = await AsyncStorage.getItem(INSTALL_ID_STORAGE_KEY);

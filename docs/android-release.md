@@ -3,7 +3,7 @@
 The runbook for turning this repo into an installable Android build:
 **build → test on a device → publish → point the website at it.**
 
-The APK is the app's only delivery channel (PLAN.md §2: sideload from the
+The APK is the app's only delivery channel (sideload from the
 website, no store). Until this runbook has run once, the download page has nothing
 to install. Treat the release as the milestone it is.
 
@@ -176,7 +176,6 @@ is inherited from a library and lands on the user's install screen,which matters
    - `apps/web/index.html`: the FAQ answer (both the visible copy *and* the matching
      `FAQPage` JSON-LD answer near the top of the file — they must stay identical).
    - `apps/web/privacy.html`: "Android (APK sideload; build in progress)".
-   - `PLAN.md`: M0's APK checkbox and M4's "free APK download hosting".
 6. **Verify, then deploy**:
 
    ```bash
@@ -215,7 +214,7 @@ Known gaps for this cluster: routines are stored on the device and are not in th
 
 ## Not covered yet
 
-- **iOS** — parked until an Apple Developer account exists (PLAN.md M2/M5).
-- **Play Store** — not planned yet; the current plan is sideload-only (PLAN.md §2).
+- **iOS** — parked until an Apple Developer account exists.
+- **Play Store** — not planned yet; the current plan is sideload-only.
 - **Hardening** — code obfuscation and runtime APK-signature checks are M5. The app is
   free and has no server-side gate to protect.

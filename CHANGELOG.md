@@ -140,4 +140,4 @@ Current version: **beta v0.0.4** · `apps/mobile` `v0.0.4` (versionCode 5) · La
 
 ### How to read this
 
-Each entry is the user-visible story, not a commit list. For the engineering detail, see `PLAN.md` (roadmap) and the per-version notes above.
+Each entry is the user-visible story, not a commit list. For the engineering detail, see the per-version notes above.

@@ -13,14 +13,13 @@ one-time lifetime unlock — no subscriptions, no in-app purchases, no ads.
 | `brand/` | Brand system — monoline balance mark, wordmark lockup, gallery, and the generated `glyph-gallery.html` icon review sheet. |
 | `docs/` | Operational notes (e.g. `support-email.md` for the Resend inbound setup). |
 | `scripts/` | Repo-level tooling — `check-site.mjs` and the OG-card generator. |
-| `PLAN.md` | Product & engineering plan: monetization model, licensing security analysis, data model, milestones. |
 
 ## Status
 
 Feature-complete **offline app**, a **live license API** and a **live checkout**.
 The one thing missing is the release itself: **the Android APK is not published
 yet** (`download.html` says "coming soon"). Until it is, checkout should not be
-promoted — see PLAN.md §7 (M0/M4).
+promoted.
 
 ## Checks
 

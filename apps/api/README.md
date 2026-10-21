@@ -1,6 +1,6 @@
 # calibrEAT license API (`apps/api`)
 
-The **hard gate** for the app (PLAN.md milestone M3). The mobile app unlocks only
+The **hard gate** for the app. The mobile app unlocks only
 when this service says the license is valid — a code is accepted only if it exists,
 belongs to the buyer's email, is not revoked, and that email proved ownership via a
 6-digit verification code. **There is no client-side path past the lock screen**; this
@@ -215,4 +215,4 @@ test/api.test.ts 8-scenario suite (node:test)
 
 The webhook body is provider-agnostic; each provider's payload must be mapped to
 `{ event, customer_email, license_key }`. Confirm your provider auto-generates a unique
-**permanent** license key per sale and emails it with the receipt (see `PLAN.md` §3).
+**permanent** license key per sale and emails it with the receipt.

@@ -4,8 +4,6 @@ Free-to-install calorie tracker for **Android (APK sideload)** first, iOS later.
 gated behind a **one-time lifetime activation code** sold on the calibrEAT website and emailed
 to the buyer. No in-app purchases, no ads.
 
-Full product & engineering plan: [`PLAN.md`](../../PLAN.md) at the repo root.
-
 **Stack:** Expo SDK 57 (React Native 0.86, React 19), TypeScript, `expo-router` with typed
 routes, `expo-sqlite` for the local database, `expo-camera` for barcodes, `react-native-svg`
 for the charts and the header marks, dark/light theming throughout.
@@ -126,6 +124,6 @@ scripts/        check-*.mjs logic suites + run-checks.mjs + glyph-gallery.mjs
 
 ## Still to come
 
-Tracked in PLAN.md: data **export/import** for backups and device migration (M1), and iOS
+Tracked on the roadmap: data **export/import** for backups and device migration (M1), and iOS
 (parked until an Apple Developer account exists). USDA FoodData Central is now a graceful search
 fallback when Open Food Facts has no results.

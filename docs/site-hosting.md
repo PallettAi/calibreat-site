@@ -269,8 +269,7 @@ git rm .github/workflows/deploy-site.yml apps/web/CNAME
 ```
 
 `CNAME` is meaningless on Pages (and would otherwise be served as a stray file),
-and the GitHub Pages workflow is what keeps the old host alive. Update `PLAN.md`
-§8, which still names GitHub Pages.
+and the GitHub Pages workflow is what keeps the old host alive.
 
 ## Rollback
 

@@ -1,8 +1,7 @@
 /**
  * calibrEAT app-wide configuration and brand palette.
  *
- * URLs point at the live marketing / sales site (calibreat.co.uk, GitHub Pages);
- * see PLAN.md at the repo root.
+ * URLs point at the live marketing / sales site (calibreat.co.uk, GitHub Pages).
  */
 
 export const AppMeta = {
@@ -14,7 +13,7 @@ export const AppMeta = {
 
 export const LicenseConfig = {
   /**
-   * Base URL of the license activation API (PLAN.md milestone M3).
+   * Base URL of the license activation API.
    * Set EXPO_PUBLIC_LICENSE_API_URL when building a release APK.
    * When empty, activation falls back to the __DEV__-only local mode
    * implemented in src/lib/license.ts.
@@ -28,7 +27,7 @@ export const LicenseConfig = {
   /**
    * Help / self-service page for existing license holders (recover a lost code,
    * move devices, contact support). There is no customer portal yet — until the
-   * real one exists (PLAN.md M4 optional order-status page), this points at the
+   * real one exists, this points at the
    * license page's lost-code FAQ + support email.
    */
   licenseHelpUrl: process.env.EXPO_PUBLIC_LICENSE_HELP_URL ?? `${AppMeta.websiteUrl}/license.html#faq`,
