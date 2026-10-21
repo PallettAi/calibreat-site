@@ -20,7 +20,7 @@ Both hostnames serve the same Worker and are checked every 5 minutes:
 | Hostname | Who uses it | Notes |
 | --- | --- | --- |
 | `api.calibreat.co.uk` | APKs from v0.0.5 on (baked at build) | custom domain, Cloudflare cert |
-| `calibreat-license.coreypallett20.workers.dev` | shipped v0.0.4 APKs; fallback | must keep answering until no old APKs are in the wild |
+| `calibreat-license.<you>.workers.dev` | shipped v0.0.4 APKs; fallback | must keep answering until no old APKs are in the wild |
 
 ## Alerts you can receive, and what each means
 
@@ -45,7 +45,7 @@ Work top to bottom; stop when the cause is found.
 
    ```bash
    curl -s -m 10 https://api.calibreat.co.uk/health
-   curl -s -m 10 https://calibreat-license.coreypallett20.workers.dev/health
+   curl -s -m 10 https://calibreat-license.<you>.workers.dev/health
    ```
 
    Healthy = `{"ok":true,"service":"calibreat-license"}` with HTTP 200.
@@ -111,11 +111,11 @@ Workers → calibreat-license → Logs for the scheduled run.
 # manual pinger cycle (checks both targets, emails only on state change)
 export ADMIN_TOKEN=$(grep ^ADMIN_TOKEN apps/api/.env | cut -d= -f2)
 curl -s -H "Authorization: Bearer $ADMIN_TOKEN" \
-  https://calibreat-uptime.coreypallett20.workers.dev/run
+  https://calibreat-uptime.<you>.workers.dev/run
 
 # send yourself a drill alert (proves Resend → inbox still works)
 curl -s -H "Authorization: Bearer $ADMIN_TOKEN" \
-  https://calibreat-uptime.coreypallett20.workers.dev/test-alert
+  https://calibreat-uptime.<you>.workers.dev/test-alert
 
 # mint a license for a customer who paid but lost the email
 curl -X POST https://api.calibreat.co.uk/v1/admin/licenses \

@@ -45,7 +45,7 @@ Both exist so the pipeline can be verified without waiting for a real outage.
 
 ```sh
 cd apps/api
-npx wrangler secret put ALERT_TO      # e.g. coreypallett20@gmail.com
+npx wrangler secret put ALERT_TO      # e.g. you@example.com
 npx wrangler secret put ALERT_FROM    # must be a Resend-verified sender
 npx wrangler secret put ADMIN_TOKEN   # same token as the license API
 npm run deploy:uptime                 # deploys the pinger worker
@@ -55,9 +55,9 @@ Manual cycle + test email:
 
 ```sh
 curl -s -H "Authorization: Bearer $ADMIN_TOKEN" \
-  https://calibreat-uptime.coreypallett20.workers.dev/run
+  https://calibreat-uptime.<you>.workers.dev/run
 curl -s -H "Authorization: Bearer $ADMIN_TOKEN" \
-  https://calibreat-uptime.coreypallett20.workers.dev/test-alert
+  https://calibreat-uptime.<you>.workers.dev/test-alert
 ```
 
 Fail-safe: every alert email includes the line

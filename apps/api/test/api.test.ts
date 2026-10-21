@@ -468,7 +468,7 @@ test('Dodo webhook registers a license_key.created event and revokes on entitlem
   const secret = 'whsec_' + Buffer.from('dodo-test-secret-bytes').toString('base64');
   const dodoConfig = configFromEnv({ DODO_WEBHOOK_SECRET: secret });
   const dodoCtx = { store, config: dodoConfig };
-  const email = 'pallettai@proton.me';
+  const email = 'buyer@example.com';
   const key = '0a29a466-9553-4aa6-b714-b61692b55130';
 
   const unset = await handleHttp(

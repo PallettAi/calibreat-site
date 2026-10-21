@@ -105,8 +105,8 @@ Everything below is a dashboard step. Nothing here can be done from a laptop's
 (`workers_*`), so it cannot create or deploy a Pages project.
 
 1. Use your existing Cloudflare account — the uptime Worker already lives on it.
-   The account ID is **`92e5d7d3336709a2a783488b3cdc0241`** (it is the middle
-   column of `npx wrangler whoami`).
+   The account ID is the middle column of `npx wrangler whoami`. Copy it from
+   there; it is not stored in this repo.
 2. Create an API token: **My Profile → API Tokens → Create Token → Edit
    Cloudflare Workers** template is *not* enough; use **Create Custom Token**
    with **Account → Cloudflare Pages → Edit** for this account. Then add two
@@ -115,7 +115,7 @@ Everything below is a dashboard step. Nothing here can be done from a laptop's
    | Secret | Value |
    | --- | --- |
    | `CLOUDFLARE_API_TOKEN` | the token you just made |
-   | `CLOUDFLARE_ACCOUNT_ID` | `92e5d7d3336709a2a783488b3cdc0241` |
+   | `CLOUDFLARE_ACCOUNT_ID` | your account ID from `npx wrangler whoami` |
 
 3. Push anything touching `apps/web` (or run the workflow manually from the
    Actions tab). **You do not need to create the Pages project first** — the
