@@ -121,6 +121,20 @@ export class LicenseStoreDO extends DurableObject<Env> implements LicenseStore {
     const entries = await this.ctx.storage.list<NotifyRecord>({ prefix: 'ntf:' });
     return [...entries.values()].sort((a, b) => a.createdAt - b.createdAt);
   }
+  async getNotifySends(ipHash: string): Promise<AttemptRecord | null> {
+    return (await this.ctx.storage.get<AttemptRecord>(keys.notifySends(ipHash))) ?? null;
+  }
+  async recordNotifySend(ipHash: string, windowEndsAt: number): Promise<void> {
+    const current = await this.getNotifySends(ipHash);
+    if (!current || Date.now() >= current.windowEndsAt) {
+      await this.ctx.storage.put(keys.notifySends(ipHash), { count: 1, windowEndsAt });
+      return;
+    }
+    await this.ctx.storage.put(keys.notifySends(ipHash), {
+      count: current.count + 1,
+      windowEndsAt: current.windowEndsAt,
+    });
+  }
 
   async putInbound(record: InboundRecord): Promise<void> {
     await this.ctx.storage.put(keys.inbound(record.id), record);

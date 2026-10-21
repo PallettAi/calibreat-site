@@ -10,6 +10,7 @@ import {
   isValidEmail,
   normalizeCode,
   safeEqual,
+  sha256Hex,
   sanitizeDeviceLabel,
   alreadyActiveMessage,
 } from './license.ts';
@@ -64,7 +65,7 @@ export const routeTable: Record<
   'POST /v1/release': (ctx, req) => release(ctx, req.body),
   'POST /v1/validate': (ctx, req) => validate(ctx, req.body),
   'POST /v1/license/resend': (ctx, req) => resendLicense(ctx, req.body),
-  'POST /v1/notify': (ctx, req) => notifySignup(ctx, req.body),
+  'POST /v1/notify': (ctx, req) => notifySignup(ctx, req.body, req.headers),
   'POST /v1/webhook/mor': morWebhook,
   'POST /v1/webhook/dodo': dodoWebhook,
   'POST /v1/webhook/inbound': inboundWebhook,
@@ -341,7 +342,9 @@ async function validate(ctx: Context, body: Record<string, unknown>): Promise<Ht
     revoked: license.revoked,
     activatedAt: activation?.activatedAt ?? null,
     plan: PLAN,
-    customerEmail: license.email,
+    // Only echo the buyer's address back to the person who already proved they
+    // know it; anyone holding a leaked code must not learn who bought it.
+    customerEmail: license.email === email ? license.email : null,
     activeDevice:
       activation && !active && !license.revoked
         ? { label: activation.deviceLabel ?? null, activatedAt: activation.activatedAt }
@@ -728,15 +731,21 @@ async function adminListInbound(ctx: Context, req: HttpRequest): Promise<HttpRes
  * consequence is one launch email to the address given.
  *
  * Defenses are the usual three: an exact-match probe (identical response
- * whether or not the address is already on the list), a modest per-IP-ish
- * payload cap (the email is length-limited, so a flood costs nothing to
- * store), and idempotency (re-signups update the source and never re-email
- * the confirmation). Abuse ceiling: one row per address — an attacker can
- * only sign up addresses they type by hand.
+ * whether or not the address is already on the list), a length cap on the
+ * address (the email is length-limited, so a flood costs nothing to store),
+ * and idempotency (re-signups update the source and never re-email the
+ * confirmation). The one cost an attacker can drive is the confirmation email,
+ * so that is capped per client IP (NOTIFY_MAX_EMAILS_PER_IP per
+ * NOTIFY_IP_WINDOW_MS); signups over the cap are still stored, just not sent
+ * a confirmation.
  */
 const NOTIFY_EMAIL_MAX = 320;
 
-async function notifySignup(ctx: Context, body: Record<string, unknown>): Promise<HttpResponse> {
+async function notifySignup(
+  ctx: Context,
+  body: Record<string, unknown>,
+  headers: Record<string, string> | undefined,
+): Promise<HttpResponse> {
   const { store } = ctx;
   const email = str(body.email).trim().toLowerCase();
   const source = str(body.source).trim().slice(0, 64);
@@ -751,8 +760,18 @@ async function notifySignup(ctx: Context, body: Record<string, unknown>): Promis
     createdAt: existing?.createdAt ?? Date.now(),
     notifiedAt: existing?.notifiedAt ?? null,
   });
+  // Each new address costs one email, so cap those per client IP. Over the cap
+  // the signup is still stored and gets the same response (no probe signal),
+  // it just isn't sent a confirmation; the launch email still reaches it.
   if (!existing) {
-    await sendNotifyConfirmEmail(email, ctx.config.resendApiKey, ctx.config.emailFrom);
+    const ipHash = await sha256Hex(str(headers?.['cf-connecting-ip']) || 'unknown');
+    const sends = await store.getNotifySends(ipHash);
+    const underCap =
+      !sends || Date.now() >= sends.windowEndsAt || sends.count < ctx.config.notifyMaxEmailsPerIp;
+    if (underCap) {
+      await store.recordNotifySend(ipHash, Date.now() + ctx.config.notifyIpWindowMs);
+      await sendNotifyConfirmEmail(email, ctx.config.resendApiKey, ctx.config.emailFrom);
+    }
   }
   return ok({ message: "You're on the list — we'll email you when calibrEAT is ready to download." });
 }

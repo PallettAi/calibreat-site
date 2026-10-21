@@ -101,6 +101,9 @@ export interface LicenseStore {
   getInbound(id: string): Promise<InboundRecord | null>;
   getNotify(email: string): Promise<NotifyRecord | null>;
   putNotify(record: NotifyRecord): Promise<void>;
+  /** Confirmation emails sent to a client IP (hashed) in the current window. */
+  getNotifySends(ipHash: string): Promise<AttemptRecord | null>;
+  recordNotifySend(ipHash: string, windowEndsAt: number): Promise<void>;
   /** Every notify-me signup, oldest first — the launch-announcement export. */
   listNotify(): Promise<NotifyRecord[]>;
   listInbound(limit: number): Promise<InboundRecord[]>;
@@ -123,6 +126,7 @@ export const keys = {
   resends: (emailHash: string) => `res:${emailHash}`,
   inbound: (id: string) => `inb:${id}`,
   notify: (email: string) => `ntf:${email}`,
+  notifySends: (ipHash: string) => `nip:${ipHash}`,
 } as const;
 
 /** In-memory implementation used by the node:test suite. */
@@ -220,6 +224,22 @@ export class InMemoryStore implements LicenseStore {
 
   private inbound = new Map<string, InboundRecord>();
   private notify = new Map<string, NotifyRecord>();
+  private notifySends = new Map<string, AttemptRecord>();
+
+  async getNotifySends(ipHash: string): Promise<AttemptRecord | null> {
+    return this.notifySends.get(keys.notifySends(ipHash)) ?? null;
+  }
+  async recordNotifySend(ipHash: string, windowEndsAt: number): Promise<void> {
+    const current = this.notifySends.get(keys.notifySends(ipHash));
+    if (!current || Date.now() >= current.windowEndsAt) {
+      this.notifySends.set(keys.notifySends(ipHash), { count: 1, windowEndsAt });
+      return;
+    }
+    this.notifySends.set(keys.notifySends(ipHash), {
+      count: current.count + 1,
+      windowEndsAt: current.windowEndsAt,
+    });
+  }
 
   async getNotify(email: string): Promise<NotifyRecord | null> {
     return this.notify.get(keys.notify(email)) ?? null;

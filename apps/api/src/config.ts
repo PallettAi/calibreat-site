@@ -27,6 +27,9 @@ export type ApiConfig = {
   supportFrom: string;
   /** Max self-service license replacements per email per rolling year. */
   maxResendsPerYear: number;
+  /** Max notify-me confirmation emails per client IP inside notifyIpWindowMs. */
+  notifyMaxEmailsPerIp: number;
+  notifyIpWindowMs: number;
 };
 
 function read(env: object, key: string): string | undefined {
@@ -57,5 +60,7 @@ export function configFromEnv(env: object): ApiConfig {
     resendWebhookSecret: read(env, 'RESEND_WEBHOOK_SECRET') ?? '',
     supportFrom: read(env, 'SUPPORT_FROM') ?? '',
     maxResendsPerYear: num(read(env, 'MAX_RESENDS_PER_YEAR'), 3),
+    notifyMaxEmailsPerIp: num(read(env, 'NOTIFY_MAX_EMAILS_PER_IP'), 5),
+    notifyIpWindowMs: num(read(env, 'NOTIFY_IP_WINDOW_MS'), 60 * 60 * 1000),
   };
 }

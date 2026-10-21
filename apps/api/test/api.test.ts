@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { configFromEnv } from '../src/config.ts';
-import { generateCode, hashCode } from '../src/license.ts';
+import { generateCode, hashCode, sha256Hex } from '../src/license.ts';
 import { handleHttp, isKnownRoute, routeTable, type HttpRequest } from '../src/router.ts';
 import { InMemoryStore } from '../src/store.ts';
 
@@ -911,4 +911,52 @@ test('notify listNotify orders signups oldest first', async () => {
   const list = await store.listNotify();
   const emails = list.map((r) => r.email);
   assert.ok(emails.indexOf(a) < emails.indexOf(b), 'signup order is preserved');
+});
+
+test('notify caps confirmation emails per client IP; over-cap signups are still stored', async () => {
+  const capStore = new InMemoryStore();
+  const capConfig = configFromEnv({ NOTIFY_MAX_EMAILS_PER_IP: '2' });
+  const signup = (email: string, ip: string) =>
+    handleHttp(
+      { store: capStore, config: capConfig },
+      { method: 'POST', path: '/v1/notify', body: { email }, headers: { 'cf-connecting-ip': ip } },
+    );
+  const ipHash = await sha256Hex('198.51.100.9');
+
+  assert.equal((await signup('cap-1@example.com', '198.51.100.9')).status, 200);
+  assert.equal((await signup('cap-2@example.com', '198.51.100.9')).status, 200);
+  assert.equal((await capStore.getNotifySends(ipHash))?.count, 2);
+
+  // Third new address from the same IP: identical success, stored, but no email counted.
+  const over = await signup('cap-3@example.com', '198.51.100.9');
+  assert.equal(over.status, 200);
+  assert.match(String(over.body.message), /on the list/i);
+  assert.ok(await capStore.getNotify('cap-3@example.com'), 'over-cap signup must still be stored');
+  assert.equal((await capStore.getNotifySends(ipHash))?.count, 2, 'no confirmation sent over the cap');
+
+  // Re-signup of an existing address never sends, so it never counts either.
+  await signup('cap-1@example.com', '198.51.100.9');
+  assert.equal((await capStore.getNotifySends(ipHash))?.count, 2);
+
+  // A different client IP has its own budget.
+  assert.equal((await signup('cap-4@example.com', '198.51.100.10')).status, 200);
+  assert.equal((await capStore.getNotifySends(await sha256Hex('198.51.100.10')))?.count, 1);
+});
+
+test('validate only echoes the buyer email back to someone who typed it', async () => {
+  const owner = 'owner-echo@example.com';
+  const code = await seedLicense(owner);
+
+  const stranger = await api('POST', '/v1/validate', {
+    code,
+    email: 'stranger-echo@example.com',
+    installId: 'probe',
+  });
+  assert.equal(stranger.status, 200);
+  assert.equal(stranger.body.valid, false);
+  assert.equal(stranger.body.customerEmail, null, 'a leaked code must not reveal the buyer address');
+
+  const buyer = await api('POST', '/v1/validate', { code, email: owner, installId: 'probe' });
+  assert.equal(buyer.status, 200);
+  assert.equal(buyer.body.customerEmail, owner);
 });
