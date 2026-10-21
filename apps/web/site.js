@@ -5,7 +5,7 @@
  * This absorbs the block of small scripts that used to be copy-pasted into all
  * nine pages: mark injection, favicon, footer year, theme toggle, mobile nav
  * and scroll reveal. Each page now only carries what is genuinely its own
- * (CHECKOUT_URL / APK_URL / NOTIFY_API_BASE constants and the page's wiring).
+ * (page-specific constants such as APK_URL, and the page's wiring).
  *
  * Behaviour styles live in polish.css. Both are additive and fail safe: with no
  * JS, or under prefers-reduced-motion, pages render complete and static. The
